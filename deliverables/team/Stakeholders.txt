@@ -3,7 +3,7 @@ Organization Name: QEYnet Inc.
 Partner: 
   Michael Luciuk
   Primary point of contact
-  [Email]
+  Email: mike.luciuk@mail.utoronto.ca
 
 TA:
   Sajad Faghfoor Maghrebi
