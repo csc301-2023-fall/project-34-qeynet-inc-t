@@ -1,4 +1,4 @@
-# YOUR PRODUCT/TEAM NAME
+# Astra
 > _Note:_ This document will evolve throughout your project. You commit regularly to this file while working on the project (especially edits/additions/deletions to the _Highlights_ section). 
  > **This document will serve as a master plan between your team, your partner and your TA.**
 
@@ -24,6 +24,7 @@
   > Short (1 - 2 min' read max)
  * Be specific (e.g. a 'a third-year university student studying Computer Science' and not 'a student')
  * **Feel free to use personas. You can create your personas as part of this Markdown file, or add a link to an external site (for example, [Xtensio](https://xtensio.com/user-persona/)).**
+ * QEYNET staff as well as customers for critical satellite data monitoring.
 
 #### Q3: Why would your users choose your product? What are they using today to solve their problem/need?
 
@@ -50,6 +51,7 @@
  * How will you deploy the application?
  * Describe the architecture - what are the high level components or patterns you will use? Diagrams are useful here. 
  * Will you be using third party applications or APIs? If so, what are they?
+ * For now we know we will use Python as long as several of its relevant and useful python libraries.
 
 ----
 ## Intellectual Property Confidentiality Agreement 
@@ -76,6 +78,7 @@ Do a team-building activity in-person or online. This can be playing an online g
 * Get to know each other on a more personal level.
 * Provide a few sentences on what you did and share a picture or other evidence of your team building activity.
 * Share at least three fun facts from members of you team (total not 3 for each member).
+* TBA: Most people are good on Friday, and we could also play a game?
 
 
 #### Q7: What are the roles & responsibilities on the team?
