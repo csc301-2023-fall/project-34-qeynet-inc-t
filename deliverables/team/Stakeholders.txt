@@ -2,7 +2,7 @@ Organization Name: QEYnet Inc.
 
 Partner: 
   Michael Luciuk
-  Primary point of contract
+  Primary point of contact
   [Email]
 
 TA:
