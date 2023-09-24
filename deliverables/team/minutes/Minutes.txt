@@ -1,1 +1,13 @@
-
+Saturday, Sept 23, 13:00-13:55
+- Partner explained in greater depth the goals of QEYnet and how the team's project fits in
+- Project will be a local GUI application with local file I/O
+- Partner shared example types of data that will be processed by the project
+- For the project, functionality and usability are to be prioritized over visual aesthetics
+- Team will be working in the team repository, not a repository of QEYnet
+- Partner will be providing support regarding the requirements of the project, but not regarding the code of the project
+- Team may make source code public after the completion of the project
+- The team repository is to be kept private until the completion of the project, as the code may contain confidential information that will need to be removed before public release
+- Project Expectations and Code of Conduct document was brought up, but not explicitly reviewed
+- To do: set up a file-sharing hub for the project separate from source control
+- Next meeting: Tue, Sept 26, 18:30 to evaluate an initial mockup for the project design
+- Schedule for regular meetings will be determined in the next meeting
