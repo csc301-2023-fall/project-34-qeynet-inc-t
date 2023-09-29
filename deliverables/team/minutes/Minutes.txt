@@ -11,3 +11,10 @@ Saturday, Sept 23, 13:00-13:55
 - To do: set up a file-sharing hub for the project separate from source control
 - Next meeting: Tue, Sept 26, 18:30 to evaluate an initial mockup for the project design
 - Schedule for regular meetings will be determined in the next meeting
+
+Tuesday, Sept 26, 18:30-19:20
+- Team presented initial mockups to the partner
+- Team presented initial user stories to the partner – to be revised and presented again approval before the D1 deadline
+- Team asked clarifying questions about the project
+- Partner presented and explained an example configuration file for the project
+- Regular meetings will occur every Monday at 11:00 (decided shortly before the meeting)
