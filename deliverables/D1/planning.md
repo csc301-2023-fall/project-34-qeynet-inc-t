@@ -114,7 +114,7 @@ We also played some online games on Jackbox, including Gartic Phone and etc.
 |Johnny|Frontend/GUI help (taking CSC309 / interested in PyQt/Tkinter stuff)<br>Database (CSC343)|
 |Bonan|Product manager<br>Dedicated partner liaison<br>Frontend help (taking CSC318)<br>Backend - data processing logic (have experience with NumPy and pandas)|
 |Alex|Development manager, feel somewhat experienced with it from my part in CSC207.<br>Backend, My primary experience area.|
-|Liam|Backend<br>database (taking CSC343, interested in gaining experience)|
+|Liam|Backend - database (taking CSC343, interested in gaining experience)|
 |Albert|Frontend/GUI help (taking CSC309)|
 
 
