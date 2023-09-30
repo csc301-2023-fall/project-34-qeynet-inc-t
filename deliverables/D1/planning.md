@@ -8,6 +8,13 @@
 
 **Astra** will be a local, GUI-based program that will allow QEYnet employees and customers to read and interact with data from QEYnet satellites and other devices. QEYnet is a startup company aiming to deploy a quantum key distribution system using satellites. Users will be able to use our app to monitor satellite health by displaying plots of health data over time, and notifying users in case there are any unexpected discrepancies so that they can diagnose and treat any potential problems.
 
+<p float="left">
+    <img width="200" height="150" src="./mockups/d1-mockup-dashboard.png">
+    <img width="200" height="150" src="./mockups/d1-mockup-table-view.png">
+    <img width="200" height="150" src="./mockups/d1-mockup-graph-view.png">
+    <img width="200" height="150" src="./mockups/d1-mockup-frame-view.png">
+</p>
+
 #### Q2: Who are your target users?
 
 This app will be targeted towards QEYnet engineers who need to perform live satellite monitoring as well as customers using QEYnet services.
