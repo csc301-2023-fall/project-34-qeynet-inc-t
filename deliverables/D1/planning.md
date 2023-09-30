@@ -30,6 +30,12 @@ Additionally, QEYnet has 6 to 8 daily contacts with their satellite, and some of
 
 #### Q4: What are the user stories that make up the Minumum Viable Product (MVP)?
 
+Our partner has approved and provided feedback on a previous version of these user stories:
+
+<img src="images/user-stories-unrevised-partner-approval.png">
+
+The current version below is a revision that incorporates some of the provided feedback.
+
 <table>
     <thead>
     <tr>
