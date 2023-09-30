@@ -8,6 +8,10 @@
 
 **Organization:**
 
+<p>
+ <img width="300" height="160" src="https://images.squarespace-cdn.com/content/v1/5a837cb7d74cffca72977a29/1518672294226-XPZ4FOYONO9PKB0DX8AC/QEYnet+logo_final-+iteration+2.png">
+</p>
+
 [QEYnet](qeynet.com) is a startup company aiming to deploy a quantum key distribution system using satellites ... **_add more here plz_**
 
 ## Description about the project
