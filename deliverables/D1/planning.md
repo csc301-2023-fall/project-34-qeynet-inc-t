@@ -97,8 +97,8 @@ We had two meetings with the team on our Discord channel, briefly introducing ou
 We also played some online games on Jackbox, including Gartic Phone and etc.
 
 <p float="left">
-    <img width="490" height="280" src="./image1.png">
-    <img width="490" height="280" src="./image2.png">
+    <img width="490" height="280" src="./images/team-building-1.png">
+    <img width="490" height="280" src="./images/team-building-2.png">
 </p>
 
 **Fun Facts**:
