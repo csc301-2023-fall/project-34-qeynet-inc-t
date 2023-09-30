@@ -32,13 +32,17 @@ Our application will give employees a convenient and smooth GUI to check satelli
 
 The user can upload a local file from their computer and have the information accessible to the program. If there are problems with the file, the upload does not go through and the user is shown an error.
 
-* **Check the current status/operating mode of QRx/satellite**
+* **See the current status/operating mode of the device**
 
-In just a few clicks, the user can see every major piece of broad information about a satellite. The information is correct and up-to-date relative to the data known to the program.
+In just a few clicks, the user can see every major piece of broad information about the device. The information is correct and up-to-date relative to the data known to the program.
 
-* **Plot selected variables against time**
+* **View telemetry data**
 
-Data from telemetry frames is plotted on a graph with time as the independent variable and user-chosen dependent variables. The user can customize what specific data is plotted, along with the general appearance of the resulting graph.
+A table containing the data accessible to the program, spanning multiple telemetry frames, is displayed to the user. The user can customize what parameters are displayed for each telemetry frame, and sort the table by a specific parameter.
+
+* **Plot selected parameters against time**
+
+Data from telemetry frames is plotted on a graph with time as the independent variable and various user-chosen parameters as dependent variables.
 
 * **View data for a chosen telemetry frame**
 
@@ -46,11 +50,15 @@ The program keeps track of a number of telemetry frames that the user can select
 
 * **Apply filters to data**
 
-Upon specifying a criterion, only telemetry frames (if viewing frames) / data points (if viewing a graph) that satisfy the criterion are displayed. The table for the current frame can be reduced to chosen columns and sorted according to how the user desires. The filter can be cleared through a GUI button.
+The user can specify and un-specify criteria so that only telemetry frames (if viewing frames) / data points (if viewing a graph) that satisfy the specified criteria are displayed. Criteria include conditions on values for chosen parameters as well as conditions on the alarms that apply to a given frame.
 
 * **Display warning messages**
 
-When unexpected behaviours happen, warnings will be displayed on the dashboard, ordered by priority. For sufficiently critical problems, additional methods of notifying staff will be deployed such as popups or emails (if time permits).
+When unexpected behaviours happen, warnings are displayed on the dashboard, ordered by priority.
+
+* **Emit additional warnings for high-priority alarms (if time permits)**
+
+For sufficiently high-priority alarms, additional methods of notifying staff are deployed such as popups or emails.
 
 ## Instructions
  * Clear instructions for how to use the application from the end-user's perspective
