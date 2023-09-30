@@ -83,10 +83,8 @@ Describe your Git/GitHub workflow. Essentially, we want to understand how your t
   **_TBA_**
 
  ## Licenses 
-​
- Keep this section as brief as possible. You may read this [Github article](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository) for a start.
-​
- * What type of license will you apply to your codebase? And why?
- * What affect does it have on the development and use of your codebase?
 
-  **_TBA_**
+We will apply the **MIT license** to our codebase. It’s because we're allowed to share the code under an open-source license and the MIT license is such a simple and popular open-source license that meets all our needs.
+
+With the MIT license in our codebase, it grants any person the right to use, modify, and distribute our codebase as long as they include the same copyright notice in their copies.
+
