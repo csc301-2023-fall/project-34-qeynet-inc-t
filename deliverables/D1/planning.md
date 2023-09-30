@@ -29,7 +29,7 @@ Additionally, QEYnet has 6 to 8 daily contacts with their satellite, and some of
             <th>Role</th>
             <th>Action</th>
             <th>Benefit</th>
-												<th>Acceptance criteria</th>
+			<th>Acceptance criteria</th>
         </tr>
     </thead>
     <tbody>
@@ -37,32 +37,32 @@ Additionally, QEYnet has 6 to 8 daily contacts with their satellite, and some of
             <td rowspan=6>QEYnet staff and staff of QEYnet’s customers who need to perform satellite monitoring</td>
             <td>Read in custom telemetry files</td>
             <td>Let the program “see” new satellite data</td>
-			<td>The user can upload a local file from their computer and have the information accessible to the program. If there are problems with the file, the 				upload does not go through and the user is shown an error.</td>
+			<td>The user can upload a local file from their computer and have the information accessible to the program. If there are problems with the file, the upload does not go through and the user is shown an error.</td>
         </tr>
         <tr>
             <td>See the current status/operating mode of QRx/satellite</td>
 			<td>Have quick, easy access to the most important information</td>
-			<td>In just a few clicks, the user can see every major piece of broad information about a satellite. The information is correct and up-to-date 						relative to the data known to the program.</td>
+			<td>In just a few clicks, the user can see every major piece of broad information about a satellite. The information is correct and up-to-date relative to the data known to the program.</td>
         </tr>
         <tr>
             <td>Plot selected variables against time</td>
 			<td>Better understand how given variables change over time or easily see outlying data points.</td>
-			<td>Data from telemetry frames is plotted on a graph with time as the independent variable and user-chosen dependent variables. The user can customize 				what specific data is plotted, along with the general appearance of the resulting graph.</td>
+			<td>Data from telemetry frames is plotted on a graph with time as the independent variable and user-chosen dependent variables. The user can customize what specific data is plotted, along with the general appearance of the resulting graph.</td>
         </tr>
         <tr>
             <td>View data for a chosen telemetry frame</td>
 			<td>Focus on data at one specific point in time</td>
-			<td>The program keeps track of a number of telemetry frames that the user can select between. Doing so displays all data linked to the chosen 						telemetry frame, along with descriptions of the data.</td>
+			<td>The program keeps track of a number of telemetry frames that the user can select between. Doing so displays all data linked to the chosen telemetry frame, along with descriptions of the data.</td>
         </tr>
 		<tr>
             <td>Apply filters to data</td>
 			<td>Focus on a specific subset of the data</td>
-			<td>Upon specifying a criterion, only telemetry frames (if viewing frames) / data points (if viewing a graph) that satisfy the criterion are 						displayed. The table for the current frame can be reduced to chosen columns and sorted according to how the user desires. The filter can be 					cleared through a GUI button.</td>
+			<td>Upon specifying a criterion, only telemetry frames (if viewing frames) / data points (if viewing a graph) that satisfy the criterion are displayed. The table for the current frame can be reduced to chosen columns and sorted according to how the user desires. The filter can be cleared through a GUI button.</td>
         </tr>
 		<tr>
             <td>Display warning messages</td>
 			<td>Allow staff to know if problems are occurring with a project satellite, especially critical errors, so they can act on it quickly</td>
-			<td>When unexpected behaviours happen, warnings will be displayed on the dashboard, ordered by priority. For sufficiently critical problems, 						additional methods of notifying staff will be deployed such as popups or emails (if time permits).</td>
+			<td>When unexpected behaviours happen, warnings will be displayed on the dashboard, ordered by priority. For sufficiently critical problems, additional methods of notifying staff will be deployed such as popups or emails (if time permits).</td>
         </tr>
     </tbody>
 </table>
@@ -96,9 +96,9 @@ We had two meetings with the team on our Discord channel, briefly introducing ou
 
 We also played some online games on Jackbox, including Gartic Phone and etc.
 
-<p>
-    <img src="             " hspace="10" >
-    <img src="             " hspace="10" >
+<p float="left">
+    <img width="490" height="280" src="./image1.png">
+    <img width="490" height="280" src="./image2.png">
 </p>
 
 **Fun Facts**:
