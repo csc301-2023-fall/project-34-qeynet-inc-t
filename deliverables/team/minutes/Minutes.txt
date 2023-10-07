@@ -18,3 +18,14 @@ Tuesday, Sept 26, 18:30-19:20
 - Team asked clarifying questions about the project
 - Partner presented and explained an example configuration file for the project
 - Regular meetings will occur every Monday at 11:00 (decided shortly before the meeting)
+
+Monday, Oct 2, 16:10-16:50
+- Team presented updated mockups to partner
+- Team asked clarifying questions about the project
+- Partner clarified: no need to deal with persistence of telemetry data at this stage
+- Partner clarified: "Table View" is not a high-priority feature for the program
+- Partner requested: alarms in the dashboard should be filterable
+- Partner clarified: graphing will occur for one parameter at a time
+- Team TODO: start discussing the architecture of the project
+- After meeting, team made updated mockups available for download to the partner
+- After meeting, partner made available drawn feedback on the team's updated mockups
