@@ -1,7 +1,7 @@
 Member number, UTORid, Name, Github username, Status, Role(s)
-1, guoandy4, Andy Guo, andy-guo-21, enrolled, Frontend | Database
-2, jiangl54, Lingyun Jiang, johnnyjly, enrolled, Frontend | Database
-3, luanbo2, Bonan Luan, shape-warrior-t, enrolled, Frontend | Backend | Coordination
-4, mathiou2, Alexander Mathioudakis, alexma22, enrolled, Backend | Coordination
-5, oderolia, Liam Odero, LiamOdero, enrolled, Database
-6, yanalbe1, Albert Yan, Alkolyte, enrolled, Frontend
+1, guoandy4, Andy Guo, andy-guo-21, enrolled, Frontend subteam
+2, jiangl54, Lingyun Jiang, johnnyjly, enrolled, Data subteam
+3, luanbo2, Bonan Luan, shape-warrior-t, enrolled, Coordination | Data subteam
+4, mathiou2, Alexander Mathioudakis, alexma22, enrolled, Coordination | Use case subteam
+5, oderolia, Liam Odero, LiamOdero, enrolled, Use case subteam
+6, yanalbe1, Albert Yan, Alkolyte, enrolled, Frontend subteam
