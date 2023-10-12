@@ -29,3 +29,24 @@ Monday, Oct 2, 16:10-16:50
 - Team TODO: start discussing the architecture of the project
 - After meeting, team made updated mockups available for download to the partner
 - After meeting, partner made available drawn feedback on the team's updated mockups
+
+Monday, Oct 9, 11:00-12:10
+- Team presented initial architecture to partner
+  - Team TODO: update UML diagram to distinguish files from in-memory data
+  - Team TODO: separate telemetry file reading from appending to telemetry data
+  - Team TODO: create visual groupings for sets of modules
+    - Module groups should have high cohesion
+    - There should be low coupling between different groups
+  - Team TODO: separate telemetry configuration from user settings
+  - Team TODO: separate alarm checking from alarm display
+- Team asked clarifying questions about the project
+  - Clarified: Project must incorporate error handling, but the specifics are up to the team
+  - Clarified: It can be assumed that there exists a specified interface such that all valid configuration files can be parsed into an object that satisfies this interface
+  - Clarified: User settings can be read from and written to files
+  - Clarified: Python version can be either 3.11 or 3.12 (up to the team to decide)
+- Partner requested: feature for switching devices (not high-priority)
+- Partner expressed concerns about the team's progress, especially its progress with the mockups and architecture
+  - After meeting, team communicated with the partner to resolve this issue
+    - Team will largely stick to its original plans for Deliverable 2
+    - Team will create and present updated mockups to partner by Wednesday
+    - Team will complete and get approval for mockups and architecture before working on any code past Deliverable 2
