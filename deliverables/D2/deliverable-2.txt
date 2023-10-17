@@ -1,0 +1,17 @@
+---Software---
+
+Astra will be a local, GUI-based program that will allow QEYnet employees and customers to read and interact with data from QEYnet satellites and other devices. QEYnet is a startup company aiming to deploy a quantum key distribution system using satellites. Users will be able to use our app to monitor satellite health by displaying plots of telemetry data over time, and notifying users in case there are any unexpected discrepancies so that they can diagnose and treat any potential problems.
+
+We will be using Python to develop Astra from scratch. Python aligns with other QEYnet products and it has several powerful scientific libraries like PyQt5, Tkinter, matplotlib, plotly, numpy, scipy and pandas.
+
+---D2 divisions---
+
+We decided to divide our project into 3 components as follows:
+
+- Data subteam: responsible for interacting with the file system and exposing read-in telemetry and configuration data.
+
+- Use case subteam: responsible for taking data from the data subteam and transforming it into a format that fits the various needs of the front end subteam.
+
+- Frontend subteam: responsible for the user interface of the program.
+
+The divide is basically a frontend-backend divide that, given the restrictions imposed by the deliverable, contains an additional divide in the backend between interacting with files and transforming and formatting data.
