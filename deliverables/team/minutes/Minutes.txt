@@ -50,3 +50,19 @@ Monday, Oct 9, 11:00-12:10
     - Team will largely stick to its original plans for Deliverable 2
     - Team will create and present updated mockups to partner by Wednesday
     - Team will complete and get approval for mockups and architecture before working on any code past Deliverable 2
+
+Wednesday, Oct 18, 14:00-15:05
+- Notified: Deliverable 2 has been completed 2 days behind schedule
+- Partner presented Panoptes, a configuration/telemetry file generation tool (was earlier provided for download without presentation)
+- Clarified: primary priorities for the team are telemetry, alarms, and plotting
+- Shortly after meeting, partner shared paper on alarm management
+- Various points about the project clarified:
+  - On scale:
+    - Each device will have 1000-10000 tags
+    - Team can consider reading in telemetry files on demand
+  - State of alarms should be communicated in a more prominent way
+  - There is a difference between acknowledging an alarm and resolving it
+  - Plotting should support multiple parameters -- there are ways to handle the problem of differing axis scales
+  - There should not be duplicate timestamps for a device
+  - Configuration files will give info on available devices
+  - File extension is likely OK to rely on for determining file format
