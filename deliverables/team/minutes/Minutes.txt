@@ -66,3 +66,17 @@ Wednesday, Oct 18, 14:00-15:05
   - There should not be duplicate timestamps for a device
   - Configuration files will give info on available devices
   - File extension is likely OK to rely on for determining file format
+
+Monday, Oct 23, 11:00-12:10
+- Reaffirmed: at minimum, scope for the project is Telemetry, Alarms, Graphing
+- Team presented revised mockups to partner representative, and got early feedback; more feedback to come from partner organization
+- Team asked clarifying questions
+- REQUIREMENT: The program must be robust, given plans for sessions to last for years at a time in the future
+- Discussed details of telemetry file reading
+- Discussed checking for rate of change alarms -- to be researched further by the team
+- Discussed details for alarms in general
+  - Terminology: alarms in the application should be closed, not resolved
+  - No need to worry about time elasped since alarm ring-in vs "time left to address alarm"
+- Clarified: static alarms specifically target _no change_, not merely low amounts of change
+- Code style is not strict, but deviations must have good justifications behind them
+- After meeeting: further discussion on how to represent logical alarms
