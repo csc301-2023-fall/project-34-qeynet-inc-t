@@ -80,3 +80,10 @@ Monday, Oct 23, 11:00-12:10
 - Clarified: static alarms specifically target _no change_, not merely low amounts of change
 - Code style is not strict, but deviations must have good justifications behind them
 - After meeeting: further discussion on how to represent logical alarms
+
+Monday, Oct 30, 11:00-11:50
+- General updates on progress
+- Team clarified subteam divisions
+- Partner presented updates to configuration files
+- New version of Panoptes to be released soon; will be the final version for the team barring exceptional circumstances
+- Next meeting: Tuesday, Nov 7, 11:00
