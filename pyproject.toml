@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools~=65.5.1", "wheel~=0.41.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Astra"
+version = ""
+description = "Telemetry monitoring program developed for QEYnet."
+readme = "README.md"
+requires-python = "~=3.12"
+license = "MIT"
+keywords = []
+authors = [
+    {name = "Andy Guo", email = "andyruifeng.guo@mail.utoronto.ca"},
+    {name = "Lingyun Jiang", email = "johnnyl.jiang@mail.utoronto.ca"},
+	{name = "Bonan Luan", email = "bonan.luan@mail.utoronto.ca"},
+	{name = "Alexander Mathioudakis", email = "alex.mathioudakis@mail.utoronto.ca"},
+	{name = "Liam Odero", email = "liam.odero@mail.utoronto.ca"},
+	{name = "Albert Yan", email = "albert.yan@mail.utoronto.ca"}
+]
+maintainers = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop :: Science/Research",
+    "Environment :: Win32 (MS Windows)",
+    "Operating System :: Microsoft :: Windows",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+
+]
+
+[project.urls]
+source = ""
+tracker = ""
+documentation = ""
+
+[project.scripts]  # If any.
+
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = []
+
+[tool.flake8]
+ignore = [
+    "W503"  # Line break occurred before a binary operator.
+]
+exclude = [
+    ".git", ".idea", "build", "config", "data", "dist", "docs", "venv", "wheels",
+    "*.egg", "*.egg-info/"
+]
+max-line-length = 100
+count = true
