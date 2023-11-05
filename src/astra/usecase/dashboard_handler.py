@@ -106,7 +106,7 @@ class DashboardHandler(UseCaseHandler):
 
     @classmethod
     def _add_tags_to_output(cls, input_tags: set, return_data: TableReturn,
-                           data: DataTable) -> None:
+                            data: DataTable) -> None:
         """
         Adds tags from <input_tags> and their relevant data to <output_list>
 
