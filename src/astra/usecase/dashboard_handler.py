@@ -1,8 +1,6 @@
-from abc import ABC, abstractmethod
-from typing import Any
 from .output_boundary import send_data
 from .use_case_handlers import UseCaseHandler
-from src.astra.data.datatable import DataTable
+from astra.data.datatable import DataTable
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -15,7 +13,14 @@ CONFIG = 'CONFIG'
 
 class TableReturn:
     """A container for the output of get_data() and output_data() in
-    DashBoardHandler"""
+    DashBoardHandler
+
+    :param columns: An ordered list of column names to be displayed
+    :param timestamp: The timestamp of the currently shown telemetry frame
+    :param table: an ordered list of lists containing data for each row
+    :param removed: an unordered list of lists containing data for tags
+    not currently shown
+    """
 
     def __init__(self):
         self.columns = ['Tag', 'Description', 'Value']
@@ -78,6 +83,17 @@ class DashboardHandler(UseCaseHandler):
         cls.tags.add(tag)
 
     @classmethod
+    def set_shown_tag(cls, tags: str):
+        """
+        sets <tags> to the set of tags to be shown
+
+        PRECONDITION: <tag> is an element of <cls.tags>
+
+        :param tags: a set of tags to show
+        """
+        cls.tags = tags
+
+    @classmethod
     def remove_shown_tag(cls, tag: str):
         """
         Removes <tag> from the set of tags to be shown
@@ -89,7 +105,7 @@ class DashboardHandler(UseCaseHandler):
         cls.tags.remove(tag)
 
     @classmethod
-    def add_tags_to_output(cls, input_tags: set, return_data: TableReturn,
+    def _add_tags_to_output(cls, input_tags: set, return_data: TableReturn,
                            data: DataTable) -> None:
         """
         Adds tags from <input_tags> and their relevant data to <output_list>
@@ -117,7 +133,7 @@ class DashboardHandler(UseCaseHandler):
                 return_data.removed.append(tag)
 
     @classmethod
-    def sort_output(cls, return_data: TableReturn):
+    def _sort_output(cls, return_data: TableReturn):
         """
         sorts the <table> field of return_data based on cls.sort
 
