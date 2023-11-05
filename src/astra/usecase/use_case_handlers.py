@@ -24,7 +24,6 @@ class UseCaseHandler(ABC):
         """
         pass
 
-
     @abstractmethod
     def update_data(self, prev_data: Any):
         """
@@ -33,3 +32,4 @@ class UseCaseHandler(ABC):
         :param prev_data: The representation of the current state of displayed data
         determined by each child class
         """
+        pass
