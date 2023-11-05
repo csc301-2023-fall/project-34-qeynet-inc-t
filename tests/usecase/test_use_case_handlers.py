@@ -1,6 +1,6 @@
 from typing import NewType
-from src.app.use_case_handlers import DashboardHandler, DataHandler
-from src.storage.datatable import DataTable
+from astra.usecase.use_case_handlers import DashboardHandler, DataHandler
+from astra.data.datatable import DataTable
 
 
 INDEX = 'INDEX'
