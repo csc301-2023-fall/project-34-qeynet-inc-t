@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from app import use_case_handlers
+from .use_case_handlers import UseCaseHandler
 from dashboard_handler import DashboardHandler, TableReturn
 from astra.data.datatable import DataTable
 from output_boundary import send_data
@@ -12,7 +12,7 @@ class RequestReceiver(ABC):
     RequestReceiver is an abstract class that defines the interface for front end data requests.
     """
 
-    handler: use_case_handlers
+    handler: UseCaseHandler
 
     @abstractmethod
     def create(self):
