@@ -176,10 +176,10 @@ class DashboardHandler(UseCaseHandler):
         return_data = TableReturn()
 
         # First, creating each row for tags that should be included
-        cls.add_tags_to_output(cls.tags, return_data, data)
+        cls._add_tags_to_output(cls.tags, return_data, data)
 
         # Next, determine if any sorting was requested
-        cls.sort_output(return_data)
+        cls._sort_output(return_data)
 
         return_data.timestamp = telemetry_frame.timestamp
 
@@ -217,5 +217,5 @@ class DashboardHandler(UseCaseHandler):
                     previous_table.table.remove(removed_row)
                     break
 
-        cls.sort_output(previous_table)
+        cls._sort_output(previous_table)
         send_data(previous_table)
