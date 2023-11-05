@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from src.storage.datatable import DataTable
+from src.astra.data.datatable import DataTable
 
 
 class UseCaseHandler(ABC):

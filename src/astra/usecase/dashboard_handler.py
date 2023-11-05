@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 from .output_boundary import send_data
 from .use_case_handlers import UseCaseHandler
-from src.storage.datatable import DataTable
+from src.astra.data.datatable import DataTable
 
 SORT = 'SORT'
 TAG = 'TAG'
