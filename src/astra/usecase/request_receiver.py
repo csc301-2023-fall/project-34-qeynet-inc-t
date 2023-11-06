@@ -59,7 +59,7 @@ class DashboardRequestReceiver(RequestReceiver):
         DashboardHandler.set_index(0)
 
         # Create the initial table.
-        send_data(DashboardHandler.get_data(data))
+        DashboardHandler.get_data(data)
 
     @staticmethod
     def update():
@@ -78,7 +78,9 @@ class DashboardRequestReceiver(RequestReceiver):
         :returns: True if the index was successfully changed and False otherwise.
         """
 
-        # TODO what are valid indices?
+        # Check if we have a valid index.
+        if abs(index) > data.num_telemetry_frames:
+            return False
 
         DashboardHandler.set_index(index)
 
@@ -154,7 +156,7 @@ class DashboardRequestReceiver(RequestReceiver):
 
 class DataRequestReceiver(RequestReceiver):
     """
-    _summary_
+    Receives new data files and updates our programs database accordingly.
     """
 
     def create(filename: str, table: DataTable) -> DataTable:
