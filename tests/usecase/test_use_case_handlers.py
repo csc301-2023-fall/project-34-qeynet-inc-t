@@ -4,13 +4,11 @@ from astra.data.data_manager import (
     DataManager,
     telemetry_0,
     telemetry_1,
-    config
 )
 
 from astra.usecase.dashboard_handler import (
     TableReturn,
-    DashboardHandler,
-    Tag,
+    DashboardHandler
 )
 
 MOCKTELEMETRY0 = 'telemetry0.h5'
