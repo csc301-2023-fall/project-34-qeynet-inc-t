@@ -57,12 +57,12 @@ class View(Tk):
         self.dashboard_table = dashboard_table
         dashboard_table['columns'] = ("tag", "description", "value")
         dashboard_table.grid(sticky="W", row=10, column=0)
-        dashboard_table.column("#0", width=0,  stretch=NO)
+        dashboard_table.column("#0", width=0, stretch=NO)
         dashboard_table.column("tag", anchor=CENTER, width=80)
         dashboard_table.column("description", anchor=CENTER, width=100)
         dashboard_table.column("value", anchor=CENTER, width=80)
         dashboard_table.heading("tag", text="Tags", anchor=CENTER, command=self.toggle_tag)
-        dashboard_table.heading("description", text="Descriptions",  anchor=CENTER,
+        dashboard_table.heading("description", text="Descriptions", anchor=CENTER,
                                 command=self.toggle_description)
         dashboard_table.heading("value", text="Values", anchor=CENTER, command=self.toggle_value)
         dashboard_table.bind('<Double-1>', self.double_click_table_row)
