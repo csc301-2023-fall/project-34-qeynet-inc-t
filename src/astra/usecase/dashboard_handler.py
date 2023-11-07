@@ -32,6 +32,13 @@ class TableReturn:
         self.removed = removed
         self.frame_quantity = frame_quantity
 
+    def __eq__(self, other):
+        return self.columns == other.columns and \
+               self.timestamp == other.timestamp and \
+               self.table == other.table and \
+               self.removed == other.removed and \
+               self.frame_quantity == other.frame_quantity
+
 
 class DashboardHandler(UseCaseHandler):
     """DashboardHandler is a child class of UseCaseHandler that defines
