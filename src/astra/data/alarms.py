@@ -55,6 +55,11 @@ class AnyEventBase(EventBase):
 
 
 @dataclass
+class XOREventBase(EventBase):
+    event_bases: list[EventBase]
+
+
+@dataclass
 class NotEventBase(EventBase):
     event_base: EventBase
 
