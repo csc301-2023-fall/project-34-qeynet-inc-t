@@ -2,6 +2,7 @@ from datetime import datetime
 from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
+from astra.data.parameters import Parameter, ParameterValue
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -40,12 +41,15 @@ class DashboardHandler(UseCaseHandler):
     A tuple in the form (sort_type, sort_column), where sort_type is one
     of '>' or '<', and sort_column is one of <DATA> or <CONFIG>
     :param tags: a set of all tags that are shown in the dashboard
+    :param start_time: the first time of telemetry frames to examined
+    :param end_time: the last time of telemetry frames to be examined
     """
 
     sort = None
     index = None
     tags = set()
-    times = []
+    start_time = None
+    end_time = None
 
     @classmethod
     def set_index(cls, index: int):
@@ -110,30 +114,40 @@ class DashboardHandler(UseCaseHandler):
     @classmethod
     def set_start_time(cls, start_time: datetime):
         """
-        Modifies <cls.times[0] to be equal to <start_time>
+        Modifies <cls.start_time> to be equal to <start_time>
 
         :param start_time: the datetime to be set
         """
-        if len(cls.times) == 0:
-            # <cls.times> is empty, so we append this instead
-            cls.times.append(start_time)
-        else:
-            cls.times[0] = start_time
+        cls.start_time = start_time
 
     @classmethod
     def set_end_time(cls, end_time: datetime):
         """
-        Modifies <cls.times[1] to be equal to <end_time>
+        Modifies <cls.times[1]> to be equal to <end_time>
 
         :param end_time: the datetime to be set
 
         PRECONDITION: len(cls.times) >= 1
         """
-        if len(cls.times) == 1:
-            # <cls.times> is only has a start time
-            cls.times.append(end_time)
+        cls.end_time = end_time
+
+    @classmethod
+    def _eval_param_value(cls, tag_parameter: Parameter,
+                          tag_data: ParameterValue) -> float | int | bool:
+        """
+        Converts the raw <parameter_data> into it's true value using the
+        parameter multiplier and constant
+
+        :param tag_parameter: Parameter data for the relevant tag
+        :param tag_data: The raw data in the telemetry frame
+        :return: The converted parameter value
+        """
+        if type(tag_data) == bool:
+            return tag_data
         else:
-            cls.times[1] = end_time
+            multiplier = tag_parameter.display_units.multiplier
+            constant = tag_parameter.display_units.constant
+            return tag_data * multiplier + constant
 
     @classmethod
     def _add_tags_to_output(cls, input_tags: set, return_data: TableReturn,
@@ -155,12 +169,15 @@ class DashboardHandler(UseCaseHandler):
             tag_description = tag_parameters.description
 
             # creating the string for the tag value
-            tag_data = td.get_parameter_values(tag)
+            raw_tag_data = td.get_parameter_values(tag)
+            tag_data = cls._eval_param_value(tag_parameters, raw_tag_data)
             tag_value = (str(tag_data) + " "
                          + tag_parameters.display_units.symbol)
 
             # creating the string for the tag setpoint value
-            tag_setpoint_value = tag_parameters.setpoint
+            raw_tag_setpoint_value = tag_parameters.setpoint
+            tag_setpoint_value = cls._eval_param_value(
+                tag_parameters, raw_tag_setpoint_value)
             tag_setpoint = (str(tag_setpoint_value) + " "
                             + tag_parameters.display_units.symbol)
 
@@ -214,7 +231,7 @@ class DashboardHandler(UseCaseHandler):
         """
 
         telemetry_data = dm.get_telemetry_data(
-            cls.times[0], cls.times[1], cls.tags)
+            cls.start_time, cls.end_time, cls.tags)
         telemetry_frame = telemetry_data.get_telemetry_frame(cls.index)
         return_data = TableReturn()
 
