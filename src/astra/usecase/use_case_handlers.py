@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from astra.data.datatable import DataTable
+from astra.data.data_manager import DataManager
 
 
 class UseCaseHandler(ABC):
@@ -15,12 +15,12 @@ class UseCaseHandler(ABC):
     """
 
     @abstractmethod
-    def get_data(self, data: DataTable):
+    def get_data(self, dm: DataManager):
         """
         get_data is a method that processes the data according to determined
         filters by each child class
 
-        :param data: The data that will be processed.
+        :param dm: The data that will be processed.
         """
         pass
 
