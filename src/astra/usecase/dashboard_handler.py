@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import Tuple, List
+
 from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
-from astra.data.parameters import Parameter, ParameterValue
+from astra.data.parameters import Parameter, ParameterValue, Tag
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -24,12 +26,13 @@ class TableReturn:
     not currently shown
     """
 
-    def __init__(self):
+    def __init__(self, timestamp: datetime, table: list[list],
+                 removed: list[list], frame_quantity: int):
         self.columns = ['Tag', 'Description', 'Value', 'Setpoint']
-        self.timestamp = None
-        self.table = []
-        self.removed = []
-        self.frame_quantity = 0
+        self.timestamp = timestamp
+        self.table = table
+        self.removed = removed
+        self.frame_quantity = frame_quantity
 
 
 class DashboardHandler(UseCaseHandler):
@@ -123,11 +126,9 @@ class DashboardHandler(UseCaseHandler):
     @classmethod
     def set_end_time(cls, end_time: datetime):
         """
-        Modifies <cls.times[1]> to be equal to <end_time>
+        Modifies <cls.end_time> to be equal to <end_time>
 
         :param end_time: the datetime to be set
-
-        PRECONDITION: len(cls.times) >= 1
         """
         cls.end_time = end_time
 
@@ -150,18 +151,23 @@ class DashboardHandler(UseCaseHandler):
             return tag_data * multiplier + constant
 
     @classmethod
-    def _add_tags_to_output(cls, input_tags: set, return_data: TableReturn,
-                            dm: DataManager, td: TelemetryData) -> None:
+    def _add_rows_to_output(cls, input_tags: set, dm: DataManager, td: TelemetryData) \
+            -> tuple[list[list[str]], list[list[str]]]:
         """
         Adds tags from <input_tags> and their relevant data to <output_list>
 
         :param dm: Contain all data stored by the program to date
         :param input_tags: a set of tags to be added to output_list
-        :param return_data: The output container to add data to
+        :return A tuple of two 2D lists. The first contains an ordered list
+        of tag data to be shown to the user, the other an unordered list of
+        tag data to not yet be shown to the user
         """
 
         data_parameters = dm.parameters
         data_tags = dm.tags
+
+        include = []
+        removed = []
 
         for tag in data_tags:
 
@@ -185,9 +191,10 @@ class DashboardHandler(UseCaseHandler):
 
             include_tag = tag in input_tags
             if include_tag:
-                return_data.table.append(new_row)
+                include.append(new_row)
             else:
-                return_data.removed.append(tag)
+                removed.append(new_row)
+            return include, removed
 
     @classmethod
     def _sort_output(cls, return_data: TableReturn):
@@ -226,23 +233,23 @@ class DashboardHandler(UseCaseHandler):
         represents the ordered rows to be presented in the Telemetry Dashboard
         table, and removed represents all tags not shown presently
 
-        PRECONDITIONS: <cls.index> is not None, <cls.tags> is not empty, and
-        len(cls.times) == 2
+        PRECONDITIONS: <cls.index> is not None, and <cls.tags> is not empty
         """
 
         telemetry_data = dm.get_telemetry_data(
             cls.start_time, cls.end_time, cls.tags)
         telemetry_frame = telemetry_data.get_telemetry_frame(cls.index)
-        return_data = TableReturn()
 
-        # First, creating each row for tags that should be included
-        cls._add_tags_to_output(cls.tags, return_data, dm, telemetry_data)
+        # First, all the return data
+        include, remove = cls._add_rows_to_output(cls.tags, dm, telemetry_data)
+
+        timestamp = telemetry_frame.timestamp
+        frame_quantity = telemetry_data.num_telemetry_frames
+
+        return_data = TableReturn(timestamp, include, remove, frame_quantity)
 
         # Next, determine if any sorting was requested
         cls._sort_output(return_data)
-
-        return_data.timestamp = telemetry_frame.timestamp
-        return_data.frame_quantity = telemetry_data.num_telemetry_frames
 
         return return_data
 
