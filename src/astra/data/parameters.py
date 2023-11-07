@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import NewType
 
 Tag = NewType('Tag', str)
-ParameterValue = bool | int | float
+type ParameterValue = bool | int | float
 
 
 @dataclass(frozen=True)
