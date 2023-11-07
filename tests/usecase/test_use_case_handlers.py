@@ -1,4 +1,4 @@
-from datetime import datetime
+from copy import copy
 import pytest
 from astra.data.data_manager import (
     DataManager,
@@ -20,7 +20,7 @@ MOCKTABLELIST0 = [
     ['C1', 'of endofunctors', '2 s', 'None']
 ]
 MOCKTABLE0 = TableReturn(
-    telemetry_0.get('EPOCH')[0],
+    telemetry_0.get('EPOCH')[0],  # use the earliest date
     MOCKTABLELIST0,
     [],
     3
@@ -50,6 +50,7 @@ def test_dashboard_no_filter(telemetry_file: str, tablereturn: TableReturn):
     A test case for the dashboard use case handler with no filters.
     We expect the full table to be returned.
     """
+    # creates a data manager and adds data to it.
     data = DataManager.from_device_name(DEVICE)
     start_time = data.add_data_from_file(telemetry_file)
 
@@ -60,7 +61,8 @@ def test_dashboard_no_filter(telemetry_file: str, tablereturn: TableReturn):
     DashboardHandler.set_end_time(None)
     actual = DashboardHandler.get_data(data)
 
-    expected = tablereturn
+    # Avoid alias of the table object.
+    expected = copy(tablereturn)
 
     assert (
         actual == expected
@@ -85,13 +87,16 @@ def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
     DashboardHandler.set_end_time(None)
     actual = DashboardHandler.get_data(data)
 
-    # remove a tag from the display.
+    # remove a tag from the display and update it.
     DashboardHandler.remove_shown_tag('A3')
 
     DashboardHandler.update_data(actual)
 
-    expected = tablereturn
-    expected.removed = [tablereturn.table[0]]
+    # avoid alias of the table object.
+    expected = copy(tablereturn)
+
+    # remove the first row from the table.
+    expected.removed = [tablereturn.table[0][:]]
     expected.table = tablereturn.table[1:]
 
     assert (
@@ -99,34 +104,41 @@ def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
     )
 
 
-# @pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
-#                                                          (MOCKTELEMETRY1, MOCKTABLE1)])
-# def test_dashboard_all_filters(telemetry_file: str, tablereturn: TableReturn):
-#     """
-#     A test case for the dashboard use case handler with every tag filtered.
-#     We expect an empty list to be returned.
-#     """
+@pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
+                                                         (MOCKTELEMETRY1, MOCKTABLE1)])
+def test_dashboard_all_filters(telemetry_file: str, tablereturn: TableReturn):
+    """
+    A test case for the dashboard use case handler with every tag filtered.
+    We expect an empty list to be returned.
+    """
 
-#     data = DataManager.from_device_name(DEVICE)
-#     start_time = data.add_data_from_file(telemetry_file)
+    data = DataManager.from_device_name(DEVICE)
+    start_time = data.add_data_from_file(telemetry_file)
 
-#     # creates a datatable and adds data to it and retrieves the data.
-#     DashboardHandler.set_index(0)
-#     DashboardHandler.set_shown_tag(data.tags)
-#     DashboardHandler.set_start_time(start_time)
-#     DashboardHandler.set_end_time(None)
+    # creates a datatable and adds data to it and retrieves the data.
+    DashboardHandler.set_index(0)
+    DashboardHandler.set_shown_tag(data.tags)
+    DashboardHandler.set_start_time(start_time)
+    DashboardHandler.set_end_time(None)
+    actual = DashboardHandler.get_data(data)
 
-#     # remove the tags from the display.
-#     DashboardHandler.remove_shown_tag('A3')
-#     DashboardHandler.remove_shown_tag('B1')
-#     DashboardHandler.remove_shown_tag('B4')
-#     DashboardHandler.remove_shown_tag('C1')
+    # remove the tags from the display and update between each.
+    DashboardHandler.remove_shown_tag('A3')
+    DashboardHandler.update_data(actual)
+    DashboardHandler.remove_shown_tag('B1')
+    DashboardHandler.update_data(actual)
+    DashboardHandler.remove_shown_tag('B4')
+    DashboardHandler.update_data(actual)
+    DashboardHandler.remove_shown_tag('C1')
+    DashboardHandler.update_data(actual)
 
-#     actual = DashboardHandler.get_data(data)
+    # avoid alias of the table object.
+    expected = copy(tablereturn)
 
-#     expected = tablereturn
-#     expected.table = tablereturn.table[len(tablereturn.table):]
+    # remove all rows from the table.
+    expected.removed = tablereturn.table
+    expected.table = []
 
-#     assert (
-#         actual == expected
-#     )
+    assert (
+        actual == expected
+    )
