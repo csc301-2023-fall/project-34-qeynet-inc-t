@@ -3,7 +3,7 @@ from datetime import datetime
 from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
-from astra.data.parameters import Parameter, ParameterValue, Tag
+from astra.data.parameters import Parameter, ParameterValue
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -139,7 +139,7 @@ class DashboardHandler(UseCaseHandler):
         :param tag_data: The raw data in the telemetry frame
         :return: The converted parameter value
         """
-        if type(tag_data) == bool:
+        if type(tag_data) is bool:
             return tag_data
         else:
             multiplier = tag_parameter.display_units.multiplier
