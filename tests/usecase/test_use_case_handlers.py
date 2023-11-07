@@ -83,13 +83,15 @@ def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
     DashboardHandler.set_shown_tag(data.tags)
     DashboardHandler.set_start_time(start_time)
     DashboardHandler.set_end_time(None)
+    actual = DashboardHandler.get_data(data)
 
     # remove a tag from the display.
     DashboardHandler.remove_shown_tag('A3')
 
-    actual = DashboardHandler.get_data(data)
+    DashboardHandler.update_data(actual)
 
     expected = tablereturn
+    expected.removed = [tablereturn.table[0]]
     expected.table = tablereturn.table[1:]
 
     assert (
