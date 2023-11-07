@@ -263,8 +263,6 @@ class DashboardHandler(UseCaseHandler):
 
         :param previous_table: A representation of the current shown data in
         the Telemetry Dashboard
-
-        PRECONDITIONS: <cls.tags> is not empty
         """
 
         # Technically inefficient, but far better than re-building every time.
