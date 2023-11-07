@@ -78,7 +78,7 @@ class AlarmCriticality(Enum):
     CRITICAL = 'CRITICAL'
 
 
-type AlarmPriority = AlarmCriticality
+AlarmPriority = AlarmCriticality
 
 
 @dataclass
