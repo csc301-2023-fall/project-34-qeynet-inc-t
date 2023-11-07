@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
@@ -13,6 +14,7 @@ DATA = 'DATA'
 CONFIG = 'CONFIG'
 
 
+@dataclass
 class TableReturn:
     """A container for the output of get_data() and output_data() in
     DashBoardHandler
@@ -23,21 +25,10 @@ class TableReturn:
     :param removed: an unordered list of lists containing data for tags
     not currently shown
     """
-
-    def __init__(self, timestamp: datetime, table: list[list],
-                 removed: list[list], frame_quantity: int):
-        self.columns = ['Tag', 'Description', 'Value', 'Setpoint']
-        self.timestamp = timestamp
-        self.table = table
-        self.removed = removed
-        self.frame_quantity = frame_quantity
-
-    def __eq__(self, other):
-        return self.columns == other.columns and \
-               self.timestamp == other.timestamp and \
-               self.table == other.table and \
-               self.removed == other.removed and \
-               self.frame_quantity == other.frame_quantity
+    timestamp: datetime
+    table: list[list[str]]
+    removed: list[list[str]]
+    frame_quantity: int
 
 
 class DashboardHandler(UseCaseHandler):
@@ -156,8 +147,8 @@ class DashboardHandler(UseCaseHandler):
             return tag_data * multiplier + constant
 
     @classmethod
-    def _add_rows_to_output(cls, input_tags: set, dm: DataManager, td: TelemetryData) \
-            -> tuple[list[list[str]], list[list[str]]]:
+    def _add_rows_to_output(cls, input_tags: set, dm: DataManager, td: TelemetryData,
+                            timestamp: datetime) -> tuple[list[list[str]], list[list[str]]]:
         """
         Adds tags from <input_tags> and their relevant data to <output_list>
 
@@ -181,16 +172,15 @@ class DashboardHandler(UseCaseHandler):
 
             # creating the string for the tag value
             raw_tag_data = td.get_parameter_values(tag)
-            tag_data = cls._eval_param_value(tag_parameters, raw_tag_data)
-            tag_value = \
-                f'{tag_data} {tag_parameters.display_units.symbol}'
+            raw_timestamp_data = raw_tag_data[timestamp]
+            tag_data = cls._eval_param_value(tag_parameters, raw_timestamp_data)
+            tag_value = f'{tag_data} {tag_parameters.display_units.symbol}'
 
             # creating the string for the tag setpoint value
             raw_tag_setpoint_value = tag_parameters.setpoint
             tag_setpoint_value = cls._eval_param_value(
                 tag_parameters, raw_tag_setpoint_value)
-            tag_setpoint = \
-                f'{tag_setpoint_value} {tag_parameters.display_units.symbol}'
+            tag_setpoint = f'{tag_setpoint_value} {tag_parameters.display_units.symbol}'
 
             new_row = [tag, tag_description, tag_value, tag_setpoint]
 
@@ -246,9 +236,8 @@ class DashboardHandler(UseCaseHandler):
         telemetry_frame = telemetry_data.get_telemetry_frame(cls.index)
 
         # First, all the return data
-        include, remove = cls._add_rows_to_output(cls.tags, dm, telemetry_data)
-
         timestamp = telemetry_frame.timestamp
+        include, remove = cls._add_rows_to_output(cls.tags, dm, telemetry_data, timestamp)
         frame_quantity = telemetry_data.num_telemetry_frames
 
         return_data = TableReturn(timestamp, include, remove, frame_quantity)
