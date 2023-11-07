@@ -1,6 +1,9 @@
+from datetime import datetime
 from .output_boundary import send_data
 from .use_case_handlers import UseCaseHandler
-from astra.data.datatable import DataTable
+from astra.data.data_manager import DataManager
+from astra.data.telemetry_data import TelemetryData, TelemetryFrame
+from astra.data.parameters import Parameter
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -23,10 +26,11 @@ class TableReturn:
     """
 
     def __init__(self):
-        self.columns = ['Tag', 'Description', 'Value']
+        self.columns = ['Tag', 'Description', 'Value', 'Setpoint']
         self.timestamp = None
         self.table = []
         self.removed = []
+        self.frame_quantity = 0
 
 
 class DashboardHandler(UseCaseHandler):
@@ -43,6 +47,7 @@ class DashboardHandler(UseCaseHandler):
     sort = None
     index = None
     tags = set()
+    times = []
 
     @classmethod
     def set_index(cls, index: int):
@@ -105,26 +110,63 @@ class DashboardHandler(UseCaseHandler):
         cls.tags.remove(tag)
 
     @classmethod
+    def set_start_time(cls, start_time: datetime):
+        """
+        Modifies <cls.times[0] to be equal to <start_time>
+
+        :param start_time: the datetime to be set
+        """
+        if len(cls.times) == 0:
+            # <cls.times> is empty, so we append this instead
+            cls.times.append(start_time)
+        else:
+            cls.times[0] = start_time
+
+    @classmethod
+    def set_end_time(cls, end_time: datetime):
+        """
+        Modifies <cls.times[1] to be equal to <end_time>
+
+        :param end_time: the datetime to be set
+
+        PRECONDITION: len(cls.times) >= 1
+        """
+        if len(cls.times) == 1:
+            # <cls.times> is only has a start time
+            cls.times.append(end_time)
+        else:
+            cls.times[1] = end_time
+
+    @classmethod
     def _add_tags_to_output(cls, input_tags: set, return_data: TableReturn,
-                            data: DataTable) -> None:
+                            dm: DataManager, td: TelemetryData) -> None:
         """
         Adds tags from <input_tags> and their relevant data to <output_list>
 
-        :param data: Contain all data stored by the program to date
+        :param dm: Contain all data stored by the program to date
         :param input_tags: a set of tags to be added to output_list
         :param return_data: The output container to add data to
         """
-        telemetry_frame = data.get_telemetry_frame(cls.index)
-        data_parameters = data.parameters
-        data_tags = data.tags
+
+        data_parameters = dm.parameters
+        data_tags = dm.tags
 
         for tag in data_tags:
+
             tag_parameters = data_parameters[tag]
             tag_description = tag_parameters.description
-            tag_data = telemetry_frame.data[tag]
-            tag_value = str(tag_data) + " " + tag_parameters.units
 
-            new_row = [tag, tag_description, tag_value]
+            # creating the string for the tag value
+            tag_data = td.get_parameter_values(tag)
+            tag_value = (str(tag_data) + " " +
+                         tag_parameters.display_units.symbol)
+
+            # creating the string for the tag setpoint value
+            tag_setpoint_value = tag_parameters.setpoint
+            tag_setpoint = (str(tag_setpoint_value) + " " +
+                            tag_parameters.display_units.symbol)
+
+            new_row = [tag, tag_description, tag_value, tag_setpoint]
 
             include_tag = tag in input_tags
             if include_tag:
@@ -158,30 +200,35 @@ class DashboardHandler(UseCaseHandler):
                                        reverse=reverse)
 
     @classmethod
-    def get_data(cls, data: DataTable):
+    def get_data(cls, dm: DataManager):
         """
         An implementation of get_data for the Telemetry Dashboard to create a
         data table pertaining to a single telemetry frame with data filtering
         requested by the user
 
-        :param data: Contain all data stored by the program to date
+        :param dm: Contain all data stored by the program to date
         :return: An instance of TableReturn where the <table> attribute
         represents the ordered rows to be presented in the Telemetry Dashboard
         table, and removed represents all tags not shown presently
 
-        PRECONDITIONS: <cls.index> is not None and <cls.tags> is not empty
+        PRECONDITIONS: <cls.index> is not None, <cls.tags> is not empty, and
+        len(cls.times) == 2
         """
 
-        telemetry_frame = data.get_telemetry_frame(cls.index)
+        telemetry_data = dm.get_telemetry_data(
+            cls.times[0], cls.times[1], cls.tags
+                                                )
+        telemetry_frame = telemetry_data.get_telemetry_frame(cls.index)
         return_data = TableReturn()
 
         # First, creating each row for tags that should be included
-        cls._add_tags_to_output(cls.tags, return_data, data)
+        cls._add_tags_to_output(cls.tags, return_data, dm)
 
         # Next, determine if any sorting was requested
         cls._sort_output(return_data)
 
         return_data.timestamp = telemetry_frame.timestamp
+        return_data.frame_quantity = telemetry_data.num_telemetry_frames
 
         send_data(return_data)
         return return_data
