@@ -134,7 +134,7 @@ class DashboardHandler(UseCaseHandler):
     def _eval_param_value(cls, tag_parameter: Parameter,
                           tag_data: ParameterValue) -> float | int | bool:
         """
-        Converts the raw <parameter_data> into it's true value using the
+        Converts the raw <parameter_data> into its true value using the
         parameter multiplier and constant
 
         :param tag_parameter: Parameter data for the relevant tag
@@ -175,15 +175,15 @@ class DashboardHandler(UseCaseHandler):
             # creating the string for the tag value
             raw_tag_data = td.get_parameter_values(tag)
             tag_data = cls._eval_param_value(tag_parameters, raw_tag_data)
-            tag_value = (str(tag_data) + " "
-                         + tag_parameters.display_units.symbol)
+            tag_value = \
+                f'{tag_data} {tag_parameters.display_units.symbol}'
 
             # creating the string for the tag setpoint value
             raw_tag_setpoint_value = tag_parameters.setpoint
             tag_setpoint_value = cls._eval_param_value(
                 tag_parameters, raw_tag_setpoint_value)
-            tag_setpoint = (str(tag_setpoint_value) + " "
-                            + tag_parameters.display_units.symbol)
+            tag_setpoint = \
+                f'{tag_setpoint_value} {tag_parameters.display_units.symbol}'
 
             new_row = [tag, tag_description, tag_value, tag_setpoint]
 
