@@ -4,9 +4,8 @@ from typing import Self
 
 import pandas as pd
 
-from parameters import DisplayUnit, Parameter, Tag
-from telemetry_data import TelemetryData
-from alarms import AlarmBase
+from astra.data.parameters import DisplayUnit, Parameter, Tag
+from astra.data.telemetry_data import TelemetryData
 
 config = pd.DataFrame(
     {
