@@ -156,13 +156,13 @@ class DashboardHandler(UseCaseHandler):
 
             # creating the string for the tag value
             tag_data = td.get_parameter_values(tag)
-            tag_value = (str(tag_data) + " " +
-                         tag_parameters.display_units.symbol)
+            tag_value = (str(tag_data) + " "
+                         + tag_parameters.display_units.symbol)
 
             # creating the string for the tag setpoint value
             tag_setpoint_value = tag_parameters.setpoint
-            tag_setpoint = (str(tag_setpoint_value) + " " +
-                            tag_parameters.display_units.symbol)
+            tag_setpoint = (str(tag_setpoint_value) + " "
+                            + tag_parameters.display_units.symbol)
 
             new_row = [tag, tag_description, tag_value, tag_setpoint]
 
@@ -214,13 +214,12 @@ class DashboardHandler(UseCaseHandler):
         """
 
         telemetry_data = dm.get_telemetry_data(
-            cls.times[0], cls.times[1], cls.tags
-                                                )
+            cls.times[0], cls.times[1], cls.tags)
         telemetry_frame = telemetry_data.get_telemetry_frame(cls.index)
         return_data = TableReturn()
 
         # First, creating each row for tags that should be included
-        cls._add_tags_to_output(cls.tags, return_data, dm)
+        cls._add_tags_to_output(cls.tags, return_data, dm, telemetry_data)
 
         # Next, determine if any sorting was requested
         cls._sort_output(return_data)
