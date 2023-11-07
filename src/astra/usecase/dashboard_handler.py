@@ -1,9 +1,7 @@
 from datetime import datetime
-from .output_boundary import send_data
 from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
-from astra.data.telemetry_data import TelemetryData, TelemetryFrame
-from astra.data.parameters import Parameter
+from astra.data.telemetry_data import TelemetryData
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -230,7 +228,6 @@ class DashboardHandler(UseCaseHandler):
         return_data.timestamp = telemetry_frame.timestamp
         return_data.frame_quantity = telemetry_data.num_telemetry_frames
 
-        send_data(return_data)
         return return_data
 
     @classmethod
@@ -265,4 +262,3 @@ class DashboardHandler(UseCaseHandler):
                     break
 
         cls._sort_output(previous_table)
-        send_data(previous_table)
