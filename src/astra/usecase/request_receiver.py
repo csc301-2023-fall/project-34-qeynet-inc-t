@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from .use_case_handlers import UseCaseHandler
 from dashboard_handler import DashboardHandler, TableReturn
 from astra.data.data_manager import DataManager
-from output_boundary import send_data
 
 
 # Not sure if this is necessary anymore, request receivers should just be some modules?
