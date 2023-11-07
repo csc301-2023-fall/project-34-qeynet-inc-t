@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from .use_case_handlers import UseCaseHandler
 from dashboard_handler import DashboardHandler, TableReturn
-from astra.data.datatable import DataTable
+from astra.data.data_manager import DataManager
 from output_boundary import send_data
+
 
 # Not sure if this is necessary anymore, request receivers should just be some modules?
 
@@ -41,25 +42,30 @@ class DashboardRequestReceiver(RequestReceiver):
     # TODO what is the type of the table that we are receiving?
     # TODO where do we send the data.
 
-    @staticmethod
-    def create(data: DataTable) -> None:
+    handler = DashboardHandler
+
+    def __init__(self):
+        self.handler = DashboardHandler()
+
+    @classmethod
+    def create(cls, dm: DataManager) -> None:
         """
         create is a method that creates the initial data table,
         with all tags shown, no sorting applied and at the first index.
-        :param data: Contains all data stored by the program to date.
+        :param dm: Contains all data stored by the program to date.
         """
 
-        all_tags = DataTable.tags
+        all_tags = dm.tags
 
         # Add all tags to the shown tags by default.
         for tag in all_tags:
-            DashboardHandler.add_shown_tag(tag)
+            cls.handler.add_shown_tag(tag)
 
         # Set the index to the first index by default.
-        DashboardHandler.set_index(0)
+        cls.handler.set_index(0)
 
         # Create the initial table.
-        DashboardHandler.get_data(data)
+        DashboardHandler.get_data(dm)
 
     @staticmethod
     def update():
@@ -68,31 +74,28 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         pass
 
-    @staticmethod
-    def change_index(data: DataTable, index: int) -> bool:
+    @classmethod
+    def change_index(cls, index: int) -> bool:
         """
         change_index changes the index of the datatable
         that we are viewing and then updates the view.
         It returns True if it was successful and False otherwise.
+        :param dm: The interface for getting all data known to the program
         :param index: the index of the datatable that we want to change to.
         :returns: True if the index was successfully changed and False otherwise.
         """
 
-        # Check if we have a valid index.
-        if abs(index) > data.num_telemetry_frames:
-            return False
+        # Liam's Note: due to change in interface, i've removed the index check
 
-        DashboardHandler.set_index(index)
+        cls.handler.set_index(index)
 
         # Determine if we can update the view without issues.
-        if DashboardHandler.tags is None:
+        if cls.handler.tags is None:
             return False
-
-        send_data(DashboardHandler.get_data(data))
         return True
 
-    @staticmethod
-    def add_shown_tag(previous_table: TableReturn, add: str) -> bool:
+    @classmethod
+    def add_shown_tag(cls, add: str) -> bool:
         """
         add_shown_tag is a method that adds a tag to the set of tags
         that we are viewing and then updates the view.
@@ -103,15 +106,14 @@ class DashboardRequestReceiver(RequestReceiver):
         """
 
         # Determine if we can add the tag to the set of tags that we are viewing.
-        if add not in DashboardHandler.tags:
-            DashboardHandler.add_shown_tag(add)
-            DashboardHandler.update_data(previous_table)
+        if add not in cls.handler.tags:
+            cls.handler.add_shown_tag(add)
             return True
         else:
             return False  # Tag was already in the set of tags that we are viewing.
 
-    @staticmethod
-    def remove_shown_tag(previous_table: TableReturn, remove: str) -> bool:
+    @classmethod
+    def remove_shown_tag(cls, remove: str) -> bool:
         """
         Remove a tag from the set of tags that we are viewing and update the view.
         It returns True if it was successful and False otherwise.
@@ -120,15 +122,14 @@ class DashboardRequestReceiver(RequestReceiver):
         :return: True if the tag was successfully removed and False otherwise.
         """
         # Determine if we can remove the tag from the set of tags that we are viewing.
-        if remove in DashboardHandler.tags:
-            DashboardHandler.remove_shown_tag(remove)
-            DashboardHandler.update_data(previous_table)
+        if remove in cls.handler.tags:
+            cls.handler.remove_shown_tag(remove)
             return True
         else:
             return False  # Tag was not in the set of tags that we are viewing.
 
-    @staticmethod
-    def update_sort(previous_table: TableReturn, sort: tuple[str, str]) -> bool:
+    @classmethod
+    def update_sort(cls, previous_table: TableReturn, sort: tuple[str, str]) -> bool:
         """
         Updates the sorting filter to be applied, and then updates the view.
         It returns True if the sorting filter was successfully applied and False otherwise.
@@ -149,8 +150,8 @@ class DashboardRequestReceiver(RequestReceiver):
             return False
 
         # both if statements failed, so the filter is valid.
-        DashboardHandler.set_sort(sort)
-        DashboardHandler.update_data(previous_table)
+        cls.handler.set_sort(sort)
+        cls.handler.update_data(previous_table)
         return True
 
 
@@ -159,16 +160,16 @@ class DataRequestReceiver(RequestReceiver):
     Receives new data files and updates our programs database accordingly.
     """
 
-    def create(filename: str, table: DataTable) -> DataTable:
+    def create(cls, device_name: str, dm: DataManager) -> DataManager:
         """
         create is a method that creates a new data table and returns it based
         on the filename provided.
-        :param filename: the name of the file to create the data table from.
+        :param device_name: the name of the file to create the data table from.
         """
-        return table.from_config_file(filename)
+        return dm.from_device_name(device_name)
 
-    def update(filename: str, table: DataTable) -> None:
+    def update(cls, filename: str, dm: DataManager) -> None:
         """
         update is a method that updates the database based on the filename provided.
         """
-        table.add_data_from_file(filename)
+        dm.add_data_from_file(filename)
