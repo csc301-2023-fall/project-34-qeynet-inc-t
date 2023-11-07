@@ -1,6 +1,4 @@
 from datetime import datetime
-from typing import Tuple, List
-
 from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
