@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import NewType
 
-from astra.data.parameters import ParameterValue, Tag
+from parameters import ParameterValue, Tag
 
 
 @dataclass

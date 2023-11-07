@@ -1,116 +1,140 @@
-from typing import NewType
-from astra.usecase.use_case_handlers import DashboardHandler, DataHandler
-from astra.data.datatable import DataTable
+from datetime import datetime
+import pytest
+from astra.data.data_manager import (
+    DataManager,
+    telemetry_0,
+    telemetry_1,
+    config
+)
+
+from astra.usecase.dashboard_handler import (
+    TableReturn,
+    DashboardHandler,
+    Tag,
+)
+
+MOCKTELEMETRY0 = 'telemetry0.h5'
+MOCKTELEMETRY1 = 'telemetry1.h5'
+DEVICE = 'DEVICE'
 
 
-INDEX = 'INDEX'
-DATA = 'DATA'
-CONFIG = 'CONFIG'
+@pytest.fixture
+def data0():
+    datamanager = DataManager.from_device_name(DEVICE)
+    start_time = datamanager.add_data_from_file(MOCKTELEMETRY0)
 
-Tag = NewType('Tag', str)
+    # Uses data from telemetry0.h5
+    telemetry_table = [
+        ['A3', 'a monad', '5 m', '3'],
+        ['B1', 'is a monoid', '0.0 g', '1.0'],
+        ['B4', 'in the category', 'True', 'False'],
+        ['C1', 'of endofuntors', '2 s', 'None']
+    ]
+
+    table = TableReturn(
+        telemetry_0.get('EPOCH')[0],
+        telemetry_table,
+        [],
+        3
+    )
+
+    return datamanager, start_time, table
 
 
-def test_dashboard_no_filter():
+@pytest.fixture
+def data1():
+    datamanager = DataManager.from_device_name(DEVICE)
+    start_time = datamanager.add_data_from_file(MOCKTELEMETRY1)
+
+    # Uses data from telemetry1.h5
+    telemetry_table = [
+        ['A3', 'a monad', '5 m', '3'],
+        ['B1', 'is a monoid', '3000.0 g', '1.0'],
+        ['B4', 'in the category', 'False', 'False'],
+        ['C1', 'of endofuntors', '1 s', 'None']
+    ]
+
+    table = TableReturn(
+        telemetry_1.get('EPOCH')[0],
+        telemetry_table,
+        [],
+        2
+    )
+
+    return datamanager, start_time, table
+
+
+@pytest.mark.parametrize('data,start_time,tablereturn', [data0, data1])
+def test_dashboard_no_filter(data: DataManager, start_time: datetime, table: TableReturn):
     """
     A test case for the dashboard use case handler with no filters.
     We expect the full table to be returned.
     """
 
-    # creates a datatable and adds data to it.
-    datatable = DataTable()
-    data_config = {DATA: 'telemetry0.csv', CONFIG: 'config0.csv'}
-    DataHandler.get_data(data_config, datatable)
+    # creates a datatable and adds data to it and retrieves the data.
+    DashboardHandler.set_index(0)
+    DashboardHandler.set_shown_tag(data.tags)
+    DashboardHandler.set_start_time(start_time)
+    DashboardHandler.set_end_time(None)
+    actual = DashboardHandler.get_data(data)
 
-    # create a dashboard handler
-    dashboard_handler = DashboardHandler()
-
-    # create a dictionary of filters to use for demonstration purposes.
-    filter_data = {
-        Tag('A3'): (True,),
-        Tag('B1'): (True,),
-        Tag('B4'): (True,),
-        Tag('C1'): (True,),
-        INDEX: (0,),
-    }
-
-    expected = [
-        ['A3', 'a monad', '3 cm'],
-        ['B1', 'is a monoid', '1 L'],
-        ['B4', 'in the category', '0 ft'],
-        ['C1', 'of endofuntors', '2 C'],
-        ['Tag', 'Description', 'Value']
-    ]
-    actual = dashboard_handler.get_data(filter_data, datatable)
+    expected = table
 
     assert (
-        actual[0:(len(actual) - 1)] == expected
+        actual == expected
     )
 
 
-def test_dashboard_one_filter():
+@pytest.mark.parametrize('data,start_time,tablereturn', [data0, data1])
+def test_dashboard_one_filter(data: DataManager, start_time: datetime, table: TableReturn):
     """
     A test case for the dashboard use case handler with one filter.
-    We expect a table with one column to removed be returned.
+    We expect a table with one column removed be returned.
     """
 
-    # creates a datatable and adds data to it.
-    datatable = DataTable()
-    data_config = {DATA: 'telemetry0.csv', CONFIG: 'config0.csv'}
-    DataHandler.get_data(data_config, datatable)
+    # creates a datatable and adds data to it and retrieves the data.
+    DashboardHandler.set_index(0)
+    DashboardHandler.set_shown_tag(data.tags)
+    DashboardHandler.set_start_time(start_time)
+    DashboardHandler.set_end_time(None)
 
-    # create a dashboard handler
-    dashboard_handler = DashboardHandler()
+    # remove a tag from the display.
+    DashboardHandler.remove_shown_tag('A3')
 
-    # create a dictionary of filters to use for demonstration purposes.
-    filter_data = {
-        Tag('A3'): (False,),
-        Tag('B1'): (True,),
-        Tag('B4'): (True,),
-        Tag('C1'): (True,),
-        INDEX: (0,),
-    }
+    actual = DashboardHandler.get_data(data)
 
-    expected = [
-        ['B1', 'is a monoid', '1 L'],
-        ['B4', 'in the category', '0 ft'],
-        ['C1', 'of endofuntors', '2 C'],
-        ['Tag', 'Description', 'Value']
-    ]
-    actual = dashboard_handler.get_data(filter_data, datatable)
+    expected = table
+    expected.table = table.table[1:]
 
     assert (
-        actual[0:(len(actual) - 1)] == expected
+        actual == expected
     )
 
 
-def test_dashboard_all_filters():
+@pytest.mark.parametrize('data,start_time,tablereturn', [data0, data1])
+def test_dashboard_all_filters(data: DataManager, start_time: datetime, table: TableReturn):
     """
     A test case for the dashboard use case handler with every tag filtered.
     We expect an empty list to be returned.
     """
 
-    # creates a datatable and adds data to it.
-    datatable = DataTable()
-    data_config = {DATA: 'telemetry0.csv', CONFIG: 'config0.csv'}
-    DataHandler.get_data(data_config, datatable)
+    # creates a datatable and adds data to it and retrieves the data.
+    DashboardHandler.set_index(0)
+    DashboardHandler.set_shown_tag(data.tags)
+    DashboardHandler.set_start_time(start_time)
+    DashboardHandler.set_end_time(None)
 
-    # create a dashboard handler
-    dashboard_handler = DashboardHandler()
+    # remove the tags from the display.
+    DashboardHandler.remove_shown_tag('A3')
+    DashboardHandler.remove_shown_tag('B1')
+    DashboardHandler.remove_shown_tag('B4')
+    DashboardHandler.remove_shown_tag('C1')
 
-    # create a dictionary of filters to use for demonstration purposes.
-    filter_data = {
-        Tag('A3'): (False,),
-        Tag('B1'): (False,),
-        Tag('B4'): (False,),
-        Tag('C1'): (False,),
-        INDEX: (0,),
-    }
+    actual = DashboardHandler.get_data(data)
 
-    # We expect an empty list to be returned, since all tags are filtered
-    # out.
-    expected = [['Tag', 'Description', 'Value']]
-    actual = dashboard_handler.get_data(filter_data, datatable)
+    expected = table
+    expected.table = table.table[len(table.table):]
 
     assert (
-        actual[0:(len(actual) - 1)] == expected
+        actual == expected
     )

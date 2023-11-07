@@ -1,10 +1,10 @@
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 
 import pandas as pd
 
-from astra.data.parameters import ParameterValue, Tag
+from parameters import Parameter, ParameterValue, Tag
 
 
 @dataclass(frozen=True)
@@ -17,12 +17,8 @@ class TelemetryData:
     _telemetry_data: pd.DataFrame
 
     def __init__(self, telemetry_data, start_time, end_time, tags):
-        time_filter = telemetry_data['EPOCH'] == telemetry_data['EPOCH']
-        if start_time is not None:
-            time_filter &= start_time <= telemetry_data['EPOCH']
-        if end_time is not None:
-            time_filter &= telemetry_data['EPOCH'] <= end_time
-        self._telemetry_data = telemetry_data[tags][time_filter]
+        self._telemetry_data = telemetry_data[tags][
+            (start_time <= telemetry_data['EPOCH']) & (telemetry_data['EPOCH'] <= end_time)]
 
     @property
     def num_telemetry_frames(self) -> int:
