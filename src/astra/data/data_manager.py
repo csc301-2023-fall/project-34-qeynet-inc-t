@@ -4,9 +4,8 @@ from typing import Self
 
 import pandas as pd
 
-from parameters import DisplayUnit, Parameter, Tag
-from telemetry_data import TelemetryData
-from alarms import AlarmBase
+from astra.data.parameters import DisplayUnit, Parameter, Tag
+from astra.data.telemetry_data import TelemetryData
 
 config = pd.DataFrame(
     {
@@ -99,13 +98,10 @@ class DataManager:
         except KeyError:
             raise FileNotFoundError(f"Couldn't find telemetry file {filename}")
         self.add_data(df)
-        if 'telemetry1.h5' in self._telemetry_files:
-            return datetime(2022, 3, 25)
-        else:
-            return datetime(2018, 3, 16)
+        return min(df['EPOCH']).to_pydatetime()
 
     # Will likely need some way to only get every nth value for graphing over long timespans.
     def get_telemetry_data(
-            self, start_time: datetime, end_time: datetime, tags: Iterable[Tag]
+            self, start_time: datetime | None, end_time: datetime | None, tags: Iterable[Tag]
     ) -> TelemetryData:
         return TelemetryData(self._telemetry_data, start_time, end_time, ['EPOCH'] + list(tags))
