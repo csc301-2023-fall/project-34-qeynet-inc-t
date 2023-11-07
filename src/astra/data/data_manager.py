@@ -4,6 +4,7 @@ from typing import Self
 
 import pandas as pd
 
+from astra.data.alarms import AlarmBase
 from astra.data.parameters import DisplayUnit, Parameter, Tag
 from astra.data.telemetry_data import TelemetryData
 
@@ -77,6 +78,10 @@ class DataManager:
                 index=False
             )
         }
+
+    @property
+    def alarm_bases(self) -> Iterable[AlarmBase]:
+        ...
 
     def add_data(self, new_data: pd.DataFrame) -> None:
         """Add new telemetry data to this DataTable.
