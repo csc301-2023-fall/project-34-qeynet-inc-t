@@ -29,13 +29,13 @@ MOCKTABLE0 = TableReturn(
 # Creating the mock telemetry data frame for the second file.
 MOCKTELEMETRY1 = 'telemetry1.h5'
 MOCKTABLELIST1 = [
-    ['A3', 'a monad', '5 m', '3 m'],
-    ['B1', 'is a monoid', '3000.0 g', '1000.0 g'],
+    ['A3', 'a monad', '3 m', '3 m'],
+    ['B1', 'is a monoid', '1000.0 g', '1000.0 g'],
     ['B4', 'in the category', 'False', 'False'],
-    ['C1', 'of endofunctors', '1 s', 'None']
+    ['C1', 'of endofunctors', '3 s', 'None']
 ]
 MOCKTABLE1 = TableReturn(
-    telemetry_1.get('EPOCH')[0],
+    telemetry_1.get('EPOCH')[1],  # earliest date
     MOCKTABLELIST1,
     [],
     2
@@ -67,34 +67,34 @@ def test_dashboard_no_filter(telemetry_file: str, tablereturn: TableReturn):
     )
 
 
-# @pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
-#                                                          (MOCKTELEMETRY1, MOCKTABLE1)])
-# def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
-#     """
-#     A test case for the dashboard use case handler with one filter.
-#     We expect a table with one column removed be returned.
-#     """
+@pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
+                                                         (MOCKTELEMETRY1, MOCKTABLE1)])
+def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
+    """
+    A test case for the dashboard use case handler with one filter.
+    We expect a table with one column removed be returned.
+    """
 
-#     data = DataManager.from_device_name(DEVICE)
-#     start_time = data.add_data_from_file(telemetry_file)
+    data = DataManager.from_device_name(DEVICE)
+    start_time = data.add_data_from_file(telemetry_file)
 
-#     # creates a datatable and adds data to it and retrieves the data.
-#     DashboardHandler.set_index(0)
-#     DashboardHandler.set_shown_tag(data.tags)
-#     DashboardHandler.set_start_time(start_time)
-#     DashboardHandler.set_end_time(None)
+    # creates a datatable and adds data to it and retrieves the data.
+    DashboardHandler.set_index(0)
+    DashboardHandler.set_shown_tag(data.tags)
+    DashboardHandler.set_start_time(start_time)
+    DashboardHandler.set_end_time(None)
 
-#     # remove a tag from the display.
-#     DashboardHandler.remove_shown_tag('A3')
+    # remove a tag from the display.
+    DashboardHandler.remove_shown_tag('A3')
 
-#     actual = DashboardHandler.get_data(data)
+    actual = DashboardHandler.get_data(data)
 
-#     expected = tablereturn
-#     expected.table = tablereturn.table[1:]
+    expected = tablereturn
+    expected.table = tablereturn.table[1:]
 
-#     assert (
-#         actual == expected
-#     )
+    assert (
+        actual == expected
+    )
 
 
 # @pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
