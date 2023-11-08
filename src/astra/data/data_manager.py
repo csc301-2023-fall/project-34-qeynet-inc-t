@@ -39,8 +39,7 @@ class DataManager:
             raise ValueError(f'there is no device with name {device_name}')
         self._device_name = device_name
         self._parameters = {
-            Tag(dbtag.tag_name): DataManager._parameter_from_dbtag(dbtag)
-            for dbtag in device.tags
+            Tag(dbtag.tag_name): DataManager._parameter_from_dbtag(dbtag) for dbtag in device.tags
         }
 
     @staticmethod
@@ -53,8 +52,9 @@ class DataManager:
                 'description': str(description),
                 'dtype': 'bool' | 'int' | 'float' as dtype_string,
                 'setpoint': bool() | int() | float() | None as setpoint,
-                'display_units': dict() | None as display_units_dict
-            }: pass
+                'display_units': dict() | None as display_units_dict,
+            }:
+                pass
             case _:
                 raise InternalDatabaseError(
                     f'could not retrieve configuration for tag {dbtag.tag_name}'
@@ -65,7 +65,7 @@ class DataManager:
                 'description': str(units_description),
                 'symbol': str(units_symbol),
                 'multiplier': float(units_multiplier),
-                'constant': float(units_constant)
+                'constant': float(units_constant),
             }:
                 display_units = DisplayUnit(
                     units_description, units_symbol, units_multiplier, units_constant

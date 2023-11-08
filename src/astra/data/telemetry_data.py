@@ -11,12 +11,14 @@ from astra.data.parameters import ParameterValue, Tag
 
 class InternalDatabaseError(IOError):
     """Raised when objects read from the database are detected to violate internal invariants."""
+
     pass
 
 
 @dataclass(frozen=True)
 class TelemetryFrame:
     """All the telemetry data from a TelemetryData object for one timestamp."""
+
     time: datetime
     data: Mapping[Tag, ParameterValue]
 
@@ -38,8 +40,11 @@ class TelemetryData:
     _tags: set[Tag]
 
     def __init__(
-            self, device_name: str, start_time: datetime | None,
-            end_time: datetime | None, tags: set[Tag]
+        self,
+        device_name: str,
+        start_time: datetime | None,
+        end_time: datetime | None,
+        tags: set[Tag],
     ):
         # Not meant to be instantiated directly. Instead, create via DataManager.get_telemetry_data.
         self._device_name = device_name
@@ -76,9 +81,9 @@ class TelemetryData:
             self._device_name, self._start_time, self._end_time, index
         )
         data = db_manager.get_telemetry_data_by_timestamp(self._device_name, self._tags, timestamp)
-        return TelemetryFrame(timestamp, {
-            Tag(dbdata.tag.tag_name): dbdata.value for dbdata in data
-        })
+        return TelemetryFrame(
+            timestamp, {Tag(dbdata.tag.tag_name): dbdata.value for dbdata in data}
+        )
 
     def get_parameter_values(self, tag: Tag) -> Mapping[datetime, ParameterValue]:
         """
