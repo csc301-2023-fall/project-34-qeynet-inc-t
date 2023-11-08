@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 
-from astra.data import db_manager
+from astra.data.database import db_manager
 from astra.data.parameters import ParameterValue, Tag
 
 

@@ -1,4 +1,4 @@
-from .db_initializer import initialize_sqlite_db, Device, Tag, Alarm, Data
+from astra.data.database.db_initializer import initialize_sqlite_db, Device, Tag, Alarm, Data
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, insert, update, delete
 from datetime import datetime
@@ -133,6 +133,20 @@ def device_exists(device_name: str) -> [Device | None]:
         check_stmt = select(Device).where(Device.device_name == device_name)
         device_exist = session.execute(check_stmt).first()
         return None if device_exist is None else device_exist
+
+
+def get_device(device_name: str) -> Device | None:
+    """
+        get device if it exists
+    Args:
+        device_name (str): the name of the device
+
+    Returns:
+        Device | None: the device with the given name, or None if none exists
+    """
+    with Session.begin() as session:
+        check_stmt = select(Device).where(Device.device_name == device_name)
+        return session.execute(check_stmt).scalar()
 
 
 def get_tags_for_device(device_name: str) -> list[Tag]:

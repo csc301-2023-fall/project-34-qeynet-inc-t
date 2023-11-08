@@ -3,9 +3,9 @@ from collections.abc import Iterable, Mapping
 from datetime import datetime
 from typing import Self
 
-from astra.data import db_manager
 from astra.data import telemetry_reader
-from astra.data.db_initializer import Tag as DBTag
+from astra.data.database import db_manager
+from astra.data.database.db_initializer import Tag as DBTag
 from astra.data.parameters import DisplayUnit, Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 
@@ -38,8 +38,9 @@ class DataManager:
         if device is None:
             raise ValueError(f'there is no device with name {device_name}')
         self._device_name = device_name
+        device_tags = db_manager.get_tags_for_device(device_name)
         self._parameters = {
-            Tag(dbtag.tag_name): DataManager._parameter_from_dbtag(dbtag) for dbtag in device.tags
+            Tag(dbtag.tag_name): DataManager._parameter_from_dbtag(dbtag) for dbtag in device_tags
         }
 
     @staticmethod
@@ -64,8 +65,8 @@ class DataManager:
             case {
                 'description': str(units_description),
                 'symbol': str(units_symbol),
-                'multiplier': float(units_multiplier),
-                'constant': float(units_constant),
+                'multiplier': int() | float() as units_multiplier,
+                'constant': int() | float() as units_constant,
             }:
                 display_units = DisplayUnit(
                     units_description, units_symbol, units_multiplier, units_constant
