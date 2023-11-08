@@ -4,7 +4,8 @@ from dashboard_handler import DashboardHandler, TableReturn
 from astra.data.data_manager import DataManager
 
 
-# Not sure if this is necessary anymore, request receivers should just be some modules?
+VALID_SORTING_DIRECTIONS = {'>', '<'}
+VALID_COLUMNS = {'tag', 'description'}
 
 
 class RequestReceiver(ABC):
@@ -39,7 +40,6 @@ class DashboardRequestReceiver(RequestReceiver):
     """
 
     # TODO what is the type of the table that we are receiving?
-    # TODO where do we send the data.
 
     handler = DashboardHandler
 
@@ -64,7 +64,7 @@ class DashboardRequestReceiver(RequestReceiver):
         cls.handler.set_index(0)
 
         # Create the initial table.
-        DashboardHandler.get_data(dm)
+        cls.handler.get_data(dm)
 
     @staticmethod
     def update():
@@ -139,13 +139,11 @@ class DashboardRequestReceiver(RequestReceiver):
         :param previous_table: the previous table that was in the view.
         :returns: True if the sorting filter was successfully updated and False otherwise.
         """
-        valid_sorting_directions = {'>', '<'}
-        valid_columns = {'tag', 'description'}  # TODO confirm this
 
         # Determine if the sorting filter is valid.
-        if sort[0] not in valid_sorting_directions:
+        if sort[0] not in VALID_SORTING_DIRECTIONS:
             return False
-        if sort[1] not in valid_columns:
+        if sort[1] not in VALID_COLUMNS:
             return False
 
         # both if statements failed, so the filter is valid.
