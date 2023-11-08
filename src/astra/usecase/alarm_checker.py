@@ -32,11 +32,13 @@ def get_strategy(base: EventBase) -> Callable:
             return xor_events_check
 
 
-def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]]) -> None:
+def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]],
+                 earliest_time: datetime) -> None:
     """
     Goes through all possible alarms to check and, if any exists, adds them to <alarms>
     based on their criticality
 
+    :param earliest_time:
     :param dm: The manager of all data known to the program
     :param alarms: The global variable storing all current alarms
 
@@ -52,7 +54,7 @@ def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]]) -
         criticality = alarm_base.criticality
 
         strategy = get_strategy(base)
-        alarm = strategy(dm, base, criticality, next_id)
+        alarm = strategy(dm, base, criticality, next_id, earliest_time)
         if alarm is not None:
             next_id += 1
             criticality = alarm.criticality
