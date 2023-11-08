@@ -158,7 +158,7 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     setpoint = alarm_base.setpoint
 
     # Checking which frames have tag values at setpoint and indicating it in <cond_met> in order
-    cond_met = check_conds(dm, telemetry_data, tag, setpoint_cond, [setpoint])
+    cond_met = check_conds(telemetry_data, tag, setpoint_cond, [setpoint])
 
     first_index = forward_checking(cond_met, sequence)
     if first_index == -1:
