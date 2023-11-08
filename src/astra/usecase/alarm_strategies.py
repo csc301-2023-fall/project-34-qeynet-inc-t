@@ -15,14 +15,12 @@ def create_alarm(event_base: EventBase, id: int, time: datetime, description: st
     return Alarm(event, criticality)
 
 
-def check_conds(dm: DataManager, td: TelemetryData,
-                tag: Tag, condition: Callable,
+def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
                 comparison: list[ParameterValue]) -> list[tuple[bool, datetime]]:
     """
     Checks all telemetry frames in <td> where <condition> returns true
+    Note: This should only be used for conditions where only 1 tag is relevant
 
-
-    :param dm: Contains all data known to the program
     :param tag: The tag to use for checking conditions
     :param td: Contains all telemetry frames to examine
     :param condition: A function that returns a boolean with parameters
@@ -34,7 +32,6 @@ def check_conds(dm: DataManager, td: TelemetryData,
     """
     cond_met = []
     num_frames = td.num_telemetry_frames
-    tag_params = get_tag_params(tag, dm)
     for i in range(num_frames):
         telemetry_frame = td.get_telemetry_frame(i)
 
