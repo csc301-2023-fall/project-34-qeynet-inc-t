@@ -3,6 +3,14 @@ from astra.data.data_manager import DataManager
 from .alarm_checker import get_strategy
 
 
+def create_alarm(event_base: EventBase, id: int, time: datetime, description: str,
+                 criticality: AlarmCriticality) -> Alarm:
+
+    event = Event(event_base, id, time, description)
+
+    return Alarm(event, criticality)
+
+
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
                          criticality: AlarmCriticality, new_id: int) -> Alarm | None:
     ...
