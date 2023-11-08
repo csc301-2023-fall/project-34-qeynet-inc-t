@@ -4,6 +4,8 @@ from astra.data.alarms import *
 from astra.data.data_manager import DataManager
 from .alarm_checker import get_strategy
 from .utils import eval_param_value, get_tag_param_value, get_tag_params
+from typing import Callable, Iterable
+from astra.data.telemetry_data import TelemetryData
 
 
 def create_alarm(event_base: EventBase, id: int, time: datetime, description: str,
@@ -11,6 +13,37 @@ def create_alarm(event_base: EventBase, id: int, time: datetime, description: st
     event = Event(event_base, id, time, description)
 
     return Alarm(event, criticality)
+
+
+def check_conds(dm: DataManager, td: TelemetryData,
+                tag: Tag, condition: Callable,
+                comparison: list[ParameterValue]) -> list[tuple[bool, datetime]]:
+    """
+    Checks all telemetry frames in <td> where <condition> returns true
+
+
+    :param dm: Contains all data known to the program
+    :param tag: The tag to use for checking conditions
+    :param td: Contains all telemetry frames to examine
+    :param condition: A function that returns a boolean with parameters
+                      (ParameterValue, list[ParameterValue]
+    :param comparison: A list of all ParameterValues to be used as a point of comparison
+    :return: A list where each index i refers to the i-th telemetry frame in TelemetryData,
+    the boolean in the tuple refers to the associated return from <condition>, and the datetime
+    refers to the associated time of the telemetry frame
+    """
+    cond_met = []
+    num_frames = td.num_telemetry_frames
+    tag_params = get_tag_params(tag, dm)
+    for i in range(num_frames):
+        telemetry_frame = td.get_telemetry_frame(i)
+
+        # Note: I believe we don't need to covnert to true value because both sides of
+        # comparison would be applied the same transformation anyway
+        raw_parameter_value = get_tag_param_value(i, tag, td)
+
+        cond_met.append((condition(raw_parameter_value, comparison), telemetry_frame.time))
+    return cond_met
 
 
 def forward_checking(tuples: list[tuple[bool, datetime]], persistence) -> int:
@@ -82,6 +115,17 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
     ...
 
 
+def setpoint_cond(param_value: ParameterValue, setpoint: list[ParameterValue]) -> bool:
+    """
+    Checks if param_value is at it's associated setpoint exactly
+
+    :param param_value: The true value of the given parameter
+    :param setpoint: The setpoint value to compare against
+    :return: A boolean indicating if param_value is at the setpoint
+    """
+    return param_value == setpoint[0]
+
+
 def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
                    criticality: AlarmCriticality, new_id: int,
                    earliest_time: datetime) -> Alarm | None:
@@ -115,19 +159,9 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
 
     setpoint = alarm_base.setpoint
-    cond_met = []
-
-    tag_parameters = get_tag_params(tag, dm)
 
     # Checking which frames have tag values at setpoint and indicating it in <cond_met> in order
-    num_frames = telemetry_data.num_telemetry_frames
-    for i in range(num_frames):
-        telemetry_frame = telemetry_data.get_telemetry_frame(i)
-
-        raw_parameter_value = get_tag_param_value(i, tag, telemetry_data)
-        true_parameter_value = eval_param_value(tag_parameters, raw_parameter_value)
-
-        cond_met.append((true_parameter_value == setpoint, telemetry_frame.time))
+    cond_met = check_conds(dm, telemetry_data, tag, setpoint_cond, [setpoint])
 
     first_index = forward_checking(cond_met, sequence)
     if first_index == -1:
