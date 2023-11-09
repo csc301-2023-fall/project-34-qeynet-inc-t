@@ -166,8 +166,11 @@ class DashboardHandler(UseCaseHandler):
                 tag_setpoint = f'{tag_setpoint_value}'
             else:
                 unit_symbol = tag_parameters.display_units.symbol
-                tag_value = f'{tag_data} {unit_symbol}'
-                if raw_tag_setpoint_value is None:
+                if tag_data is None:
+                    tag_value = f'{tag_data}'
+                else:
+                    tag_value = f'{tag_data} {unit_symbol}'
+                if tag_setpoint_value is None:
                     tag_setpoint = f'{tag_setpoint_value}'
                 else:
                     tag_setpoint = f'{tag_setpoint_value} {unit_symbol}'
