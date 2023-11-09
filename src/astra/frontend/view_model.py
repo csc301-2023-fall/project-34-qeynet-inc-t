@@ -6,7 +6,12 @@ For this deliverable, it just contains the view model for the dashboard
 
 from .model import Model
 import datetime
-from typing import List
+from typing import List, Iterable
+
+from ..data.data_manager import DataManager
+from ..data.parameters import Tag
+from ..usecase.dashboard_handler import TableReturn
+from ..usecase.request_receiver import DashboardRequestReceiver, DataRequestReceiver
 
 
 class DashboardViewModel:
@@ -17,15 +22,17 @@ class DashboardViewModel:
     _sorting: List[int]
     _time: datetime.datetime
     _table_entries: List[list]
+    _num_frames: int
 
     def __init__(self) -> None:
         """
         Initializes the view model
         """
-        self.model = Model()
+        self.model = Model(DashboardRequestReceiver())
         self._sorting = [1, 1]
         self._table_entries = []
         self._time = None
+        self._num_frames = 0
 
     def get_table_entries(self) -> List[list]:
         """
@@ -48,6 +55,9 @@ class DashboardViewModel:
         """
         return self._time
 
+    def get_num_frames(self) -> int:
+        return self._num_frames
+
     def toggle_sort(self, heading: str) -> None:
         """
         Method for toggling sorting on a specific heading
@@ -60,7 +70,7 @@ class DashboardViewModel:
         Args:
             heading (str): string representing which heading was toggled
         """
-        sort_value = 0
+
         if heading == "TAG":
             self._sorting[0] *= -1
             sort_value = self._sorting[0]
@@ -68,13 +78,28 @@ class DashboardViewModel:
             self._sorting[1] *= -1
             sort_value = self._sorting[1]
 
-        filter_data = {'A3': (True,), 'B1': (False,), 'B4': (True,), 'C1': (True,), 'INDEX': (0, )}
         if sort_value == 1:
-            filter_data['SORT'] = ('>', heading)
+            # ascending
+            self.model.request_receiver.update_sort(('>', heading))
         elif sort_value == -1:
-            filter_data['SORT'] = ('<', heading)
+            # descending
+            self.model.request_receiver.update_sort(('<', heading))
 
-        self.model.receive(filter_data=filter_data, data=None)
+        self.model.receive_updates()
+        self.update_table_entries()
+
+    def toggle_tag(self, tags: Iterable[Tag]) -> None:
+        self.model.request_receiver.set_shown_tags(tags)
+
+    def toggle_start_time(self, start: datetime) -> None:
+        self.model.request_receiver.set_start_time(start)
+
+    def toggle_end_time(self, end: datetime) -> None:
+        self.model.request_receiver.set_end_time(end)
+
+    def choose_frame(self, dm: DataManager, index: int) -> None:
+        self.model.request_receiver.change_index(index)
+        self.model.receive_new_data(dm)
         self.update_table_entries()
 
     def update_table_entries(self) -> None:
@@ -83,15 +108,14 @@ class DashboardViewModel:
         what is in the model
         """
         self._table_entries = []
-        for row in self.model.get_data():
-            if row == ['Tag', 'Description', 'Value']:
-                continue
-            elif len(row) < 3:
-                self._time = row
-            else:
-                self._table_entries.append(row)
+        table_data: TableReturn
+        table_data = self.model.get_data()
 
-    def load_file(self, file):
+        self._time = table_data.timestamp
+        self._num_frames = table_data.frame_quantity
+        self._table_entries = table_data.table
+
+    def load_file(self, dm: DataManager, file: str):
         """
         This method has yet to be fully implemented
         Currently it just asks the view_model to update itself to
@@ -99,5 +123,9 @@ class DashboardViewModel:
 
         Args:
             file: the filepath of the telemetry file
+            :param file:
+            :param dm:
         """
-        self.update_table_entries()
+        data_receiver = DataRequestReceiver
+        data_receiver.set_filename(file)
+        data_receiver.update(dm)

@@ -6,15 +6,21 @@ from tkinter import filedialog, ttk, Tk, Label
 from tkinter import Button, Entry, Frame, LabelFrame, Toplevel
 from tkinter import CENTER, NO, END
 from tkinter import StringVar
+from tkinter.ttk import Treeview
+
 from .view_model import DashboardViewModel
 from .view_draw_functions import draw_frameview
 from typing import List
+
+from ..data.data_manager import DataManager
 
 
 class View(Tk):
     """
     View class
     """
+    dashboard_table: Treeview
+    _dm: DataManager
 
     def __init__(self) -> None:
         """
@@ -22,6 +28,7 @@ class View(Tk):
         When the view is initialized, all the frames and tables
         are loaded into the view
         """
+        self._dm = DataManager.from_device_name('DEVICE')
 
         # Root frame of tkinter
         super().__init__()
@@ -59,7 +66,8 @@ class View(Tk):
         Entry(dashboard_time_range_row, textvariable=self.start_time).grid(row=0, column=1)
         Label(dashboard_time_range_row, text='to').grid(row=0, column=2)
         Entry(dashboard_time_range_row, textvariable=self.end_time).grid(row=0, column=3)
-        Button(dashboard_time_range_row, text='Update time').grid(row=0, column=4)
+        Button(dashboard_time_range_row, text='Update time',
+               command=self.update_time).grid(row=0, column=4)
 
         self.dashboard_current_frame_number = 0
         self.dashboard_frame_navigation_text = StringVar()
@@ -199,5 +207,13 @@ class View(Tk):
         is clicked
         """
         file = filedialog.askopenfilename()
-        self.dashboard_view_model.load_file(file)
+
+        self.dashboard_view_model.load_file(self._dm, 'telemetry0.h5')
+        self.refresh_table()
+
+    def update_time(self):
+        # Dummy for testing in the extreme short term
+        self.dashboard_view_model.toggle_start_time(None)
+        self.dashboard_view_model.toggle_end_time(None)
+        self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_table()
