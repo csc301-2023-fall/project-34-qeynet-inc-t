@@ -23,7 +23,7 @@ class DashboardViewModel:
         Initializes the view model
         """
         self.model = Model()
-        self._sorting = [1, 1, 1]
+        self._sorting = [1, 1]
         self._table_entries = []
         self._time = None
 
@@ -54,7 +54,6 @@ class DashboardViewModel:
         The headings include (for now):
         - TAG
         - DESCRIPTION
-        - VALUE
         This method will ask the model to sort the data
         according to which heading was toggled
 
@@ -65,12 +64,9 @@ class DashboardViewModel:
         if heading == "TAG":
             self._sorting[0] *= -1
             sort_value = self._sorting[0]
-        elif heading == "DESCRIPTION":
+        else:
             self._sorting[1] *= -1
             sort_value = self._sorting[1]
-        else:
-            self._sorting[2] *= -1
-            sort_value = self._sorting[2]
 
         filter_data = {'A3': (True,), 'B1': (False,), 'B4': (True,), 'C1': (True,), 'INDEX': (0, )}
         if sort_value == 1:
