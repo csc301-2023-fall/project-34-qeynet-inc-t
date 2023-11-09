@@ -1,51 +1,117 @@
+"""This module defines the TelemetryData class, representing a collection of telemetry data."""
+
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 
-import pandas as pd
+from astra.data.database import db_manager
+from astra.data.parameters import Parameter, ParameterValue, Tag
 
-from astra.data.parameters import ParameterValue, Tag
+
+class InternalDatabaseError(IOError):
+    """Raised when objects read from the database are detected to violate internal invariants."""
+
+    pass
 
 
 @dataclass(frozen=True)
 class TelemetryFrame:
+    """All the telemetry data from a TelemetryData object for one timestamp."""
+
     time: datetime
-    data: Mapping[Tag, ParameterValue]
+    data: Mapping[Tag, ParameterValue | None]
 
 
 class TelemetryData:
-    _telemetry_data: pd.DataFrame
+    """
+    A collection of telemetry data, organized by timestamp and tag.
 
-    def __init__(self, telemetry_data, start_time, end_time, tags):
-        time_filter = telemetry_data['EPOCH'] == telemetry_data['EPOCH']
-        if start_time is not None:
-            time_filter &= start_time <= telemetry_data['EPOCH']
-        if end_time is not None:
-            time_filter &= telemetry_data['EPOCH'] <= end_time
-        self._telemetry_data = telemetry_data[tags][time_filter]
+    Can be thought of as a lazy 2D array,
+    with one row per telemetry frame and one column per parameter.
 
-    @property
+    All rows will have a timestamp between the start and end times.
+    The columns will match the set of tags.
+    """
+
+    _device_name: str
+    _start_time: datetime | None  # Unbounded if None
+    _end_time: datetime | None  # Unbounded if None
+    _parameters: dict[Tag, Parameter]
+
+    def __init__(
+        self,
+        device_name: str,
+        start_time: datetime | None,
+        end_time: datetime | None,
+        parameters: dict[Tag, Parameter],
+    ):
+        # Not meant to be instantiated directly. Instead, create via DataManager.get_telemetry_data.
+        self._device_name = device_name
+        self._start_time = start_time
+        self._end_time = end_time
+        self._parameters = parameters
+
+    @cached_property
+    def _tags(self) -> set[Tag]:
+        return set(self._parameters.keys())
+
+    def _convert_dtype(self, tag: Tag, value: float | None) -> ParameterValue:
+        # Convert the float telemetry value from the database
+        # to the correct type for the given parameter.
+        if value is None:
+            return None
+        return self._parameters[tag].dtype(value)
+
+    @cached_property
     def num_telemetry_frames(self) -> int:
-        return len(self._telemetry_data)
+        """Return the number of telemetry frames (rows) for this TelemetryData."""
+        return db_manager.num_telemetry_frames(self._device_name, self._start_time, self._end_time)
 
     def get_telemetry_frame(self, index: int) -> TelemetryFrame:
-        try:
-            telemetry_row = self._telemetry_data.iloc[index]
-        except IndexError:
-            raise IndexError('telemetry data index out of range') from None
-        match telemetry_row.to_dict():
-            case {'EPOCH': timestamp, **unscaled_data}:
-                pass
-            case _:
-                raise RuntimeError('telemetry data lacks an EPOCH column')
-        data = {
-            tag: value
-            for tag, value in unscaled_data.items()
-        }
-        return TelemetryFrame(pd.to_datetime(timestamp, unit='s'), data)
+        """
+        Return the <index>th-oldest telemetry frame (row) for this TelemetryData.
 
-    def get_parameter_values(self, tag: Tag) -> Mapping[datetime, ParameterValue]:
-        telemetry_frames = [
-            self.get_telemetry_frame(index) for index in range(self.num_telemetry_frames)
-        ]
-        return {frame.time: frame.data[tag] for frame in telemetry_frames}
+        :param index:
+            Acts as an index into an array of telemetry frames sorted by timestamp
+            (older comes first). 0-indexed; negative indices have standard Python semantics.
+            (An index of -1 corresponds to the newest telemetry frame.)
+
+        :raise IndexError:
+            If index is out of range. The index is in range if and only if
+            -self.num_telemetry_frames <= index < self.num_telemetry_frames.
+
+        :return:
+            A TelemetryFrame with the appropriate timestamp and data.
+        """
+        if not (-self.num_telemetry_frames <= index < self.num_telemetry_frames):
+            raise IndexError(f'telemetry frame index {index} out of range')
+        if index < 0:
+            index += self.num_telemetry_frames
+        timestamp = db_manager.get_timestamp_by_index(
+            self._device_name, self._start_time, self._end_time, index
+        )
+        data = db_manager.get_telemetry_data_by_timestamp(self._device_name, self._tags, timestamp)
+        return TelemetryFrame(timestamp, {
+            Tag(tag_name): self._convert_dtype(Tag(tag_name), value) for tag_name, value in data
+        })
+
+    def get_parameter_values(self, tag: Tag) -> Mapping[datetime, ParameterValue | None]:
+        """
+        Return a column of this TelemetryData in the form of a timestamp->value mapping.
+
+        :param tag:
+            The tag for the parameter to get values for.
+
+        :raise ValueError:
+            If the tag isn't among the set of tags in this TelemetryData.
+
+        :return:
+            A mapping from timestamps to the values of the given parameter at those timestamps.
+        """
+        if tag not in self._tags:
+            raise ValueError(f'got unexpected tag {tag}')
+        data = db_manager.get_telemetry_data_by_tag(
+            self._device_name, self._start_time, self._end_time, tag
+        )
+        return {timestamp: self._convert_dtype(tag, value) for value, timestamp in data}
