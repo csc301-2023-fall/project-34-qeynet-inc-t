@@ -1,14 +1,47 @@
 from copy import copy
+from datetime import datetime
+
+import pandas as pd
 import pytest
-from astra.data.data_manager import (
-    DataManager,
-    telemetry_0,
-    telemetry_1,
+
+from astra.data.data_manager import DataManager
+from astra.data.parameters import DisplayUnit
+from astra.usecase.dashboard_handler import TableReturn, DashboardHandler
+
+config = pd.DataFrame(
+    {
+        'tag': ['A3', 'B1', 'B4', 'C1'],
+        'description': ['a monad', 'is a monoid', 'in the category', 'of endofunctors'],
+        'dtype': ['int', 'float', 'bool', 'int'],
+        'setpoint': [3, 1.0, False, None],
+        'units': [
+            DisplayUnit('metre', 'm', 1, 0),
+            DisplayUnit('gram', 'g', 1000, 0),
+            None,
+            DisplayUnit('second', 's', 1, 0)
+        ]
+    }
 )
 
-from astra.usecase.dashboard_handler import (
-    TableReturn,
-    DashboardHandler
+
+telemetry_0 = pd.DataFrame(
+    {
+        'EPOCH': [datetime(2011, 10, 24), datetime(2018, 3, 16), datetime(2014, 5, 2)],
+        'A3': [5, 3, 3],
+        'B1': [0.0, 0.0, 1.0],
+        'B4': [True, False, False],
+        'C1': [2, 4, 2],
+    }
+)
+
+telemetry_1 = pd.DataFrame(
+    {
+        'EPOCH': [datetime(2022, 3, 25), datetime(2016, 6, 1)],
+        'A3': [5, 3],
+        'B1': [3.0, 1.0],
+        'B4': [False, False],
+        'C1': [1, 3],
+    }
 )
 
 # Creating a mock data for the test cases.
