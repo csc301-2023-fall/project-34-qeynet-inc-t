@@ -1,7 +1,7 @@
 from yaml import safe_load
 
 # import parameters
-from database.db_manager import (
+from astra.data.database.db_manager import (
     create_update_device,
     create_update_tag,
     create_update_alarm,

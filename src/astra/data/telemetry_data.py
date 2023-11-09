@@ -6,7 +6,7 @@ from datetime import datetime
 from functools import cached_property
 
 from astra.data.database import db_manager
-from astra.data.parameters import ParameterValue, Tag
+from astra.data.parameters import Parameter, ParameterValue, Tag
 
 
 class InternalDatabaseError(IOError):
@@ -20,7 +20,7 @@ class TelemetryFrame:
     """All the telemetry data from a TelemetryData object for one timestamp."""
 
     time: datetime
-    data: Mapping[Tag, ParameterValue]
+    data: Mapping[Tag, ParameterValue | None]
 
 
 class TelemetryData:
@@ -37,20 +37,31 @@ class TelemetryData:
     _device_name: str
     _start_time: datetime | None  # Unbounded if None
     _end_time: datetime | None  # Unbounded if None
-    _tags: set[Tag]
+    _parameters: dict[Tag, Parameter]
 
     def __init__(
         self,
         device_name: str,
         start_time: datetime | None,
         end_time: datetime | None,
-        tags: set[Tag],
+        parameters: dict[Tag, Parameter],
     ):
         # Not meant to be instantiated directly. Instead, create via DataManager.get_telemetry_data.
         self._device_name = device_name
         self._start_time = start_time
         self._end_time = end_time
-        self._tags = tags
+        self._parameters = parameters
+
+    @cached_property
+    def _tags(self) -> set[Tag]:
+        return set(self._parameters.keys())
+
+    def _convert_dtype(self, tag: Tag, value: float | None) -> ParameterValue:
+        # Convert the float telemetry value from the database
+        # to the correct type for the given parameter.
+        if value is None:
+            return None
+        return self._parameters[tag].dtype(value)
 
     @cached_property
     def num_telemetry_frames(self) -> int:
@@ -81,11 +92,11 @@ class TelemetryData:
             self._device_name, self._start_time, self._end_time, index
         )
         data = db_manager.get_telemetry_data_by_timestamp(self._device_name, self._tags, timestamp)
-        return TelemetryFrame(
-            timestamp, {Tag(dbdata.tag.tag_name): dbdata.value for dbdata in data}
-        )
+        return TelemetryFrame(timestamp, {
+            Tag(tag_name): self._convert_dtype(Tag(tag_name), value) for tag_name, value in data
+        })
 
-    def get_parameter_values(self, tag: Tag) -> Mapping[datetime, ParameterValue]:
+    def get_parameter_values(self, tag: Tag) -> Mapping[datetime, ParameterValue | None]:
         """
         Return a column of this TelemetryData in the form of a timestamp->value mapping.
 
@@ -103,4 +114,4 @@ class TelemetryData:
         data = db_manager.get_telemetry_data_by_tag(
             self._device_name, self._start_time, self._end_time, tag
         )
-        return {dbdata.timestamp: dbdata.value for dbdata in data}
+        return {timestamp: self._convert_dtype(tag, value) for value, timestamp in data}

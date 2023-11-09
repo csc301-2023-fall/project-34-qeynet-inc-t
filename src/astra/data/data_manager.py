@@ -5,7 +5,6 @@ from typing import Self
 
 from astra.data import telemetry_manager
 from astra.data.database import db_manager
-from astra.data.database.db_initializer import Tag as DBTag
 from astra.data.parameters import DisplayUnit, Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 
@@ -38,17 +37,17 @@ class DataManager:
         if device is None:
             raise ValueError(f'there is no device with name {device_name}')
         self._device_name = device_name
-        device_tags = db_manager.get_tags_for_device(device_name)
         self._parameters = {
-            Tag(dbtag.tag_name): DataManager._parameter_from_dbtag(dbtag) for dbtag in device_tags
+            Tag(tag_name): DataManager._parameter_from_dbtag(tag_name, parameter_dict)
+            for tag_name, parameter_dict in db_manager.get_tags_for_device(device_name)
         }
 
     @staticmethod
-    def _parameter_from_dbtag(dbtag: DBTag) -> Parameter:
+    def _parameter_from_dbtag(tag_name: str, parameter_dict: dict) -> Parameter:
         # Return a Parameter from the given database tag object.
         # Raise DataCorruptionError if the tag_parameter field
         # does not contain data in the correct format.
-        match dbtag.tag_parameter:
+        match parameter_dict:
             case {
                 'description': str(description),
                 'dtype': 'bool' | 'int' | 'float' as dtype_string,
@@ -58,7 +57,7 @@ class DataManager:
                 pass
             case _:
                 raise InternalDatabaseError(
-                    f'could not retrieve configuration for tag {dbtag.tag_name}'
+                    f'could not retrieve configuration for tag {tag_name}'
                 )
         dtype = {'bool': bool, 'int': int, 'float': float}[dtype_string]
         match display_units_dict:
@@ -75,9 +74,9 @@ class DataManager:
                 display_units = None
             case _:
                 raise InternalDatabaseError(
-                    f'could not retrieve configuration for tag {dbtag.tag_name}'
+                    f'could not retrieve configuration for tag {tag_name}'
                 )
-        return Parameter(Tag(dbtag.tag_name), description, dtype, setpoint, display_units)
+        return Parameter(Tag(tag_name), description, dtype, setpoint, display_units)
 
     @classmethod
     def from_device_name(cls, device_name: str) -> Self:
@@ -137,4 +136,7 @@ class DataManager:
         device_tags = set(self.tags)
         if not (tags <= device_tags):
             raise ValueError(f'got unexpected tags {tags - device_tags}')
-        return TelemetryData(self._device_name, start_time, end_time, tags)
+        subset_parameters = {
+            tag: parameter for tag, parameter in self.parameters.items() if tag in tags
+        }
+        return TelemetryData(self._device_name, start_time, end_time, subset_parameters)

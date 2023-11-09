@@ -69,7 +69,6 @@ def create_update_device(metadata: dict):
     with Session.begin() as session:
         # check if device exists in database
         if device:
-            device = device[0]
             device_id = device.device_id
             # update device description
             update_stmt = (
@@ -157,7 +156,7 @@ def device_exists(device_name: str) -> bool:
     return get_device(device_name) is not None
 
 
-def get_tags_for_device(device_name: str) -> list[(str, dict)]:
+def get_tags_for_device(device_name: str) -> list[tuple[str, dict]]:
     """
         return all tags for the given device
     Args:
@@ -241,8 +240,6 @@ def get_timestamp_by_index(
         start_time (datetime | None): the start time of the data
         end_time (datetime | None): the end time of the data
         index (int): the index of the timestamp
-                     (unlike the array index, this starts from 1)
-                     # TODO: may change to start from 0
 
     Returns:
         datetime: the ith timestamp for the given device between start_time
@@ -259,7 +256,7 @@ def get_timestamp_by_index(
                 .where(Data.tag_id.in_(tag_ids))
                 .group_by(Data.timestamp)
                 .order_by(Data.timestamp)
-                .limit(index)
+                .limit(index + 1)
             )
             if start_time is not None:
                 select_stmt = select_stmt.where(Data.timestamp >= start_time)
