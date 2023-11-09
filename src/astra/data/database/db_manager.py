@@ -1,3 +1,9 @@
+from datetime import datetime
+
+from sqlalchemy import func
+from sqlalchemy import select, insert, update, delete
+from sqlalchemy.orm import sessionmaker
+
 from astra.data.database.db_initializer import (
     initialize_sqlite_db,
     Device,
@@ -5,10 +11,6 @@ from astra.data.database.db_initializer import (
     Alarm,
     Data,
 )
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select, insert, update, delete
-from datetime import datetime
-from sqlalchemy import func
 
 # auto initialize the database
 # an Engine, which the Session will use for connection

@@ -1,11 +1,13 @@
+from datetime import datetime
+
 import h5py
 import pandas as pd
-from database.db_manager import (
+
+from astra.data.database.db_manager import (
     get_device,
     engine,
     get_tag_id_name,
 )
-from datetime import datetime
 
 
 def _read_telemetry_hdf5(filename: str) -> datetime:

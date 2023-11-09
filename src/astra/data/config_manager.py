@@ -6,7 +6,7 @@ from astra.data.database.db_manager import (
     create_update_tag,
     create_update_alarm,
 )
-from parameters import DisplayUnit, Parameter, Tag
+from astra.data.parameters import DisplayUnit, Parameter, Tag
 
 
 def _read_config_yaml(filename: str) -> None:
