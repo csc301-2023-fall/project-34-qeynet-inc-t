@@ -16,10 +16,14 @@ from astra.data.data_manager import DataManager
 from .view_draw_functions import draw_frameview
 from .view_model import DashboardViewModel
 
-config_path = filedialog.askopenfilename(title='Select Config File')
+config_path = filedialog.askopenfilename(title='Select config file')
 if not config_path:
     sys.exit()
-config_manager.read_config(config_path)
+try:
+    config_manager.read_config(config_path)
+except Exception as e:
+    messagebox.showerror(title='Cannot read config', message=f'{type(e).__name__}: {e}')
+    sys.exit(1)
 device_name = pathlib.Path(config_path).stem
 
 
@@ -225,12 +229,16 @@ class View(Tk):
         This method specifies what happens when the add data button
         is clicked
         """
-        file = filedialog.askopenfilename(title='Select Telemetry File')
+        file = filedialog.askopenfilename(title='Select telemetry file')
 
         if not file:
             return
 
-        self.dashboard_view_model.load_file(self._dm, file)
+        try:
+            self.dashboard_view_model.load_file(self._dm, file)
+        except Exception as e:
+            messagebox.showerror(title='Cannot read telemetry', message=f'{type(e).__name__}: {e}')
+            return
         self.refresh_table()
 
         self.dashboard_view_model.toggle_start_time(None)
@@ -277,6 +285,7 @@ class View(Tk):
             return
         self.dashboard_view_model.toggle_start_time(start_time)
         self.dashboard_view_model.toggle_end_time(end_time)
+        self.dashboard_current_frame_number = 0
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_table()
 
