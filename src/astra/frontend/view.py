@@ -3,8 +3,9 @@ This file holds the view class that will be run in main.py
 """
 
 from tkinter import filedialog, ttk, Tk, Label
-from tkinter import Button, Frame, LabelFrame, Toplevel
+from tkinter import Button, Entry, Frame, LabelFrame, Toplevel
 from tkinter import CENTER, NO, END
+from tkinter import StringVar
 from .view_model import DashboardViewModel
 from .view_draw_functions import draw_frameview
 from typing import List
@@ -49,22 +50,47 @@ class View(Tk):
         add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
         add_data_button.grid(sticky="W", row=0, column=0)
 
+        self.start_time = StringVar()
+        self.end_time = StringVar()
+
+        dashboard_time_range_row = Frame(dashboard_frame)
+        dashboard_time_range_row.grid(sticky='W', row=1, column=0)
+        Label(dashboard_time_range_row, text='From').grid(row=0, column=0)
+        Entry(dashboard_time_range_row, textvariable=self.start_time).grid(row=0, column=1)
+        Label(dashboard_time_range_row, text='to').grid(row=0, column=2)
+        Entry(dashboard_time_range_row, textvariable=self.end_time).grid(row=0, column=3)
+        Button(dashboard_time_range_row, text='Update time').grid(row=0, column=4)
+
+        self.dashboard_current_frame_number = 0
+        self.dashboard_frame_navigation_text = StringVar()
+
+        dashboard_frame_navigation_row = Frame(dashboard_frame)
+        dashboard_frame_navigation_row.grid(sticky='W', row=2, column=0)
+        Button(dashboard_frame_navigation_row, text='|<').grid(row=0, column=0)
+        Button(dashboard_frame_navigation_row, text='<').grid(row=0, column=1)
+        (Label(dashboard_frame_navigation_row, textvariable=self.dashboard_frame_navigation_text)
+         .grid(row=0, column=2))
+        Button(dashboard_frame_navigation_row, text='>').grid(row=0, column=3)
+        Button(dashboard_frame_navigation_row, text='>|').grid(row=0, column=4)
+
         # dashboard table
         style = ttk.Style()
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
         dashboard_table = ttk.Treeview(dashboard_frame, height=10, padding=3)
         self.dashboard_table = dashboard_table
-        dashboard_table['columns'] = ("tag", "description", "value")
+        dashboard_table['columns'] = ("tag", "description", "value", "setpoint")
         dashboard_table.grid(sticky="W", row=10, column=0)
         dashboard_table.column("#0", width=0, stretch=NO)
         dashboard_table.column("tag", anchor=CENTER, width=80)
         dashboard_table.column("description", anchor=CENTER, width=100)
         dashboard_table.column("value", anchor=CENTER, width=80)
-        dashboard_table.heading("tag", text="Tags", anchor=CENTER, command=self.toggle_tag)
-        dashboard_table.heading("description", text="Descriptions", anchor=CENTER,
+        dashboard_table.column("setpoint", anchor=CENTER, width=80)
+        dashboard_table.heading("tag", text="Tag", anchor=CENTER, command=self.toggle_tag)
+        dashboard_table.heading("description", text="Description", anchor=CENTER,
                                 command=self.toggle_description)
-        dashboard_table.heading("value", text="Values", anchor=CENTER, command=self.toggle_value)
+        dashboard_table.heading("value", text="Value", anchor=CENTER, command=self.toggle_value)
+        dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
         dashboard_table.bind('<Double-1>', self.double_click_table_row)
 
         # elements of tableview_frame
