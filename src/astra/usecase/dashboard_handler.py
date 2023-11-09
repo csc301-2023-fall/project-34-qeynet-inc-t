@@ -4,6 +4,7 @@ from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
 from astra.data.parameters import Parameter, ParameterValue
+from ..frontend.model import Model
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -225,12 +226,13 @@ class DashboardHandler(UseCaseHandler):
                                        reverse=reverse)
 
     @classmethod
-    def get_data(cls, dm: DataManager):
+    def get_data(cls, dm: DataManager, model: Model):
         """
         An implementation of get_data for the Telemetry Dashboard to create a
         data table pertaining to a single telemetry frame with data filtering
         requested by the user
 
+        :param model: The model of currently shown data
         :param dm: Contain all data stored by the program to date
         :return: An instance of TableReturn where the <table> attribute
         represents the ordered rows to be presented in the Telemetry Dashboard
@@ -252,6 +254,8 @@ class DashboardHandler(UseCaseHandler):
 
         # Next, determine if any sorting was requested
         cls._sort_output(return_data)
+
+        model.set_data(return_data)
 
         return return_data
 

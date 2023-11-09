@@ -4,7 +4,7 @@ from typing import Any
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn
 from astra.data.data_manager import DataManager
-
+from ..frontend.model import Model
 
 # Not sure if this is necessary anymore, request receivers should just be some modules?
 
@@ -17,7 +17,7 @@ class RequestReceiver(ABC):
     handler: UseCaseHandler
 
     @abstractmethod
-    def create(self, dm: DataManager):
+    def create(self, dm: DataManager, model: Model):
         """
         create is a method that creates a new data table.
         """
@@ -49,10 +49,11 @@ class DashboardRequestReceiver(RequestReceiver):
         self.handler = DashboardHandler()
 
     @classmethod
-    def create(cls, dm: DataManager) -> None:
+    def create(cls, dm: DataManager, model: Model) -> None:
         """
         create is a method that creates the initial data table,
         with all tags shown, no sorting applied and at the first index.
+        :param model: The model of currently shown data
         :param dm: Contains all data stored by the program to date.
         """
 
@@ -162,19 +163,17 @@ class DataRequestReceiver(RequestReceiver):
 
     file = None
 
-    def __init__(self):
-        self.file = None
-
     @classmethod
     def set_filename(cls, file):
         cls.file = file
 
     @classmethod
-    def create(cls, dm: DataManager) -> DataManager:
+    def create(cls, dm: DataManager, model: Model) -> DataManager:
         """
         create is a method that creates a new data table and returns it based
         on the filename provided.
-        :param dm: 
+        :param model: The model of currently shown data
+        :param dm:
         :param device_name: the name of the file to create the data table from.
         """
         return dm.from_device_name(cls.file)
