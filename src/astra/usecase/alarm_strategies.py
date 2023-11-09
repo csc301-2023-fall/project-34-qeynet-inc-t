@@ -187,15 +187,9 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     """
 
     # Calculating the range of time that needs to be checked
-    if alarm_base.persistence is None:
-        subtract_time = datetime.timedelta(seconds=0)
-        sequence = 0
-    else:
-        subtract_time = datetime.timedelta(seconds=alarm_base.persistence)
-        sequence = alarm_base.persistence
+    first_time, sequence = find_first_time(alarm_base, earliest_time)
 
     # Getting all Telemetry Frames associated with the relevant timeframe
-    first_time = earliest_time - subtract_time
     tag = alarm_base.tag
     telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
 
