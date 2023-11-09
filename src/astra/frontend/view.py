@@ -211,6 +211,11 @@ class View(Tk):
         self.dashboard_view_model.load_file(self._dm, 'telemetry0.h5')
         self.refresh_table()
 
+        self.dashboard_view_model.toggle_start_time(None)
+        self.dashboard_view_model.toggle_end_time(None)
+        self.dashboard_view_model.choose_frame(self._dm, 0)
+        self.refresh_table()
+
     def update_time(self):
         # Dummy for testing in the extreme short term
         self.dashboard_view_model.toggle_start_time(None)
