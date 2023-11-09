@@ -65,7 +65,7 @@ def create_update_device(metadata: dict):
         metadata (_type_): metadata of the configuration file
     """
     device_id = None
-    device = device_exists(metadata["device"])
+    device = get_device(metadata["device"])
     with Session.begin() as session:
         # check if device exists in database
         if device:
@@ -126,9 +126,9 @@ def create_update_alarm(dictionary_of_alarms: dict, device_id: int):
         session.add_all(alarm_list)
 
 
-def device_exists(device_name: str) -> [Device | None]:
+def get_device(device_name: str) -> [Device | None]:
     """
-        check if device exists in database
+        check if device exists in database and return the device
     Args:
         device_name (str): the name of the device
 
@@ -145,7 +145,7 @@ def device_exists(device_name: str) -> [Device | None]:
         return None if device_exist is None else device_exist
 
 
-def get_device(device_name: str) -> bool:
+def device_exists(device_name: str) -> bool:
     """
         check if device exists in database
     Args:
@@ -154,7 +154,7 @@ def get_device(device_name: str) -> bool:
     Returns:
         bool: True if device exists in database, False otherwise
     """
-    return device_exists(device_name) is not None
+    return get_device(device_name) is not None
 
 
 def get_tags_for_device(device_name: str) -> list[(str, dict)]:
@@ -209,7 +209,7 @@ def num_telemetry_frames(
         int: the number of telemetry frames for the given device between
              start_time and end_time
     """
-    device = device_exists(device_name)
+    device = get_device(device_name)
     with Session.begin() as session:
         if device:
             device_name = device.device_name
@@ -247,7 +247,7 @@ def get_timestamp_by_index(
         datetime: the ith timestamp for the given device between start_time
                   and end_time
     """
-    device = device_exists(device_name)
+    device = get_device(device_name)
     with Session.begin() as session:
         if device:
             device_name = device.device_name
@@ -283,7 +283,7 @@ def get_telemetry_data_by_timestamp(
         list[tuple[str, float]]: a list of tuple (tag_name, value) for the given
                                  device/tags with the given timestamp
     """
-    device = device_exists(device_name)
+    device = get_device(device_name)
     with Session.begin() as session:
         if device:
             device_id = device.device_id
@@ -321,7 +321,7 @@ def get_telemetry_data_by_tag(
         list[tuple[float, datetime]]: a list of tuple (value, timestamp) for the given
                                       device/tag between start_time and end_time
     """
-    device = device_exists(device_name)
+    device = get_device(device_name)
     with Session.begin() as session:
         if device:
             device_id = device.device_id
@@ -361,6 +361,6 @@ if __name__ == "__main__":
 
     # f should not pass unless we uncomment the lazy="selectin"
     # line in db_initializer.py
-    # f = device_exists("DF71ZLMI9W")
+    # f = get_device("DF71ZLMI9W")
     # for ff in f._tags:
     #     print(ff.tag_name)
