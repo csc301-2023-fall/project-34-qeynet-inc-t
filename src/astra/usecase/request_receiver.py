@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from .use_case_handlers import UseCaseHandler
-from dashboard_handler import DashboardHandler, TableReturn
+from .dashboard_handler import DashboardHandler, TableReturn
 from astra.data.data_manager import DataManager
 
 
@@ -165,8 +165,9 @@ class DataRequestReceiver(RequestReceiver):
     def __init__(self):
         self.file = None
 
-    def set_filename(self, file):
-        self.file = file
+    @classmethod
+    def set_filename(cls, file):
+        cls.file = file
 
     @classmethod
     def create(cls, dm: DataManager) -> DataManager:
