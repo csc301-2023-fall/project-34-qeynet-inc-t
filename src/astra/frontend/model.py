@@ -2,7 +2,6 @@
 File that holds the dummy Model Class
 """
 
-import datetime
 from typing import Any
 
 from astra.data.data_manager import DataManager

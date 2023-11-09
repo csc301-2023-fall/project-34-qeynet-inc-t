@@ -26,7 +26,7 @@ class RequestReceiver(ABC):
         pass
 
     @abstractmethod
-    def update(self, previous_data: Any, dm: DataManager=None):
+    def update(self, previous_data: Any, dm: DataManager = None):
         """
         update is a method that updates the currently represented information
         """
