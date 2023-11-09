@@ -54,16 +54,6 @@ class AnyEventBase(EventBase):
     event_bases: list[EventBase]
 
 
-@dataclass
-class XOREventBase(EventBase):
-    event_bases: list[EventBase]
-
-
-@dataclass
-class NotEventBase(EventBase):
-    event_base: EventBase
-
-
 EventID = NewType('EventID', int)
 
 
