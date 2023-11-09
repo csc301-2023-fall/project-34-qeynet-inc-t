@@ -20,7 +20,7 @@ def create_alarm(event_base: EventBase, id: int, time: datetime, description: st
     :param criticality: The criticality of this alarm.
     :return: An Alarm with the given attributes.
     """
-    
+
     event = Event(event_base, id, time, description)
 
     return Alarm(event, criticality)
@@ -320,4 +320,28 @@ def xor_events_check(dm: DataManager, alarm_base: XOREventBase,
 def not_events_check(dm: DataManager, alarm_base: NotEventBase,
                      criticality: AlarmCriticality, new_id: int,
                      earliest_time: datetime) -> Alarm | None:
-    ...
+    """
+    Checks that none event bases in <alarm_base> have occurred, and returns an appropriate
+    Alarm. Otherwise, returns None.
+
+    :param dm: The source of all data known to the program
+    :param alarm_base: Defines events to check
+    :param criticality: default criticality for the alarm base
+    :param new_id: the id to assign a potential new alarm
+    :param earliest_time: The earliest time from a set of the most recently added
+    telemetry frames
+    :return: An Alarm containing all data about the recent event, or None if the check
+    is not satisfied
+    """
+
+    strategy = get_strategy(alarm_base)
+    alarm = strategy(dm, alarm_base, criticality,
+                     new_id, earliest_time)
+
+    # Determine if the alarm was triggered.
+    if alarm is not None:
+        return None
+    else:
+        # If the alarm did not trigger we create and return a 'not-alarm'.
+        description = 'None of the events were triggered.'
+        return create_alarm(alarm_base, new_id, earliest_time, description, criticality)
