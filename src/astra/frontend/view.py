@@ -186,6 +186,7 @@ class View(Tk):
         This method wipes the data from the dashboard table and re-inserts
         the new values
         """
+        self.change_frame_navigation_text()
         for item in self.dashboard_table.get_children():
             self.dashboard_table.delete(item)
         for item in self.dashboard_view_model.get_table_entries():
@@ -252,3 +253,11 @@ class View(Tk):
         index = self.dashboard_current_frame_number
         self.dashboard_view_model.choose_frame(self._dm, index)
         self.refresh_table()
+
+    def change_frame_navigation_text(self):
+        curr = self.dashboard_current_frame_number + 1
+        total = self.dashboard_view_model.get_num_frames()
+        time = self.dashboard_view_model.get_time()
+        self.dashboard_frame_navigation_text.set(
+            f"Frame {curr}/{total} at {time}"
+        )
