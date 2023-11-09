@@ -10,6 +10,17 @@ from astra.data.telemetry_data import TelemetryData
 
 def create_alarm(event_base: EventBase, id: int, time: datetime, description: str,
                  criticality: AlarmCriticality) -> Alarm:
+    """
+    Creates and returns an Alarm with the given attributes.
+
+    :param event_base: The event base for the alarm.
+    :param id: The id to give the event that triggered the alarm.
+    :param time: The time at which the event occured.
+    :param description: The description of the event that triggered the alarm.
+    :param criticality: The criticality of this alarm.
+    :return: An Alarm with the given attributes.
+    """
+    
     event = Event(event_base, id, time, description)
 
     return Alarm(event, criticality)
@@ -192,6 +203,8 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     """
 
     possible_events = alarm_base.event_bases
+    
+    # iterate through each of the eventbases and check if any of them are triggered.
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
         alarm = strategy(dm, possible_event)
@@ -205,7 +218,7 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
 
     eventbases = alarm_base.event_bases
 
-    #  iterate through each of the eventbases and check if any of them are triggered.
+    # iterate through each of the eventbases and check if any of them are triggered.
     for eventbase in eventbases:
         strategy = get_strategy(eventbase)
         alarm = strategy(dm, eventbase, criticality, new_id, earliest_time)
