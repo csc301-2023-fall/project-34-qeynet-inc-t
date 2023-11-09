@@ -26,10 +26,11 @@ class UseCaseHandler(ABC):
         pass
 
     @abstractmethod
-    def update_data(self, prev_data: Any):
+    def update_data(self, prev_data: Any, dm: DataManager = None):
         """
         update_data is a method that updates the currently represented information
 
+        :param dm: Contains all data stored by the program to date
         :param prev_data: The representation of the current state of displayed data
         determined by each child class
         """

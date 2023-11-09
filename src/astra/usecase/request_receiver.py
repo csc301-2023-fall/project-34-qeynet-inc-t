@@ -26,7 +26,7 @@ class RequestReceiver(ABC):
         pass
 
     @abstractmethod
-    def update(self, previous_data: Any):
+    def update(self, previous_data: Any, dm: DataManager=None):
         """
         update is a method that updates the currently represented information
         """
@@ -71,7 +71,7 @@ class DashboardRequestReceiver(RequestReceiver):
         return cls.handler.get_data(dm)
 
     @classmethod
-    def update(cls, previous_data: TableReturn):
+    def update(cls, previous_data: TableReturn, dm: DataManager = None):
         """
         update is a method that updates the currently represented information
         """
@@ -209,7 +209,7 @@ class DataRequestReceiver(RequestReceiver):
         return dm.from_device_name(cls.file)
 
     @classmethod
-    def update(cls, previous_data: DataManager) -> None:
+    def update(cls, previous_data: DataManager, dm: DataManager = None) -> None:
         """
         update is a method that updates the database based on the filename provided.
         """

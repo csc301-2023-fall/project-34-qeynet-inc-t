@@ -234,7 +234,7 @@ class DashboardHandler(UseCaseHandler):
         requested by the user
 
         :param model: The model of currently shown data
-        :param dm: Contain all data stored by the program to date
+        :param dm: Contains all data stored by the program to date
         :return: An instance of TableReturn where the <table> attribute
         represents the ordered rows to be presented in the Telemetry Dashboard
         table, and removed represents all tags not shown presently
@@ -259,11 +259,12 @@ class DashboardHandler(UseCaseHandler):
         return return_data
 
     @classmethod
-    def update_data(cls, previous_table: TableReturn):
+    def update_data(cls, previous_table: TableReturn, dm: DataManager = None):
         """
         An implementation of update_data for the Telemetry Dashboard to update fields
         based on new sorting requests from the user
 
+        :param dm: Contains all data stored by the program to date
         :param previous_table: A representation of the current shown data in
         the Telemetry Dashboard
         """
@@ -288,3 +289,8 @@ class DashboardHandler(UseCaseHandler):
                     break
 
         cls._sort_output(previous_table)
+
+        if dm is not None:
+            telemetry_data = dm.get_telemetry_data(
+                cls.start_time, cls.end_time, cls.tags)
+            previous_table.frame_quantity = telemetry_data.num_telemetry_frames
