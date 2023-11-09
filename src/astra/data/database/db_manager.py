@@ -1,7 +1,14 @@
-from astra.data.database.db_initializer import initialize_sqlite_db, Device, Tag, Alarm, Data
+from astra.data.database.db_initializer import (
+    initialize_sqlite_db,
+    Device,
+    Tag,
+    Alarm,
+    Data,
+)
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, insert, update, delete
 from datetime import datetime
+from sqlalchemy import func
 
 # auto initialize the database
 # an Engine, which the Session will use for connection
@@ -126,45 +133,46 @@ def device_exists(device_name: str) -> [Device | None]:
         device_name (str): the name of the device
 
     Returns:
-        bool: return true if device exists in database
+        Device | None: the device with the given name, or None if none exists
     """
     with Session.begin() as session:
         # check if device exists in database
-        check_stmt = select(Device).where(Device.device_name == device_name)
-        device_exist = session.execute(check_stmt).first()
+        device_exist = (
+            session.query(Device)
+            .filter(Device.device_name == device_name)
+            .first()
+        )
         return None if device_exist is None else device_exist
 
 
-def get_device(device_name: str) -> Device | None:
+def get_device(device_name: str) -> bool:
     """
-        get device if it exists
+        check if device exists in database
     Args:
         device_name (str): the name of the device
 
     Returns:
-        Device | None: the device with the given name, or None if none exists
+        bool: True if device exists in database, False otherwise
     """
-    with Session.begin() as session:
-        check_stmt = select(Device).where(Device.device_name == device_name)
-        return session.execute(check_stmt).scalar()
+    return device_exists(device_name) is not None
 
 
-def get_tags_for_device(device_name: str) -> list[Tag]:
+def get_tags_for_device(device_name: str) -> list[(str, dict)]:
     """
         return all tags for the given device
     Args:
         device_name (str): the name of the device
 
     Returns:
-        list[Tag]: a list of tags for the given device
+        list[(str, dict)]: a list of tuples of (tag_name, tag_parameter)
     """
     with Session.begin() as session:
-        check_stmt = select(Device).where(Device.device_name == device_name)
-        device = session.execute(check_stmt).first()
-        if device:
-            return device[0].tags
-        else:
-            return []
+        select_stmt = (
+            select(Tag.tag_name, Tag.tag_parameter)
+            .where(Tag.device_id == Device.device_id)
+            .where(Device.device_name == device_name)
+        )
+        return session.execute(select_stmt).all()
 
 
 def tags_to_tag_ids(device_name: str) -> list[int]:
@@ -176,11 +184,13 @@ def tags_to_tag_ids(device_name: str) -> list[int]:
     Returns:
         list[int]: a list of tag_ids
     """
-    tags = get_tags_for_device(device_name)
-    tag_ids = []
-    for tag in tags:
-        tag_ids.append(tag.tag_id)
-    return tag_ids
+    with Session.begin() as session:
+        tag_ids = (
+            session.query(Tag.tag_id)
+            .filter(Tag.device_id == Device.device_id)
+            .filter(Device.device_name == device_name)
+        )
+        return tag_ids
 
 
 def num_telemetry_frames(
@@ -202,32 +212,16 @@ def num_telemetry_frames(
     device = device_exists(device_name)
     with Session.begin() as session:
         if device:
-            device_name = device[0].device_name
+            device_name = device.device_name
             tag_ids = tags_to_tag_ids(device_name)
-            # TODO: I know it's ugly to have if-else, feel free to modify here
-            if start_time is None and end_time is None:
-                # TODO: may add a maximum number of frames returned
-                select_stmt = select(Data).where(Data.tag_id.in_(tag_ids))
-            elif start_time is None:
-                select_stmt = (
-                    select(Data)
-                    .where(Data.tag_id.in_(tag_ids))
-                    .where(Data.timestamp <= end_time)
-                )
-            elif end_time is None:
-                select_stmt = (
-                    select(Data)
-                    .where(Data.tag_id.in_(tag_ids))
-                    .where(Data.timestamp >= start_time)
-                )
-            else:
-                select_stmt = (
-                    select(Data)
-                    .where(Data.tag_id.in_(tag_ids))
-                    .where(Data.timestamp >= start_time)
-                    .where(Data.timestamp <= end_time)
-                )
-            return len(session.execute(select_stmt).all())
+            select_stmt = select(func.count(Data.timestamp.distinct())).where(
+                Data.tag_id.in_(tag_ids)
+            )
+            if start_time is not None:
+                select_stmt = select_stmt.where(Data.timestamp >= start_time)
+            if end_time is not None:
+                select_stmt = select_stmt.where(Data.timestamp <= end_time)
+            return session.execute(select_stmt).scalar()
         else:
             raise ValueError("Device does not exist in database")
 
@@ -256,46 +250,19 @@ def get_timestamp_by_index(
     device = device_exists(device_name)
     with Session.begin() as session:
         if device:
-            device_name = device[0].device_name
+            device_name = device.device_name
             tag_ids = tags_to_tag_ids(device_name)
-            # TODO: I know it's ugly to have if-else, feel free to modify here
-            if start_time is None and end_time is None:
-                # TODO: may add a maximum number of frames returned
-                select_stmt = (
-                    select(Data.timestamp)
-                    .where(Data.tag_id.in_(tag_ids))
-                    .group_by(Data.timestamp)
-                    .order_by(Data.timestamp)
-                    .limit(index)
-                )
-            elif start_time is None:
-                select_stmt = (
-                    select(Data.timestamp)
-                    .where(Data.tag_id.in_(tag_ids))
-                    .group_by(Data.timestamp)
-                    .having(Data.timestamp <= end_time)
-                    .order_by(Data.timestamp)
-                    .limit(index)
-                )
-            elif end_time is None:
-                select_stmt = (
-                    select(Data.timestamp)
-                    .where(Data.tag_id.in_(tag_ids))
-                    .group_by(Data.timestamp)
-                    .having(Data.timestamp >= start_time)
-                    .order_by(Data.timestamp)
-                    .limit(index)
-                )
-            else:
-                select_stmt = (
-                    select(Data.timestamp)
-                    .where(Data.tag_id.in_(tag_ids))
-                    .group_by(Data.timestamp)
-                    .having(Data.timestamp >= start_time)
-                    .having(Data.timestamp <= end_time)
-                    .order_by(Data.timestamp)
-                    .limit(index)
-                )
+            select_stmt = (
+                select(Data.timestamp)
+                .where(Data.tag_id.in_(tag_ids))
+                .group_by(Data.timestamp)
+                .order_by(Data.timestamp)
+                .limit(index)
+            )
+            if start_time is not None:
+                select_stmt = select_stmt.where(Data.timestamp >= start_time)
+            if end_time is not None:
+                select_stmt = select_stmt.where(Data.timestamp <= end_time)
             return session.execute(select_stmt).all()[-1][0]
         else:
             raise ValueError("Device does not exist in database")
@@ -303,7 +270,7 @@ def get_timestamp_by_index(
 
 def get_telemetry_data_by_timestamp(
     device_name: str, tags: set[str], timestamp: datetime
-) -> list[Data]:
+) -> list[tuple[str, float]]:
     """
         All the data for the telemetry frame with the given timestamp for a device.
         May assume: timestamp is valid for the device
@@ -313,28 +280,22 @@ def get_telemetry_data_by_timestamp(
         timestamp (datetime): the timestamp of the data
 
     Returns:
-        list[Data]: a list of data for the given device/tags with the given timestamp
+        list[tuple[str, float]]: a list of tuple (tag_name, value) for the given
+                                 device/tags with the given timestamp
     """
     device = device_exists(device_name)
     with Session.begin() as session:
         if device:
-            device_name = device[0].device_name
+            device_id = device.device_id
+            select_stmt = (
+                select(Tag.tag_name, Data.value)
+                .where(Data.tag_id == Tag.tag_id)
+                .where(Tag.device_id == device_id)
+                .where(Data.timestamp == timestamp)
+            )
             if tags is not None:
-                tag_ids = []
-                for tag in tags:
-                    tag_ids.append(tag.tag_id)
-                select_stmt = (
-                    select(Data)
-                    .where(Data.timestamp == timestamp)
-                    .where(Data.tag_id.in_(tag_ids))
-                )
-            else:
-                tag_ids = tags_to_tag_ids(device_name)
-                select_stmt = (
-                    select(Data)
-                    .where(Data.tag_id.in_(tag_ids))
-                    .where(Data.timestamp == timestamp)
-                )
+                select_stmt = select_stmt.where(Tag.tag_name.in_(tags))
+
             return session.execute(select_stmt).all()
         else:
             raise ValueError("Device does not exist in database")
@@ -345,7 +306,7 @@ def get_telemetry_data_by_tag(
     start_time: datetime | None,
     end_time: datetime | None,
     tag: str,
-) -> list[Data]:
+) -> list[tuple[float, datetime]]:
     """
         All the data for the given tag for a device between start_time and end_time
         Should be sorted by time -- 0 earliest, <num frames> - 1 latest
@@ -357,45 +318,49 @@ def get_telemetry_data_by_tag(
         tag (str): the tag of the data
 
     Returns:
-        list[Data]: a list of data for the given device/tag between start_time
-                    and end_time
+        list[tuple[float, datetime]]: a list of tuple (value, timestamp) for the given
+                                      device/tag between start_time and end_time
     """
     device = device_exists(device_name)
     with Session.begin() as session:
         if device:
-            device_id = device[0].device_id
+            device_id = device.device_id
             select_stmt = (
-                select(Tag)
-                .where(Tag.tag_name == tag)
+                select(Data.value, Data.timestamp)
+                .where(Data.tag_id == Tag.tag_id)
                 .where(Tag.device_id == device_id)
+                .where(Tag.tag_name == tag)
             )
-            tag_obj = session.execute(select_stmt).all()[0][0]
-            # TODO: I know it's ugly to have if-else, feel free to modify here
-            if start_time is None and end_time is None:
-                # TODO: may add a maximum number of frames returned
-                return tag_obj.data
-            elif start_time is None:
-                return tag_obj.data.filter(Data.timestamp <= end_time)
-            elif end_time is None:
-                return tag_obj.data.filter(Data.timestamp >= start_time)
-            else:
-                return tag_obj.data.filter(
-                    Data.timestamp >= start_time,
-                    Data.timestamp <= end_time,
-                )
+            if start_time is not None:
+                select_stmt = select_stmt.where(Data.timestamp >= start_time)
+            if end_time is not None:
+                select_stmt = select_stmt.where(Data.timestamp <= end_time)
+            return session.execute(select_stmt).all()
         else:
             raise ValueError("Device does not exist in database")
 
 
 if __name__ == "__main__":
-    a = get_timestamp_by_index(
-        "DF71ZLMI9W",
-        "2023-10-11 19:32:43.000000",
-        "2023-10-11 19:33:32.000000",
-        1,
-    )
+    # a = get_timestamp_by_index(
+    #     "DF71ZLMI9W",
+    #     "2023-10-11 19:32:43.000000",
+    #     "2023-10-11 19:33:32.000000",
+    #     5,
+    # )
     # print(a)
     # b = get_telemetry_data_by_timestamp("DF71ZLMI9W", None, a)
     # print(b)
-    # c = get_telemetry_data_by_tag("DF71ZLMI9W", None, None, "XXTT3038")
-    # print(c)
+    # c = get_telemetry_data_by_tag("DF71ZLMI9W", a, None, "XXTT3038")
+    # for cc in c:
+    #     print(cc[0], cc[1])
+    d = get_tags_for_device("DF71ZLMI9W")
+    # for dd in d:
+    #     print(dd)
+    # e = num_telemetry_frames("DF71ZLMI9W", a, None)
+    # print(e)
+
+    # f should not pass unless we uncomment the lazy="selectin"
+    # line in db_initializer.py
+    # f = device_exists("DF71ZLMI9W")
+    # for ff in f._tags:
+    #     print(ff.tag_name)
