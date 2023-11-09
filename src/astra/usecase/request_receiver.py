@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from typing import Any
+
 from .use_case_handlers import UseCaseHandler
 from dashboard_handler import DashboardHandler, TableReturn
 from astra.data.data_manager import DataManager
@@ -15,14 +17,14 @@ class RequestReceiver(ABC):
     handler: UseCaseHandler
 
     @abstractmethod
-    def create(self):
+    def create(self, dm: DataManager):
         """
         create is a method that creates a new data table.
         """
         pass
 
     @abstractmethod
-    def update(self):
+    def update(self, previous_data: Any):
         """
         update is a method that updates the currently represented information
         """
@@ -64,14 +66,14 @@ class DashboardRequestReceiver(RequestReceiver):
         cls.handler.set_index(0)
 
         # Create the initial table.
-        DashboardHandler.get_data(dm)
+        cls.handler.get_data(dm)
 
-    @staticmethod
-    def update():
+    @classmethod
+    def update(cls, previous_data: TableReturn):
         """
         update is a method that updates the currently represented information
         """
-        pass
+        cls.handler.update_data(previous_data)
 
     @classmethod
     def change_index(cls, index: int) -> bool:
@@ -128,9 +130,9 @@ class DashboardRequestReceiver(RequestReceiver):
             return False  # Tag was not in the set of tags that we are viewing.
 
     @classmethod
-    def update_sort(cls, previous_table: TableReturn, sort: tuple[str, str]) -> bool:
+    def update_sort(cls, sort: tuple[str, str]) -> bool:
         """
-        Updates the sorting filter to be applied, and then updates the view.
+        Updates the sorting filter to be applied
         It returns True if the sorting filter was successfully applied and False otherwise.
         :param sort: the first value in the tuple for this key will
              be either ">", indicating sorting by increasing values,
@@ -140,7 +142,7 @@ class DashboardRequestReceiver(RequestReceiver):
         :returns: True if the sorting filter was successfully updated and False otherwise.
         """
         valid_sorting_directions = {'>', '<'}
-        valid_columns = {'tag', 'description'}  # TODO confirm this
+        valid_columns = {'TAG', 'DESCRIPTION'}  # TODO confirm this
 
         # Determine if the sorting filter is valid.
         if sort[0] not in valid_sorting_directions:
@@ -150,7 +152,6 @@ class DashboardRequestReceiver(RequestReceiver):
 
         # both if statements failed, so the filter is valid.
         cls.handler.set_sort(sort)
-        cls.handler.update_data(previous_table)
         return True
 
 
@@ -159,16 +160,27 @@ class DataRequestReceiver(RequestReceiver):
     Receives new data files and updates our programs database accordingly.
     """
 
-    def create(cls, device_name: str, dm: DataManager) -> DataManager:
+    file = None
+
+    def __init__(self):
+        self.file = None
+
+    def set_filename(self, file):
+        self.file = file
+
+    @classmethod
+    def create(cls, dm: DataManager) -> DataManager:
         """
         create is a method that creates a new data table and returns it based
         on the filename provided.
+        :param dm: 
         :param device_name: the name of the file to create the data table from.
         """
-        return dm.from_device_name(device_name)
+        return dm.from_device_name(cls.file)
 
-    def update(cls, filename: str, dm: DataManager) -> None:
+    @classmethod
+    def update(cls, previous_data: DataManager) -> None:
         """
         update is a method that updates the database based on the filename provided.
         """
-        dm.add_data_from_file(filename)
+        previous_data.add_data_from_file(cls.file)
