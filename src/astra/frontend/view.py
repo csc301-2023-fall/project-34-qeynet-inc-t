@@ -277,6 +277,7 @@ class View(Tk):
             return
         self.dashboard_view_model.toggle_start_time(start_time)
         self.dashboard_view_model.toggle_end_time(end_time)
+        self.dashboard_current_frame_number = 0
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_table()
 
