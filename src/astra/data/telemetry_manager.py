@@ -1,9 +1,9 @@
 import h5py
 import pandas as pd
 from database.db_manager import (
-    get_tags_for_device,
-    device_exists,
+    get_device,
     engine,
+    get_tag_id_name,
 )
 from datetime import datetime
 
@@ -22,7 +22,7 @@ def _read_telemetry_hdf5(filename: str) -> datetime:
         # get the device name
         telemetry_metadata = h5file["metadata"]
         device_name = telemetry_metadata.attrs["device"]
-        device = device_exists(device_name)
+        device = get_device(device_name)
         if device:
             # get the telemetry data and use pandas to store it in a dataframe
             telemetry_data = pd.DataFrame(
@@ -49,8 +49,9 @@ def _read_telemetry_hdf5(filename: str) -> datetime:
 
             # map tag_name to tag_id
             tag_id_map = {}
-            for tag in get_tags_for_device(device[0].device_name):
-                tag_id_map[tag.tag_name] = tag.tag_id
+            tag_id_name = get_tag_id_name(device.device_name)
+            for tag_id, tag_name in tag_id_name:
+                tag_id_map[tag_name] = tag_id
             telemetry_data["tag_id"] = telemetry_data["tag_name"].map(
                 tag_id_map
             )

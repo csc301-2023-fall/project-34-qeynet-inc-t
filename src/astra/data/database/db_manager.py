@@ -175,22 +175,22 @@ def get_tags_for_device(device_name: str) -> list[(str, dict)]:
         return session.execute(select_stmt).all()
 
 
-def tags_to_tag_ids(device_name: str) -> list[int]:
+def get_tag_id_name(device_name: str) -> list[tuple[int, str]]:
     """
         A helper function that fetches the tags for a device and
-        converts that to a list of tag_ids
+        converts that to a list of (tag_id, tag_name)
     Args:
         device_name (str): the name of the device
     Returns:
-        list[int]: a list of tag_ids
+        list[tuple[int, str]]: a list of tuples of (tag_id, tag_name)
     """
     with Session.begin() as session:
-        tag_ids = (
-            session.query(Tag.tag_id)
+        tag_id_name = (
+            session.query(Tag.tag_id, Tag.tag_name)
             .filter(Tag.device_id == Device.device_id)
             .filter(Device.device_name == device_name)
         )
-        return tag_ids
+        return tag_id_name
 
 
 def num_telemetry_frames(
@@ -213,7 +213,8 @@ def num_telemetry_frames(
     with Session.begin() as session:
         if device:
             device_name = device.device_name
-            tag_ids = tags_to_tag_ids(device_name)
+            tag_id_name = get_tag_id_name(device_name)
+            tag_ids = [tag_id for tag_id, _ in tag_id_name]
             select_stmt = select(func.count(Data.timestamp.distinct())).where(
                 Data.tag_id.in_(tag_ids)
             )
@@ -251,7 +252,8 @@ def get_timestamp_by_index(
     with Session.begin() as session:
         if device:
             device_name = device.device_name
-            tag_ids = tags_to_tag_ids(device_name)
+            tag_id_name = get_tag_id_name(device_name)
+            tag_ids = [tag_id for tag_id, _ in tag_id_name]
             select_stmt = (
                 select(Data.timestamp)
                 .where(Data.tag_id.in_(tag_ids))
