@@ -206,7 +206,7 @@ class DataRequestReceiver(RequestReceiver):
         create is a method that creates a new data table and returns it based
         on the filename provided.
         :param model: The model of currently shown data
-        :param dm:
+        :param dm: The interface for getting all data known to the program
         :param device_name: the name of the file to create the data table from.
         """
         return dm.from_device_name(cls.file)
