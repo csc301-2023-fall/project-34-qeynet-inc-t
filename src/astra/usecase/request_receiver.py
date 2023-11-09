@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from datetime import datetime
+from typing import Any, Iterable
 
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn
 from astra.data.data_manager import DataManager
+from ..data.parameters import Tag
+
 
 # Not sure if this is necessary anymore, request receivers should just be some modules?
 
@@ -48,7 +51,7 @@ class DashboardRequestReceiver(RequestReceiver):
         self.handler = DashboardHandler()
 
     @classmethod
-    def create(cls, dm: DataManager) -> None:
+    def create(cls, dm: DataManager) -> TableReturn:
         """
         create is a method that creates the initial data table,
         with all tags shown, no sorting applied and at the first index.
@@ -59,14 +62,13 @@ class DashboardRequestReceiver(RequestReceiver):
         all_tags = dm.tags
 
         # Add all tags to the shown tags by default.
-        for tag in all_tags:
-            cls.handler.add_shown_tag(tag)
+        cls.handler.set_shown_tag(all_tags)
 
         # Set the index to the first index by default.
         cls.handler.set_index(0)
 
         # Create the initial table.
-        cls.handler.get_data(dm)
+        return cls.handler.get_data(dm)
 
     @classmethod
     def update(cls, previous_data: TableReturn):
@@ -114,6 +116,17 @@ class DashboardRequestReceiver(RequestReceiver):
             return False  # Tag was already in the set of tags that we are viewing.
 
     @classmethod
+    def set_shown_tags(cls, tags: Iterable[Tag]):
+        """
+        sets <tags> to the set of tags to be shown
+
+        PRECONDITION: <tag> is an element of <cls.tags>
+
+        :param tags: a set of tags to show
+        """
+        cls.handler.set_shown_tag(tags)
+
+    @classmethod
     def remove_shown_tag(cls, remove: str) -> bool:
         """
         Remove a tag from the set of tags that we are viewing and update the view.
@@ -154,6 +167,24 @@ class DashboardRequestReceiver(RequestReceiver):
         cls.handler.set_sort(sort)
         return True
 
+    @classmethod
+    def set_start_time(cls, start_time: datetime):
+        """
+        Modifies <cls.start_time> to be equal to <start_time>
+
+        :param start_time: the datetime to be set
+        """
+        cls.handler.set_start_time(start_time)
+
+    @classmethod
+    def set_end_time(cls, end_time: datetime):
+        """
+        Modifies <cls.end_time> to be equal to <end_time>
+
+        :param end_time: the datetime to be set
+        """
+        cls.handler.set_end_time(end_time)
+
 
 class DataRequestReceiver(RequestReceiver):
     """
@@ -167,7 +198,7 @@ class DataRequestReceiver(RequestReceiver):
         cls.file = file
 
     @classmethod
-    def create(cls, dm: DataManager, model: Model) -> DataManager:
+    def create(cls, dm: DataManager) -> DataManager:
         """
         create is a method that creates a new data table and returns it based
         on the filename provided.

@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Iterable
+
 from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
-from astra.data.parameters import Parameter, ParameterValue
+from astra.data.parameters import Parameter, ParameterValue, Tag
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -46,7 +48,7 @@ class DashboardHandler(UseCaseHandler):
 
     sort = None
     index = None
-    tags = set()
+    tags = Iterable[Tag]
     start_time = None
     end_time = None
 
@@ -89,7 +91,7 @@ class DashboardHandler(UseCaseHandler):
         cls.tags.add(tag)
 
     @classmethod
-    def set_shown_tag(cls, tags: str):
+    def set_shown_tag(cls, tags: Iterable[Tag]):
         """
         sets <tags> to the set of tags to be shown
 
