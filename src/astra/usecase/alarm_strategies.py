@@ -8,6 +8,29 @@ from typing import Callable, Iterable
 from astra.data.telemetry_data import TelemetryData
 
 
+def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime, datetime):
+    """Finds the first time to check for persistence and returns it, along with
+    the length of time to check for persistence
+
+    :param alarm_base: the event for which persistence must be checked
+    :param earliest_time: The earliest time linked to the newest telemetry frame
+    recently added
+    :return A tuple where the first item is the first time which must be checked,
+    and the second is the length of time to check
+    """
+
+    # Calculating the range of time that needs to be checked
+    if alarm_base.persistence is None:
+        subtract_time = datetime.timedelta(seconds=0)
+        sequence = 0
+    else:
+        subtract_time = datetime.timedelta(seconds=alarm_base.persistence)
+        sequence = alarm_base.persistence
+
+    # Getting all Telemetry Frames associated with the relevant timeframe
+    first_time = earliest_time - subtract_time
+    return first_time, sequence
+
 def create_alarm(event_base: EventBase, id: int, time: datetime, description: str,
                  criticality: AlarmCriticality) -> Alarm:
     """
@@ -153,16 +176,7 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     is not satisfied
     """
 
-    # Calculating the range of time that needs to be checked
-    if alarm_base.persistence is None:
-        subtract_time = datetime.timedelta(seconds=0)
-        sequence = 0
-    else:
-        subtract_time = datetime.timedelta(seconds=alarm_base.persistence)
-        sequence = alarm_base.persistence
-
-    # Getting all Telemetry Frames associated with the relevant timeframe
-    first_time = earliest_time - subtract_time
+    first_time, sequence = find_first_time(alarm_base, earliest_time)
     tag = alarm_base.tag
     telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
 
