@@ -202,7 +202,24 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
 def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
                      criticality: AlarmCriticality, new_id: int,
                      earliest_time: datetime) -> Alarm | None:
-    ...
+
+    eventbases = alarm_base.event_bases
+
+    #  iterate through each of the eventbases and check if any of them are triggered.
+    for eventbase in eventbases:
+        strategy = get_strategy(eventbase)
+        alarm = strategy(dm, eventbase, criticality, new_id, earliest_time)
+        if alarm is not None:
+
+            # Create a description for the alarm. #TODO Finalize this.
+            description = 'Any alarm was triggered with the following description: '
+            + alarm.event.description + '.'
+
+            # if any alarm was created, the even triggered so we return an alarm.
+            return create_alarm(alarm_base, new_id, alarm.event.time, description, criticality)
+
+    # If we exit the loop without returning, no alarm triggered, so the 'anyevent' did not happen.
+    return None
 
 
 def xor_events_check(dm: DataManager, alarm_base: XOREventBase,
