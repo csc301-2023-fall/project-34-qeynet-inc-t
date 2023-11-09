@@ -98,6 +98,8 @@ class TelemetryData:
         :return:
             A mapping from timestamps to the values of the given parameter at those timestamps.
         """
+        if tag not in self._tags:
+            raise ValueError(f'got unexpected tag {tag}')
         data = db_manager.get_telemetry_data_by_tag(
             self._device_name, self._start_time, self._end_time, tag
         )
