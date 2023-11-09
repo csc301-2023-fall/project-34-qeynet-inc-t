@@ -3,7 +3,7 @@ from collections.abc import Iterable, Mapping
 from datetime import datetime
 from typing import Self
 
-from astra.data import telemetry_reader
+from astra.data import telemetry_manager
 from astra.data.database import db_manager
 from astra.data.database.db_initializer import Tag as DBTag
 from astra.data.parameters import DisplayUnit, Parameter, Tag
@@ -107,7 +107,7 @@ class DataManager:
         :return:
             The time of the earliest read-in telemetry frame (to facilitate alarm checking).
         """
-        return telemetry_reader.read_telemetry(filename)
+        return telemetry_manager.read_telemetry(filename)
 
     add_data_from_file = add_data  # Alias for historical reasons
 

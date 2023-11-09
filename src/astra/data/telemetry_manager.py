@@ -8,7 +8,7 @@ from database.db_manager import (
 from datetime import datetime
 
 
-def _read_telemetry_hdf5(filename: str) -> None:
+def _read_telemetry_hdf5(filename: str) -> datetime:
     """
     Read in a hdf5 telemetry file and parse it into a pandas dataframe.
     The data in the "EPOCH" column is translated into human-readable
@@ -37,6 +37,7 @@ def _read_telemetry_hdf5(filename: str) -> None:
                 telemetry_data["EPOCH"], unit="s"
             )
             telemetry_data = telemetry_data.drop(columns=["EPOCH"])
+            earliest_added_timestamp = min(telemetry_data["timestamp"])
 
             # convert the dataframe to long format for database insertion
             telemetry_data = pd.melt(
@@ -66,6 +67,8 @@ def _read_telemetry_hdf5(filename: str) -> None:
                 index=False,
                 method="multi",
             )
+
+            return earliest_added_timestamp
         else:
             raise ValueError("Device does not exist in database")
 
@@ -77,7 +80,7 @@ _file_readers = {
 }
 
 
-def read_telemetry(filename: str) -> None:
+def read_telemetry(filename: str) -> datetime:
     """
     Read in a telemetry file with the given path and return
     it as a pandas dataframe.
