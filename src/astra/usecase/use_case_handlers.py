@@ -20,15 +20,17 @@ class UseCaseHandler(ABC):
         get_data is a method that processes the data according to determined
         filters by each child class
 
+        :param model: The model of currently shown data
         :param dm: The data that will be processed.
         """
         pass
 
     @abstractmethod
-    def update_data(self, prev_data: Any):
+    def update_data(self, prev_data: Any, dm: DataManager = None):
         """
         update_data is a method that updates the currently represented information
 
+        :param dm: Contains all data stored by the program to date
         :param prev_data: The representation of the current state of displayed data
         determined by each child class
         """

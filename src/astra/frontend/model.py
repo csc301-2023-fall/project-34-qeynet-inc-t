@@ -2,8 +2,10 @@
 File that holds the dummy Model Class
 """
 
-import datetime
-from typing import Dict, List
+from typing import Any
+
+from astra.data.data_manager import DataManager
+from astra.usecase.request_receiver import RequestReceiver
 
 
 class Model:
@@ -11,76 +13,36 @@ class Model:
     Dummy class currently representing the backend
     """
 
-    def __init__(self) -> None:
+    data = None
+    request_receiver = None
+
+    def __init__(self, request_receiver: RequestReceiver) -> None:
         """
         Initialize to some random telemetry data
         """
-        self.data = [
-            ['A3', 'b monad', '3 cm'],
-            ['B4', 'ain the category', '0 ft'],
-            ['C1', 'of endofuntors', '2 C'],
-            ['Tag', 'Description', 'Value'],
-            [datetime.datetime(2023, 10, 16, 17, 4, 31, 866600)]
-        ]
+        self.request_receiver = request_receiver
 
-    def receive(self, filter_data: Dict[any, tuple], data: any) -> List[list]:
+    def receive_new_data(self, dm: DataManager) -> Any:
+        self.data = self.request_receiver.create(dm)
+
+    def receive_updates(self) -> None:
         """
         A method that simulates the functionality of the backend
         Since our data is fixed, we sort by hand each input case
         """
-        if filter_data['SORT'] == ('<', 'TAG'):
-            self.data = [
-                ['A3', 'b monad', '3 cm'],
-                ['B4', 'ain the category', '0 ft'],
-                ['C1', 'of endofuntors', '2 C'],
-                ['Tag', 'Description', 'Value'],
-                [datetime.datetime(2023, 10, 16, 17, 4, 31, 866600)]
-            ]
-        elif filter_data['SORT'] == ('>', 'TAG'):
-            self.data = [
-                ['C1', 'of endofuntors', '2 C'],
-                ['B4', 'ain the category', '0 ft'],
-                ['A3', 'b monad', '3 cm'],
-                ['Tag', 'Description', 'Value'],
-                [datetime.datetime(2023, 10, 16, 17, 4, 31, 866600)]
-            ]
-        elif filter_data['SORT'] == ('<', 'DESCRIPTION'):
-            self.data = [
-                ['B4', 'ain the category', '0 ft'],
-                ['A3', 'b monad', '3 cm'],
-                ['C1', 'of endofuntors', '2 C'],
-                ['Tag', 'Description', 'Value'],
-                [datetime.datetime(2023, 10, 16, 17, 4, 31, 866600)]
-            ]
-        elif filter_data['SORT'] == ('>', 'DESCRIPTION'):
-            self.data = [
-                ['C1', 'of endofuntors', '2 C'],
-                ['A3', 'b monad', '3 cm'],
-                ['B4', 'ain the category', '0 ft'],
-                ['Tag', 'Description', 'Value'],
-                [datetime.datetime(2023, 10, 16, 17, 4, 31, 866600)]
-            ]
-        elif filter_data['SORT'] == ('<', 'VALUE'):
-            self.data = [
-                ['B4', 'ain the category', '0 ft'],
-                ['C1', 'of endofuntors', '2 C'],
-                ['A3', 'b monad', '3 cm'],
-                ['Tag', 'Description', 'Value'],
-                [datetime.datetime(2023, 10, 16, 17, 4, 31, 866600)]
-            ]
-        elif filter_data['SORT'] == ('>', 'VALUE'):
-            self.data = [
-                ['A3', 'b monad', '3 cm'],
-                ['C1', 'of endofuntors', '2 C'],
-                ['B4', 'ain the category', '0 ft'],
-                ['Tag', 'Description', 'Value'],
-                [datetime.datetime(2023, 10, 16, 17, 4, 31, 866600)]
-            ]
+        self.request_receiver.update(self.data)
 
-        return self.data
-
-    def get_data(self) -> List[list]:
+    def get_data(self) -> Any:
         """
         Getter method to return whatever's in the data
         """
         return self.data
+
+    def set_data(self, data: Any):
+        """
+        Setter method for data. Since the model is used by all viewmodels,
+        accept any form of data as input and assume they will be known by the
+        using function(s)
+        :param data: The new data to represent the current model
+        """
+        self.data = data
