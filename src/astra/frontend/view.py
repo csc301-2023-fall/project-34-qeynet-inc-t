@@ -5,8 +5,8 @@ This file holds the view class that will be run in main.py
 from tkinter import filedialog, ttk, Tk, Label
 from tkinter import Button, Frame, LabelFrame, Toplevel
 from tkinter import CENTER, NO, END
-from view_model import DashboardViewModel
-from view_draw_functions import draw_frameview
+from .view_model import DashboardViewModel
+from .view_draw_functions import draw_frameview
 from typing import List
 
 

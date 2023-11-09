@@ -4,7 +4,7 @@ File that contains the view models needed for the view
 For this deliverable, it just contains the view model for the dashboard
 """
 
-from model import Model
+from .model import Model
 import datetime
 from typing import List
 
