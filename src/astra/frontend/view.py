@@ -74,12 +74,16 @@ class View(Tk):
 
         dashboard_frame_navigation_row = Frame(dashboard_frame)
         dashboard_frame_navigation_row.grid(sticky='W', row=2, column=0)
-        Button(dashboard_frame_navigation_row, text='|<').grid(row=0, column=0)
-        Button(dashboard_frame_navigation_row, text='<').grid(row=0, column=1)
+        Button(dashboard_frame_navigation_row, text='|<',
+               command=self.first_frame).grid(row=0, column=0)
+        Button(dashboard_frame_navigation_row, text='<',
+               command=self.decrement_frame).grid(row=0, column=1)
         (Label(dashboard_frame_navigation_row, textvariable=self.dashboard_frame_navigation_text)
          .grid(row=0, column=2))
-        Button(dashboard_frame_navigation_row, text='>').grid(row=0, column=3)
-        Button(dashboard_frame_navigation_row, text='>|').grid(row=0, column=4)
+        Button(dashboard_frame_navigation_row, text='>',
+               command=self.increment_frame).grid(row=0, column=3)
+        Button(dashboard_frame_navigation_row, text='>|',
+               command=self.last_frame).grid(row=0, column=4)
 
         # dashboard table
         style = ttk.Style()
@@ -182,6 +186,7 @@ class View(Tk):
         This method wipes the data from the dashboard table and re-inserts
         the new values
         """
+        self.change_frame_navigation_text()
         for item in self.dashboard_table.get_children():
             self.dashboard_table.delete(item)
         for item in self.dashboard_view_model.get_table_entries():
@@ -222,3 +227,37 @@ class View(Tk):
         self.dashboard_view_model.toggle_end_time(None)
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_table()
+
+    def first_frame(self):
+        self.dashboard_current_frame_number = 0
+        self.dashboard_view_model.choose_frame(self._dm, 0)
+        self.refresh_table()
+
+    def last_frame(self):
+        last = self.dashboard_view_model.get_num_frames() - 1
+        self.dashboard_current_frame_number = last
+        self.dashboard_view_model.choose_frame(self._dm, last)
+        self.refresh_table()
+
+    def decrement_frame(self):
+        if self.dashboard_current_frame_number > 0:
+            self.dashboard_current_frame_number -= 1
+        index = self.dashboard_current_frame_number
+        self.dashboard_view_model.choose_frame(self._dm, index)
+        self.refresh_table()
+
+    def increment_frame(self):
+        last = self.dashboard_view_model.get_num_frames() - 1
+        if self.dashboard_current_frame_number < last:
+            self.dashboard_current_frame_number += 1
+        index = self.dashboard_current_frame_number
+        self.dashboard_view_model.choose_frame(self._dm, index)
+        self.refresh_table()
+
+    def change_frame_navigation_text(self):
+        curr = self.dashboard_current_frame_number + 1
+        total = self.dashboard_view_model.get_num_frames()
+        time = self.dashboard_view_model.get_time()
+        self.dashboard_frame_navigation_text.set(
+            f"Frame {curr}/{total} at {time}"
+        )

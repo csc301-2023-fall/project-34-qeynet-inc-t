@@ -65,7 +65,10 @@ class DashboardRequestReceiver(RequestReceiver):
         cls.handler.set_shown_tag(all_tags)
 
         # Set the index to the first index by default.
-        cls.handler.set_index(0)
+        try:
+            cls.handler.index
+        except NameError:
+            cls.handler.set_index(0)
 
         # Create the initial table.
         return cls.handler.get_data(dm)
