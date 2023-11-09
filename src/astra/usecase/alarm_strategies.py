@@ -111,10 +111,82 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     ...
 
 
+def repeat_checker(td: TelemetryData, tag: Tag) -> list[tuple[bool, datetime]]:
+    """
+    Checks all the frames in <td> and returns a list of tuples where each tuple 
+    contains a boolean indicating if the value of <tag> is the same as the previous
+    frame, and the datetime associated with the frame.
+
+    :param td: The relevant telemetry data to check.
+    :return: A list of tuples where each tuple contains a boolean indicating if the value of
+    <tag> is the same as the previous frame, and the datetime associated with the frame.
+    """
+
+    num_frames = td.num_telemetry_frames
+    sequences_of_static = []
+    i = 1
+
+    # First frame is vacuously a sequence of static values
+    sequences_of_static.append((True, td.get_telemetry_frame(0).time))
+
+    # Iterate over each frame and add a true value to the list if the value is the same as the
+    # previous one.
+    for i in range(1, num_frames):
+        curr_frame = td.get_telemetry_frame(i)
+        curr_value = get_tag_param_value(i, tag, td)
+        last_value = get_tag_param_value(i - 1, tag, td)
+
+        if curr_value == last_value:
+            sequences_of_static.append((True, curr_frame.time))
+        else:
+            sequences_of_static.append((False, curr_frame.time))
+
+    return sequences_of_static
+
+
 def static_check(dm: DataManager, alarm_base: StaticEventBase,
                  criticality: AlarmCriticality, new_id: int,
                  earliest_time: datetime) -> Alarm | None:
-    ...
+    """
+    Checks if in the telemetry frames with times in the range
+    (<earliest_time> - <alarm_base.persistence> -> present), there exists
+    a sequence lasting <alarm_base.persistence> seconds where <alarm_base.tag> reported
+    the same value. Returns an appropriate Alarm if the check is satisfied
+
+    :param dm: All data known to the program
+    :param alarm_base: Stores all parties related to the check
+    :param criticality: The base criticality of the alarm
+    :param new_id: If an alarm must be raised, the id to assign it to
+    :param earliest_time: The earliest time from a set of the most recently added
+    telemetry frames
+    :return: An Alarm containing all data about the recent event, or None if the check
+    is not satisfied
+    """
+
+    # Calculating the range of time that needs to be checked
+    if alarm_base.persistence is None:
+        subtract_time = datetime.timedelta(seconds=0)
+        sequence = 0
+    else:
+        subtract_time = datetime.timedelta(seconds=alarm_base.persistence)
+        sequence = alarm_base.persistence
+
+    # Getting all Telemetry Frames associated with the relevant timeframe
+    first_time = earliest_time - subtract_time
+    tag = alarm_base.tag
+    telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
+
+    # Check which frames share the same value as the previous frame.
+    cond_met = repeat_checker(telemetry_data, tag)
+
+    first_index = forward_checking(cond_met, sequence)
+    if first_index == -1:
+        return None
+    relevant_frame = telemetry_data.get_telemetry_frame(first_index)
+    timestamp = relevant_frame.time
+    description = "static alarm triggered"
+
+    return create_alarm(alarm_base, new_id, timestamp, description, criticality)
 
 
 def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
