@@ -192,29 +192,61 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
                      earliest_time: datetime) -> Alarm | None:
     """
     Checks that all event bases in <alarm_base> have occurred, and returns an appropriate
-    Alarm. Otherwise, returns None
+    Alarm. Otherwise, returns None.
 
-    :param earliest_time:
     :param dm: The source of all data known to the program
     :param alarm_base: Defines events to check
     :param criticality: default criticality for the alarm base
     :param new_id: the id to assign a potential new alarm
-    :return: An alarm object defining details of a determined event
+    :param earliest_time: The earliest time from a set of the most recently added
+    telemetry frames
+    :return: An Alarm containing all data about the recent event, or None if the check
+    is not satisfied
     """
 
     possible_events = alarm_base.event_bases
-    
-    # iterate through each of the eventbases and check if any of them are triggered.
+    first_alarm_time = None
+
+    # iterate through each of the eventbases and check if all of them were triggered.
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        alarm = strategy(dm, possible_event)
+        alarm = strategy(dm, possible_event, criticality,
+                         new_id, earliest_time)
+
+        # Determine if any of the alarms were not triggered.
+        # If so, the event failed and we return None.
         if alarm is None:
             return None
+        else:
+            # Track the first event to happen to return its time.
+            # TODO clarify if this is the correct time.
+            if first_alarm_time is None:
+                first_alarm_time = alarm.event.time
+            else:
+                first_alarm_time = min(first_alarm_time, alarm.event.time)
+
+    # If we exit the if, all events occured so we create and return an alarm.
+    description = 'All events were triggered.'  # TODO Finalize the description.
+    return create_alarm(alarm_base, new_id, first_alarm_time,
+                        description, criticality)
 
 
 def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
                      criticality: AlarmCriticality, new_id: int,
                      earliest_time: datetime) -> Alarm | None:
+    """
+    Checks that any of the event bases in <alarm_base> occurred, and returns an appropriate
+    Alarm. Otherwise, returns None.
+
+    :param dm: The source of all data known to the program
+    :param alarm_base: Defines events to check
+    :param criticality: default criticality for the alarm base
+    :param new_id: the id to assign a potential new alarm
+    :param earliest_time: The earliest time from a set of the most recently added
+    telemetry frames
+    :return: An Alarm containing all data about the recent event, or None if the check
+    is not satisfied
+    """
 
     eventbases = alarm_base.event_bases
 
@@ -222,13 +254,14 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     for eventbase in eventbases:
         strategy = get_strategy(eventbase)
         alarm = strategy(dm, eventbase, criticality, new_id, earliest_time)
+
+        # Determine if any of the alarms are triggered. If so, we create and return an alarm for it.
         if alarm is not None:
 
-            # Create a description for the alarm. #TODO Finalize this.
+            # Create a description for the alarm. #TODO Finalize the description.
             description = 'Any alarm was triggered with the following description: '
             + alarm.event.description + '.'
 
-            # if any alarm was created, the even triggered so we return an alarm.
             return create_alarm(alarm_base, new_id, alarm.event.time, description, criticality)
 
     # If we exit the loop without returning, no alarm triggered, so the 'anyevent' did not happen.
