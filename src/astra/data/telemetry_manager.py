@@ -26,12 +26,17 @@ def _read_telemetry_hdf5(filename: str) -> datetime:
         device_name = telemetry_metadata.attrs["device"]
         device = get_device(device_name)
         if device:
+            included_tags = set(h5file["telemetry"].keys())
+            excluded_tags = (
+                {tag_name for _, tag_name in get_tag_id_name(device_name)} - included_tags
+            )
+            [values_length] = {len(values) for values in h5file["telemetry"].values()}
             # get the telemetry data and use pandas to store it in a dataframe
             telemetry_data = pd.DataFrame(
                 {
                     header: values
                     for header, values in h5file["telemetry"].items()
-                }
+                } | {tag_name: [None] * values_length for tag_name in excluded_tags}
             )
 
             # convert EPOCH to datetime

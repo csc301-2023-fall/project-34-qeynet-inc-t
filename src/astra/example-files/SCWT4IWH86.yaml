@@ -1,0 +1,357 @@
+alarms:
+- criticality: WARNING
+  event:
+    description: pH rate of change in heater
+    persistence: null
+    rate_of_fall_threshold: 1.0
+    rate_of_rise_threshold: null
+    tag: MKTF7941
+    time_window: 40509.87
+    type: rate_of_change
+- criticality: LOW
+  event:
+    description: pH rate of change in valve
+    persistence: null
+    rate_of_fall_threshold: 2.0
+    rate_of_rise_threshold: null
+    tag: MKTF7941
+    time_window: 13160.96
+    type: rate_of_change
+- criticality: MEDIUM
+  event:
+    description: Concentration rate of change in reactor
+    persistence: null
+    rate_of_fall_threshold: 3.0
+    rate_of_rise_threshold: null
+    tag: MKTF7941
+    time_window: 61410.14
+    type: rate_of_change
+- criticality: HIGH
+  event:
+    description: pH rate of change in heater
+    persistence: null
+    rate_of_fall_threshold: 4.0
+    rate_of_rise_threshold: null
+    tag: MKTF7941
+    time_window: 79722.88
+    type: rate_of_change
+- criticality: MEDIUM
+  event:
+    description: Flow rate static in tank
+    persistence: 10800
+    tag: QLQX8249
+    type: static
+- criticality: CRITICAL
+  event:
+    description: Flow rate static in valve
+    persistence: 18000
+    tag: QLQX8249
+    type: static
+- criticality: HIGH
+  event:
+    description: Temperature threshold exceeded in reactor
+    lower_threshold: 41.28
+    persistence: null
+    tag: VZZD7230
+    type: threshold
+    upper_threshold: 44.72
+- criticality: CRITICAL
+  event:
+    description: Level threshold exceeded in valve
+    lower_threshold: 40.85
+    persistence: null
+    tag: VZZD7230
+    type: threshold
+    upper_threshold: 45.15
+- criticality: WARNING
+  event:
+    description: Concentration predefined value reached in heater
+    persistence: null
+    setpoint: 468.99999999999994
+    tag: LESL0154
+    type: setpoint
+- criticality: HIGH
+  event:
+    description: Pressure event sequence in heater
+    events:
+    - description: Flow rate static in valve
+      persistence: 18000
+      tag: QLQX8249
+      type: static
+    - description: Flow rate static in tank
+      persistence: 10800
+      tag: QLQX8249
+      type: static
+    - description: pH rate of change in valve
+      persistence: null
+      rate_of_fall_threshold: 2.0
+      rate_of_rise_threshold: null
+      tag: MKTF7941
+      time_window: 13160.96
+      type: rate_of_change
+    - description: Level threshold exceeded in valve
+      lower_threshold: 40.85
+      persistence: null
+      tag: VZZD7230
+      type: threshold
+      upper_threshold: 45.15
+    - description: pH rate of change in heater
+      persistence: null
+      rate_of_fall_threshold: 1.0
+      rate_of_rise_threshold: null
+      tag: MKTF7941
+      time_window: 40509.87
+      type: rate_of_change
+    - description: Concentration rate of change in reactor
+      persistence: null
+      rate_of_fall_threshold: 3.0
+      rate_of_rise_threshold: null
+      tag: MKTF7941
+      time_window: 61410.14
+      type: rate_of_change
+    - description: Concentration predefined value reached in heater
+      persistence: null
+      setpoint: 468.99999999999994
+      tag: LESL0154
+      type: setpoint
+    - description: pH rate of change in heater
+      persistence: null
+      rate_of_fall_threshold: 4.0
+      rate_of_rise_threshold: null
+      tag: MKTF7941
+      time_window: 79722.88
+      type: rate_of_change
+    intervals:
+    - - 0.0
+      - null
+    - - 0.0
+      - null
+    - - 0.0
+      - null
+    - - 0.0
+      - null
+    - - 0.0
+      - null
+    - - 0.0
+      - null
+    - - 0.0
+      - null
+    persistence: null
+    tags:
+    - LESL0154
+    - MKTF7941
+    - QLQX8249
+    - VZZD7230
+    type: sequence_of_events
+metadata:
+  comments: ''
+  commission: '2007-04-10 20:39:13'
+  description: Device L.
+  device: SCWT4IWH86
+  license: All Rights Reserved
+  manufacturer: QEYnet Inc.
+  model: b-s-rev17
+  modified: '2023-11-09 05:14:30'
+  n_alarms: '10'
+  n_tags: '25'
+  owner: QEYnet Inc.
+  software: 0.12.0
+  version: '1.1'
+tags:
+- SLDP8454:
+    description: High-precision power regulating gateway
+    display_units: null
+    dtype: bool
+    setpoint: false
+- NYCT7922:
+    description: Smart optics module
+    display_units: null
+    dtype: bool
+    setpoint: false
+- ZYJD2316:
+    description: Industrial network mode
+    display_units:
+      constant: 0
+      description: femto counts
+      multiplier: 1000000000000000.0
+      symbol: fcount
+    dtype: int
+    setpoint: 753
+- ROGN3932:
+    description: Advanced laser interface
+    display_units:
+      constant: 0
+      description: milli second
+      multiplier: 1000.0
+      symbol: ms
+    dtype: float
+    setpoint: 2.12
+- HUMS5024:
+    description: Integrated laser module B
+    display_units: null
+    dtype: bool
+    setpoint: false
+- RDOW3612:
+    description: Robust network mode
+    display_units: null
+    dtype: bool
+    setpoint: false
+- ELYG2567:
+    description: Industrial logging mode
+    display_units:
+      constant: 0
+      description: cubic deci metre per second
+      multiplier: 1000.0
+      symbol: "dm\xB3/s"
+    dtype: float
+    setpoint: -9730000.0
+- FBTI7045:
+    description: High-precision software mode
+    display_units: null
+    dtype: bool
+    setpoint: true
+- WWXR2372:
+    description: Industrial network module
+    display_units:
+      constant: 0
+      description: atto candela
+      multiplier: 1.0e+18
+      symbol: acd
+    dtype: float
+    setpoint: 15000.0
+- QNXZ1633:
+    description: Robust detector sensor
+    display_units:
+      constant: 0
+      description: giga bytes
+      multiplier: 8.0e-09
+      symbol: GB
+    dtype: int
+    setpoint: 50
+- VZZD7230:
+    description: Automated logging sensor
+    display_units:
+      constant: 0
+      description: centi volt
+      multiplier: 100.0
+      symbol: cV
+    dtype: int
+    setpoint: 43
+- TQBG5237:
+    description: High-precision logging module Lite
+    display_units:
+      constant: 0
+      description: mega hertz
+      multiplier: 1.0e-06
+      symbol: MHz
+    dtype: float
+    setpoint: -126000.0
+- MKTF7941:
+    description: Industrial software mode
+    display_units:
+      constant: 0
+      description: mega gram
+      multiplier: 0.001
+      symbol: Mg
+    dtype: float
+    setpoint: -8.54
+- XASE9462:
+    description: Smart detector system
+    display_units:
+      constant: 0
+      description: joule
+      multiplier: 1
+      symbol: J
+    dtype: int
+    setpoint: 571
+- ZNXC6884:
+    description: Robust power regulating system
+    display_units:
+      constant: 0
+      description: kilo counts
+      multiplier: 0.001
+      symbol: kcount
+    dtype: int
+    setpoint: 860
+- PPRL7636:
+    description: Automated network monitor Plus
+    display_units: null
+    dtype: bool
+    setpoint: true
+- LESL0154:
+    description: Smart detector monitor
+    display_units:
+      constant: 0
+      description: hecto gram
+      multiplier: 10.0
+      symbol: hg
+    dtype: float
+    setpoint: 463.99999999999994
+- YFET0079:
+    description: Robust detector controller
+    display_units:
+      constant: 0
+      description: exa kelvin
+      multiplier: 1.0e-18
+      symbol: EK
+    dtype: float
+    setpoint: -8080000.0
+- QLQX8249:
+    description: Industrial detector system
+    display_units:
+      constant: 0
+      description: pico bits
+      multiplier: 1000000000000.0
+      symbol: pb
+    dtype: float
+    setpoint: 432.0
+- EVAH6879:
+    description: Smart electronics system
+    display_units: null
+    dtype: bool
+    setpoint: false
+- JIIO2951:
+    description: Integrated power regulating sensor
+    display_units:
+      constant: 0
+      description: pico mole
+      multiplier: 1000000000000.0
+      symbol: pmol
+    dtype: float
+    setpoint: null
+- BJLN7677:
+    description: Smart software sensor X
+    display_units:
+      constant: 0
+      description: centi metre
+      multiplier: 100.0
+      symbol: cm
+    dtype: float
+    setpoint: 3.73
+- FJPW4793:
+    description: Advanced logging gateway
+    display_units:
+      constant: 0
+      description: hecto second
+      multiplier: 0.01
+      symbol: hs
+    dtype: float
+    setpoint: -67.8
+- KGVN3577:
+    description: Integrated detector interface
+    display_units:
+      constant: 0
+      description: atto candela
+      multiplier: 1.0e+18
+      symbol: acd
+    dtype: float
+    setpoint: -899000.0
+- XPQB8096:
+    description: Robust network monitor Pro
+    display_units:
+      constant: 0
+      description: nano ampere
+      multiplier: 1000000000.0
+      symbol: nA
+    dtype: float
+    setpoint: -3000.0

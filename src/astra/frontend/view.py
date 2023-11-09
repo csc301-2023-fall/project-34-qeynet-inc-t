@@ -2,17 +2,25 @@
 This file holds the view class that will be run in main.py
 """
 
-from tkinter import filedialog, ttk, Tk, Label
+import pathlib
+import sys
+from datetime import datetime
 from tkinter import Button, Entry, Frame, LabelFrame, Toplevel
 from tkinter import CENTER, NO, END
 from tkinter import StringVar
+from tkinter import filedialog, messagebox, ttk, Tk, Label
 from tkinter.ttk import Treeview
 
-from .view_model import DashboardViewModel
+from astra.data import config_manager
+from astra.data.data_manager import DataManager
 from .view_draw_functions import draw_frameview
-from typing import List
+from .view_model import DashboardViewModel
 
-from ..data.data_manager import DataManager
+config_path = filedialog.askopenfilename(title='Select Config File')
+if not config_path:
+    sys.exit()
+config_manager.read_config(config_path)
+device_name = pathlib.Path(config_path).stem
 
 
 class View(Tk):
@@ -28,7 +36,7 @@ class View(Tk):
         When the view is initialized, all the frames and tables
         are loaded into the view
         """
-        self._dm = DataManager.from_device_name('DEVICE')
+        self._dm = DataManager.from_device_name(device_name)
 
         # Root frame of tkinter
         super().__init__()
@@ -70,7 +78,7 @@ class View(Tk):
                command=self.update_time).grid(row=0, column=4)
 
         self.dashboard_current_frame_number = 0
-        self.dashboard_frame_navigation_text = StringVar()
+        self.dashboard_frame_navigation_text = StringVar(value='Frame --- at ---')
 
         dashboard_frame_navigation_row = Frame(dashboard_frame)
         dashboard_frame_navigation_row.grid(sticky='W', row=2, column=0)
@@ -146,6 +154,12 @@ class View(Tk):
 
         draw_frameview(frameview_frame, frameview_descriptions)
 
+        if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
+            self.dashboard_view_model.toggle_start_time(None)
+            self.dashboard_view_model.toggle_end_time(None)
+            self.dashboard_view_model.choose_frame(self._dm, 0)
+            self.refresh_table()
+
     def toggle_tag(self) -> None:
         """
         This method is the toggle action for the tag header
@@ -175,11 +189,11 @@ class View(Tk):
         This method specifies what happens if a double click were to happen
         in the dashboard table
         """
-        curItem = self.dashboard_table.focus()
+        cur_item = self.dashboard_table.focus()
 
         region = self.dashboard_table.identify("region", event.x, event.y)
         if region != "heading":
-            self.openNewWindow(self.dashboard_table.item(curItem)['values'])
+            self.open_new_window(self.dashboard_table.item(cur_item)['values'])
 
     def refresh_table(self) -> None:
         """
@@ -192,28 +206,31 @@ class View(Tk):
         for item in self.dashboard_view_model.get_table_entries():
             self.dashboard_table.insert("", END, values=tuple(item))
 
-    def openNewWindow(self, values: List[str]) -> None:
+    def open_new_window(self, values: list[str]) -> None:
         """
         This method opens a new window to display one row of telemetry data
 
         Args:
-            values (List[str]): the values to be displayed in the
+            values (list[str]): the values to be displayed in the
                 new window
         """
-        newWindow = Toplevel(self)
-        newWindow.title("New Window")
-        newWindow.geometry("200x200")
+        new_window = Toplevel(self)
+        new_window.title("New Window")
+        new_window.geometry("200x200")
         for column in values:
-            Label(newWindow, text=column).pack()
+            Label(new_window, text=column).pack()
 
     def open_file(self):
         """
         This method specifies what happens when the add data button
         is clicked
         """
-        file = filedialog.askopenfilename()
+        file = filedialog.askopenfilename(title='Select Telemetry File')
 
-        self.dashboard_view_model.load_file(self._dm, 'telemetry0.h5')
+        if not file:
+            return
+
+        self.dashboard_view_model.load_file(self._dm, file)
         self.refresh_table()
 
         self.dashboard_view_model.toggle_start_time(None)
@@ -222,24 +239,65 @@ class View(Tk):
         self.refresh_table()
 
     def update_time(self):
-        # Dummy for testing in the extreme short term
-        self.dashboard_view_model.toggle_start_time(None)
-        self.dashboard_view_model.toggle_end_time(None)
+        input_start_time = self.start_time.get()
+        input_end_time = self.end_time.get()
+        if input_start_time:
+            try:
+                start_time = datetime.strptime(input_start_time, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                messagebox.showwarning(
+                    title='Invalid start time',
+                    message=(
+                        'Start time must either be empty or a valid datetime in the format '
+                        'YYYY-MM-DD hh:mm:ss.'
+                    )
+                )
+                return
+        else:
+            start_time = None
+        if input_end_time:
+            try:
+                end_time = datetime.strptime(input_end_time, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                messagebox.showwarning(
+                    title='Invalid end time',
+                    message=(
+                        'End time must either be empty or a valid datetime in the format '
+                        'YYYY-MM-DD hh:mm:ss.'
+                    )
+                )
+                return
+        else:
+            end_time = None
+        if self._dm.get_telemetry_data(start_time, end_time, {}).num_telemetry_frames == 0:
+            messagebox.showinfo(
+                title='No telemetry frames',
+                message='The chosen time range does not have any telemetry frames.'
+            )
+            return
+        self.dashboard_view_model.toggle_start_time(start_time)
+        self.dashboard_view_model.toggle_end_time(end_time)
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_table()
 
     def first_frame(self):
+        if self.dashboard_view_model.get_num_frames() == 0:
+            return
         self.dashboard_current_frame_number = 0
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_table()
 
     def last_frame(self):
+        if self.dashboard_view_model.get_num_frames() == 0:
+            return
         last = self.dashboard_view_model.get_num_frames() - 1
         self.dashboard_current_frame_number = last
         self.dashboard_view_model.choose_frame(self._dm, last)
         self.refresh_table()
 
     def decrement_frame(self):
+        if self.dashboard_view_model.get_num_frames() == 0:
+            return
         if self.dashboard_current_frame_number > 0:
             self.dashboard_current_frame_number -= 1
         index = self.dashboard_current_frame_number
@@ -247,6 +305,8 @@ class View(Tk):
         self.refresh_table()
 
     def increment_frame(self):
+        if self.dashboard_view_model.get_num_frames() == 0:
+            return
         last = self.dashboard_view_model.get_num_frames() - 1
         if self.dashboard_current_frame_number < last:
             self.dashboard_current_frame_number += 1

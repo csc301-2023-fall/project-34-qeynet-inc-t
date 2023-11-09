@@ -5,7 +5,7 @@ from typing import Iterable
 from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
-from astra.data.parameters import Parameter, ParameterValue, Tag
+from astra.data.parameters import DisplayUnit, Parameter, ParameterValue, Tag
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -132,9 +132,9 @@ class DashboardHandler(UseCaseHandler):
 
     @classmethod
     def _eval_param_value(cls, tag_parameter: Parameter,
-                          tag_data: ParameterValue) -> float | int | bool | None:
+                          tag_data: ParameterValue | None) -> ParameterValue | None:
         """
-        Converts the raw <parameter_data> into its true value using the
+        Converts the raw <tag_data> into its true value using the
         parameter multiplier and constant
 
         :param tag_parameter: Parameter data for the relevant tag
@@ -147,6 +147,21 @@ class DashboardHandler(UseCaseHandler):
             multiplier = tag_parameter.display_units.multiplier
             constant = tag_parameter.display_units.constant
             return tag_data * multiplier + constant
+
+    @classmethod
+    def _format_param_value(cls, tag_data: ParameterValue | None, units: DisplayUnit | None) -> str:
+        """
+        Formats the <tag_data> with the given units
+
+        :param tag_data: The (converted) data to display with units
+        :param units: Units to display, or None for simple stringification
+        :return: A string with the data and units appropriately formatted
+        """
+        if tag_data is None:
+            return 'None'
+        if units is None:
+            return str(tag_data)
+        return f'{tag_data} {units.symbol}'
 
     @classmethod
     def _add_rows_to_output(cls, input_tags: set, dm: DataManager, td: TelemetryData,
@@ -182,17 +197,8 @@ class DashboardHandler(UseCaseHandler):
             tag_setpoint_value = cls._eval_param_value(
                 tag_parameters, raw_tag_setpoint_value)
 
-            if type(tag_data) is bool:
-                tag_value = f'{tag_data}'
-                tag_setpoint = f'{tag_setpoint_value}'
-            elif raw_tag_setpoint_value is None:
-                unit_symbol = tag_parameters.display_units.symbol
-                tag_value = f'{tag_data} {unit_symbol}'
-                tag_setpoint = f'{tag_setpoint_value}'
-            else:
-                unit_symbol = tag_parameters.display_units.symbol
-                tag_value = f'{tag_data} {unit_symbol}'
-                tag_setpoint = f'{tag_setpoint_value} {unit_symbol}'
+            tag_value = cls._format_param_value(tag_data, tag_parameters.display_units)
+            tag_setpoint = cls._format_param_value(tag_setpoint_value, tag_parameters.display_units)
 
             include_tag = tag in input_tags
             if include_tag:
