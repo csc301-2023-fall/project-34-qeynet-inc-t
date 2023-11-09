@@ -4,7 +4,6 @@ from typing import Any
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn
 from astra.data.data_manager import DataManager
-from ..frontend.model import Model
 
 # Not sure if this is necessary anymore, request receivers should just be some modules?
 
@@ -17,7 +16,7 @@ class RequestReceiver(ABC):
     handler: UseCaseHandler
 
     @abstractmethod
-    def create(self, dm: DataManager, model: Model):
+    def create(self, dm: DataManager):
         """
         create is a method that creates a new data table.
         """
@@ -49,7 +48,7 @@ class DashboardRequestReceiver(RequestReceiver):
         self.handler = DashboardHandler()
 
     @classmethod
-    def create(cls, dm: DataManager, model: Model) -> None:
+    def create(cls, dm: DataManager) -> None:
         """
         create is a method that creates the initial data table,
         with all tags shown, no sorting applied and at the first index.
