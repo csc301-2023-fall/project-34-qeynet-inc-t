@@ -51,15 +51,18 @@ class Device(Base):
     device_description: Mapped[str | None] = mapped_column()
 
     # one-to-many relationship
-    tags: Mapped[set["Tag"]] = relationship(
+    _tags: Mapped[set["Tag"]] = relationship(
         "Tag",
-        back_populates="device",
+        back_populates="_device",
         cascade="all, delete",
         passive_deletes=True,
+        # lazy="selectin",
+        # TODO: uncomment this when we need to access the
+        #       tags outside the session
     )
-    alarms: Mapped[set["Alarm"]] = relationship(
+    _alarms: Mapped[set["Alarm"]] = relationship(
         "Alarm",
-        back_populates="device",
+        back_populates="_device",
         cascade="all, delete",
         passive_deletes=True,
     )
@@ -88,15 +91,15 @@ class Tag(Base):
     device_id: Mapped[int] = mapped_column(
         ForeignKey("Device.device_id", ondelete="CASCADE")
     )
-    device: Mapped["Device"] = relationship(back_populates="tags")
+    _device: Mapped["Device"] = relationship(back_populates="_tags")
 
     tag_name: Mapped[str]
     tag_parameter: Mapped[dict] = mapped_column(JSON)
 
     # one-to-many relationship
-    data: Mapped[list["Data"]] = relationship(
+    _data: Mapped[list["Data"]] = relationship(
         "Data",
-        back_populates="tag",
+        back_populates="_tag",
         cascade="all, delete",
         passive_deletes=True,
     )
@@ -129,7 +132,7 @@ class Alarm(Base):
     device_id: Mapped[int] = mapped_column(
         ForeignKey("Device.device_id", ondelete="CASCADE")
     )
-    device: Mapped["Device"] = relationship(back_populates="alarms")
+    _device: Mapped["Device"] = relationship(back_populates="_alarms")
 
     alarm_criticality: Mapped[str]
     alarm_data: Mapped[dict] = mapped_column(JSON)
@@ -158,7 +161,7 @@ class Data(Base):
     tag_id: Mapped[int] = mapped_column(
         ForeignKey("Tag.tag_id", ondelete="CASCADE")
     )
-    tag: Mapped["Tag"] = relationship(back_populates="data")
+    _tag: Mapped["Tag"] = relationship(back_populates="_data")
 
     timestamp: Mapped[datetime]
     value: Mapped[float | None]
