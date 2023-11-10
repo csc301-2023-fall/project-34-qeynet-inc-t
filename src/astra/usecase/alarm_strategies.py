@@ -1,13 +1,16 @@
 import datetime
+from datetime import datetime
 
 from astra.data.alarms import *
 from astra.data.data_manager import DataManager
 from .alarm_checker import get_strategy
 from .utils import eval_param_value, get_tag_param_value, get_tag_params
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Tuple, List
 from astra.data.telemetry_data import TelemetryData
 
 next_id = EventID(0)
+
+# TODO: if alarm descriptions are "formulaic", extract helper method for making alarms from list
 
 
 def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime, datetime):
@@ -54,7 +57,7 @@ def create_alarm(event_base: EventBase, time: datetime, description: str,
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
-                comparison: ParameterValue) -> (list[tuple[bool, datetime]], list[bool]):
+                comparison: ParameterValue) -> (list[tuple[bool, datetime]], list[int]):
     """
     Checks all telemetry frames in <td> where <condition> returns true
     Note: This should only be used for conditions where only 1 tag is relevant
@@ -67,7 +70,7 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     :return: A list where each index i refers to the i-th telemetry frame in TelemetryData,
     the boolean in the tuple refers to the associated return from <condition>, and the datetime
     refers to the associated time of the telemetry frame, and a list of indexes where the condition
-    was False
+    was False. Also returns a list of indexes where conditions where not mot
     """
     cond_met = []
     false_index = []
@@ -87,7 +90,7 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
 
 
 def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
-                      false_indexes: list[bool]) -> list[datetime]:
+                      false_indexes: list[int]) -> list[int]:
     """
     Checks if there exists any sequence of booleans amongst tuples in <tuples>
     where all booleans are true and associated datetimes are every datetime in
@@ -108,7 +111,7 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
         first_time = tuples[0][1]
         last_time = tuples[len(tuples) - 1][1]
         if last_time - first_time >= persistence:
-            return [first_time]
+            return [0]
         return []
     else:
         times = []
@@ -130,7 +133,7 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
                 first_time = tuples[first_index][1]
                 last_time = tuples[last_index][1]
                 if last_time - first_time >= persistence:
-                    times.append(first_time)
+                    times.append(first_index)
         return times
 
 
@@ -140,7 +143,7 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     ...
 
 
-def repeat_checker(td: TelemetryData, tag: Tag) -> list[tuple[bool, datetime]]:
+def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, datetime]], list[int]]:
     """
     Checks all the frames in <td> and returns a list of tuples where each tuple 
     contains a boolean indicating if the value of <tag> is the same as the previous
@@ -154,6 +157,7 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> list[tuple[bool, datetime]]:
 
     num_frames = td.num_telemetry_frames
     sequences_of_static = []
+    false_index = []
     i = 1
 
     # First frame is vacuously a sequence of static values
@@ -170,8 +174,9 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> list[tuple[bool, datetime]]:
             sequences_of_static.append((True, curr_frame.time))
         else:
             sequences_of_static.append((False, curr_frame.time))
+            false_index.append(i)
 
-    return sequences_of_static
+    return sequences_of_static, false_index
 
 
 def static_check(dm: DataManager, alarm_base: StaticEventBase,
@@ -188,8 +193,10 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
-    :return: An Alarm containing all data about the recent event, or None if the check
-    is not satisfied
+    :return:  A list of all alarms that should be newly raised, and tuple
+    where each i-th element refers to the i-th telemetry frame in the appropriate
+    timeframe, where the first element indicates if the alarm condition was met, and
+    the second indicates the associated time
     """
 
     # Calculating the range of time that needs to be checked
@@ -200,16 +207,20 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
 
     # Check which frames share the same value as the previous frame.
-    cond_met = repeat_checker(telemetry_data, tag)
+    cond_met, false_indexes = repeat_checker(telemetry_data, tag)
 
-    first_index = persistence_check(cond_met, sequence)
-    if first_index == -1:
-        return None
-    relevant_frame = telemetry_data.get_telemetry_frame(first_index)
-    timestamp = relevant_frame.time
-    description = "static alarm triggered"
+    alarm_indexes = persistence_check(cond_met, sequence, false_indexes)
+    if not alarm_indexes:
+        return [], cond_met
+    alarms = []
+    for index in alarm_indexes:
+        relevant_frame = telemetry_data.get_telemetry_frame(index)
+        timestamp = relevant_frame.time
+        description = "static alarm triggered"
+        new_alarm = create_alarm(alarm_base, timestamp, description, criticality)
+        alarms.append(new_alarm)
 
-    return create_alarm(alarm_base, timestamp, description, criticality)
+    return alarms, cond_met
 
 
 def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
@@ -243,8 +254,10 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
-    :return: An Alarm containing all data about the recent event, or None if the check
-    is not satisfied
+    :return: A list of all alarms that should be newly raised, and tuple
+    where each i-th element refers to the i-th telemetry frame in the appropriate
+    timeframe, where the first element indicates if the alarm condition was met, and
+    the second indicates the associated time
     """
 
     first_time, sequence = find_first_time(alarm_base, earliest_time)
@@ -256,14 +269,17 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     # Checking which frames have tag values at setpoint and indicating it in <cond_met> in order
     cond_met, false_indexes = check_conds(telemetry_data, tag, setpoint_cond, [setpoint])
 
-    first_index = persistence_check(cond_met, sequence, false_indexes)
-    if not first_index:
-        return None
-    relevant_frame = telemetry_data.get_telemetry_frame(first_index)
-    timestamp = relevant_frame.time
-    description = "setpoint value recorded"
-
-    return create_alarm(alarm_base, timestamp, description, criticality)
+    first_indexes = persistence_check(cond_met, sequence, false_indexes)
+    if not first_indexes:
+        return [], cond_met
+    alarms = []
+    for index in first_indexes:
+        relevant_frame = telemetry_data.get_telemetry_frame(index)
+        timestamp = relevant_frame.time
+        description = "setpoint value recorded"
+        new_alarm = create_alarm(alarm_base, timestamp, description, criticality)
+        alarms.append(new_alarm)
+    return alarms, cond_met
 
 
 def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
