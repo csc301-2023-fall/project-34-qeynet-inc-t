@@ -26,10 +26,8 @@ def get_strategy(base: EventBase) -> Callable:
             return sequence_of_events_check
         case AllEventBase():
             return all_events_check
-        case AnyEventBase():
-            return any_events_check
         case _:
-            return xor_events_check
+            return any_events_check
 
 
 def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]],

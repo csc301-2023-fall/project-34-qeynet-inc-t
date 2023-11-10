@@ -340,88 +340,10 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
         if alarm is not None:
 
             # Create a description for the alarm. #TODO Finalize the description.
-            description = 'Any alarm was triggered with the following description: '
-            + alarm.event.description + '.'
-
+            description = (f'Any alarm was triggered with the following description: '
+                           f'{alarm.event.description}.')
             return create_alarm(alarm_base, new_id, alarm.event.time, description, criticality)
 
     # If we exit the loop without returning, no alarm triggered, so the 'anyevent' did not happen.
     return None
 
-
-def xor_events_check(dm: DataManager, alarm_base: XOREventBase,
-                     criticality: AlarmCriticality, new_id: int,
-                     earliest_time: datetime) -> Alarm | None:
-    """
-    Checks that only one of the event bases in <alarm_base> occurred, and returns an appropriate
-    Alarm. Otherwise, returns None.
-
-    :param dm: The source of all data known to the program
-    :param alarm_base: Defines events to check
-    :param criticality: default criticality for the alarm base
-    :param new_id: the id to assign a potential new alarm
-    :param earliest_time: The earliest time from a set of the most recently added
-    telemetry frames
-    :return: An Alarm containing all data about the recent event, or None if the check
-    is not satisfied
-    """
-    eventbases = alarm_base.event_bases
-    current_alarm = None
-
-    # iterate through each of the eventbases and check if any of them are triggered.
-    for eventbase in eventbases:
-        strategy = get_strategy(eventbase)
-        alarm = strategy(dm, eventbase, criticality, new_id, earliest_time)
-
-        # Determine if any of the alarms are triggered.
-        if alarm is not None:
-            # Determine if an alarm was triggered previously.
-            if current_alarm is None:
-                # No other alarm has been triggered, so we create one.
-
-                # Create a description for the alarm. #TODO Finalize the description.
-                description = 'A XOR alarm was triggered with the following description: '
-                + alarm.event.description + '.'
-                current_alarm = create_alarm(alarm_base, new_id, alarm.event.time,
-                                             description, criticality)
-
-            else:
-                # If we have already found an alarm and we find another, we return None.
-                return None
-
-        # reset the alarm to None
-        alarm = None
-
-    # When we exit the loop, current_alarm will be None if no alarm was triggered.
-    # Or it will be the one alarm that was triggered.
-    return current_alarm
-
-
-def not_events_check(dm: DataManager, alarm_base: NotEventBase,
-                     criticality: AlarmCriticality, new_id: int,
-                     earliest_time: datetime) -> Alarm | None:
-    """
-    Checks that none event bases in <alarm_base> have occurred, and returns an appropriate
-    Alarm. Otherwise, returns None.
-
-    :param dm: The source of all data known to the program
-    :param alarm_base: Defines events to check
-    :param criticality: default criticality for the alarm base
-    :param new_id: the id to assign a potential new alarm
-    :param earliest_time: The earliest time from a set of the most recently added
-    telemetry frames
-    :return: An Alarm containing all data about the recent event, or None if the check
-    is not satisfied
-    """
-
-    strategy = get_strategy(alarm_base)
-    alarm = strategy(dm, alarm_base, criticality,
-                     new_id, earliest_time)
-
-    # Determine if the alarm was triggered.
-    if alarm is not None:
-        return None
-    else:
-        # If the alarm did not trigger we create and return a 'not-alarm'.
-        description = 'None of the events were triggered.'
-        return create_alarm(alarm_base, new_id, earliest_time, description, criticality)
