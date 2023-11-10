@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Iterable
-
 from .use_case_handlers import UseCaseHandler
-from .dashboard_handler import DashboardHandler, TableReturn
+from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
 from ..data.parameters import Tag
 
@@ -45,10 +44,13 @@ class DashboardRequestReceiver(RequestReceiver):
     # TODO what is the type of the table that we are receiving?
     # TODO where do we send the data.
 
+    filters = None
     handler = DashboardHandler
 
-    def __init__(self):
-        self.handler = DashboardHandler()
+    @classmethod
+    def __init__(cls):
+        cls.handler = DashboardHandler()
+        cls.filters = DashboardFilters(None, None, None, None, None)
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
@@ -62,23 +64,21 @@ class DashboardRequestReceiver(RequestReceiver):
         all_tags = dm.tags
 
         # Add all tags to the shown tags by default.
-        cls.handler.set_shown_tag(all_tags)
+        cls.filters.tags = all_tags
 
         # Set the index to the first index by default.
-        try:
-            cls.handler.index
-        except NameError:
-            cls.handler.set_index(0)
+        if cls.filters.index is None:
+            cls.filters.index = 0
 
         # Create the initial table.
-        return cls.handler.get_data(dm)
+        return cls.handler.get_data(dm, cls.filters)
 
     @classmethod
     def update(cls, previous_data: TableReturn, dm: DataManager = None):
         """
         update is a method that updates the currently represented information
         """
-        cls.handler.update_data(previous_data)
+        cls.handler.update_data(previous_data, cls.filters)
 
     @classmethod
     def change_index(cls, index: int) -> bool:
@@ -91,12 +91,10 @@ class DashboardRequestReceiver(RequestReceiver):
         :returns: True if the index was successfully changed and False otherwise.
         """
 
-        # Liam's Note: due to change in interface, i've removed the index check
-
-        cls.handler.set_index(index)
+        cls.filters.index = index
 
         # Determine if we can update the view without issues.
-        if cls.handler.tags is None:
+        if cls.filters.tags is None:
             return False
         return True
 
@@ -112,8 +110,8 @@ class DashboardRequestReceiver(RequestReceiver):
         """
 
         # Determine if we can add the tag to the set of tags that we are viewing.
-        if add not in cls.handler.tags:
-            cls.handler.add_shown_tag(add)
+        if add not in cls.filters.tags:
+            cls.filters.tags.append(add)
             return True
         else:
             return False  # Tag was already in the set of tags that we are viewing.
@@ -127,7 +125,7 @@ class DashboardRequestReceiver(RequestReceiver):
 
         :param tags: a set of tags to show
         """
-        cls.handler.set_shown_tag(tags)
+        cls.filters.tags = tags
 
     @classmethod
     def remove_shown_tag(cls, remove: str) -> bool:
@@ -139,8 +137,8 @@ class DashboardRequestReceiver(RequestReceiver):
         :return: True if the tag was successfully removed and False otherwise.
         """
         # Determine if we can remove the tag from the set of tags that we are viewing.
-        if remove in cls.handler.tags:
-            cls.handler.remove_shown_tag(remove)
+        if remove in cls.filters.tags:
+            cls.filters.remove(remove)
             return True
         else:
             return False  # Tag was not in the set of tags that we are viewing.
@@ -167,7 +165,7 @@ class DashboardRequestReceiver(RequestReceiver):
             return False
 
         # both if statements failed, so the filter is valid.
-        cls.handler.set_sort(sort)
+        cls.filters.sort = sort
         return True
 
     @classmethod
@@ -177,7 +175,7 @@ class DashboardRequestReceiver(RequestReceiver):
 
         :param start_time: the datetime to be set
         """
-        cls.handler.set_start_time(start_time)
+        cls.filters.start_time = start_time
 
     @classmethod
     def set_end_time(cls, end_time: datetime):
@@ -186,7 +184,7 @@ class DashboardRequestReceiver(RequestReceiver):
 
         :param end_time: the datetime to be set
         """
-        cls.handler.set_end_time(end_time)
+        cls.filters.end_time = end_time
 
 
 class DataRequestReceiver(RequestReceiver):
