@@ -7,6 +7,8 @@ from .utils import eval_param_value, get_tag_param_value, get_tag_params
 from typing import Callable, Iterable
 from astra.data.telemetry_data import TelemetryData
 
+next_id = EventID(0)
+
 
 def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime, datetime):
     """Finds the first time to check for persistence and returns it, along with
@@ -32,20 +34,21 @@ def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime
     return first_time, sequence
 
 
-def create_alarm(event_base: EventBase, id: int, time: datetime, description: str,
+def create_alarm(event_base: EventBase, time: datetime, description: str,
                  criticality: AlarmCriticality) -> Alarm:
     """
     Creates and returns an Alarm with the given attributes.
 
     :param event_base: The event base for the alarm.
-    :param id: The id to give the event that triggered the alarm.
     :param time: The time at which the event occured.
     :param description: The description of the event that triggered the alarm.
     :param criticality: The criticality of this alarm.
     :return: An Alarm with the given attributes.
     """
+    global next_id
 
-    event = Event(event_base, id, time, description)
+    event = Event(event_base, next_id, time, description)
+    next_id += 1
 
     return Alarm(event, criticality)
 
@@ -72,7 +75,7 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     for i in range(num_frames):
         telemetry_frame = td.get_telemetry_frame(i)
 
-        # Note: I believe we don't need to covnert to true value because both sides of
+        # Note: I believe we don't need to convert to true value because both sides of
         # comparison would be applied the same transformation anyway
         raw_parameter_value = get_tag_param_value(i, tag, td)
         cond_frame_met = condition(raw_parameter_value, comparison)
@@ -83,8 +86,8 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     return cond_met, false_index
 
 
-def forward_checking(tuples: list[tuple[bool, datetime]], persistence,
-                     false_indexes: list[bool]) -> list[datetime]:
+def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
+                      false_indexes: list[bool]) -> list[datetime]:
     """
     Checks if there exists any sequence of booleans amongst tuples in <tuples>
     where all booleans are true and associated datetimes are every datetime in
@@ -106,6 +109,7 @@ def forward_checking(tuples: list[tuple[bool, datetime]], persistence,
         last_time = tuples[len(tuples) - 1][1]
         if last_time - first_time >= persistence:
             return [first_time]
+        return []
     else:
         times = []
         for i in range(len(false_indexes) + 1):
@@ -127,13 +131,12 @@ def forward_checking(tuples: list[tuple[bool, datetime]], persistence,
                 last_time = tuples[last_index][1]
                 if last_time - first_time >= persistence:
                     times.append(first_time)
-
         return times
 
 
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
-                         criticality: AlarmCriticality, new_id: int,
-                         earliest_time: datetime) -> Alarm | None:
+                         criticality: AlarmCriticality, earliest_time: datetime) \
+        -> (list[Alarm], list[tuple[datetime, bool]]):
     ...
 
 
@@ -143,6 +146,7 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> list[tuple[bool, datetime]]:
     contains a boolean indicating if the value of <tag> is the same as the previous
     frame, and the datetime associated with the frame.
 
+    :param tag:
     :param td: The relevant telemetry data to check.
     :return: A list of tuples where each tuple contains a boolean indicating if the value of
     <tag> is the same as the previous frame, and the datetime associated with the frame.
@@ -171,8 +175,8 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> list[tuple[bool, datetime]]:
 
 
 def static_check(dm: DataManager, alarm_base: StaticEventBase,
-                 criticality: AlarmCriticality, new_id: int,
-                 earliest_time: datetime) -> Alarm | None:
+                 criticality: AlarmCriticality, earliest_time: datetime) \
+        -> (list[Alarm], list[tuple[datetime, bool]]):
     """
     Checks if in the telemetry frames with times in the range
     (<earliest_time> - <alarm_base.persistence> -> present), there exists
@@ -182,7 +186,6 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     :param dm: All data known to the program
     :param alarm_base: Stores all parties related to the check
     :param criticality: The base criticality of the alarm
-    :param new_id: If an alarm must be raised, the id to assign it to
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
     :return: An Alarm containing all data about the recent event, or None if the check
@@ -199,19 +202,19 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     # Check which frames share the same value as the previous frame.
     cond_met = repeat_checker(telemetry_data, tag)
 
-    first_index = forward_checking(cond_met, sequence)
+    first_index = persistence_check(cond_met, sequence)
     if first_index == -1:
         return None
     relevant_frame = telemetry_data.get_telemetry_frame(first_index)
     timestamp = relevant_frame.time
     description = "static alarm triggered"
 
-    return create_alarm(alarm_base, new_id, timestamp, description, criticality)
+    return create_alarm(alarm_base, timestamp, description, criticality)
 
 
 def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
-                    criticality: AlarmCriticality, new_id: int,
-                    earliest_time: datetime) -> Alarm | None:
+                    criticality: AlarmCriticality, earliest_time: datetime) \
+        -> (list[Alarm], list[tuple[datetime, bool]]):
     ...
 
 
@@ -227,8 +230,8 @@ def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool
 
 
 def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
-                   criticality: AlarmCriticality, new_id: int,
-                   earliest_time: datetime) -> Alarm | None:
+                   criticality: AlarmCriticality, earliest_time: datetime) \
+        -> (list[Alarm], list[tuple[datetime, bool]]):
     """
     Checks if in the telemetry frames with times in the range
     (<earliest_time> - <alarm_base.persistence> -> present), there exists
@@ -238,7 +241,6 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     :param dm: All data known to the program
     :param alarm_base: Stores all parties related to the check
     :param criticality: The base criticality of the alarm
-    :param new_id: If an alarm must be raised, the id to assign it to
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
     :return: An Alarm containing all data about the recent event, or None if the check
@@ -252,27 +254,27 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     setpoint = alarm_base.setpoint
 
     # Checking which frames have tag values at setpoint and indicating it in <cond_met> in order
-    cond_met = check_conds(telemetry_data, tag, setpoint_cond, [setpoint])
+    cond_met, false_indexes = check_conds(telemetry_data, tag, setpoint_cond, [setpoint])
 
-    first_index = forward_checking(cond_met, sequence)
-    if first_index == -1:
+    first_index = persistence_check(cond_met, sequence, false_indexes)
+    if not first_index:
         return None
     relevant_frame = telemetry_data.get_telemetry_frame(first_index)
     timestamp = relevant_frame.time
     description = "setpoint value recorded"
 
-    return create_alarm(alarm_base, new_id, timestamp, description, criticality)
+    return create_alarm(alarm_base, timestamp, description, criticality)
 
 
 def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
-                             criticality: AlarmCriticality, new_id: int,
-                             earliest_time: datetime) -> Alarm | None:
+                             criticality: AlarmCriticality, earliest_time: datetime) \
+        -> (list[Alarm], list[tuple[datetime, bool]]):
     ...
 
 
 def all_events_check(dm: DataManager, alarm_base: AllEventBase,
-                     criticality: AlarmCriticality, new_id: int,
-                     earliest_time: datetime) -> Alarm | None:
+                     criticality: AlarmCriticality, earliest_time: datetime) \
+        -> (list[Alarm], list[tuple[datetime, bool]]):
     """
     Checks that all event bases in <alarm_base> have occurred, and returns an appropriate
     Alarm. Otherwise, returns None.
@@ -280,7 +282,6 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     :param dm: The source of all data known to the program
     :param alarm_base: Defines events to check
     :param criticality: default criticality for the alarm base
-    :param new_id: the id to assign a potential new alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
     :return: An Alarm containing all data about the recent event, or None if the check
@@ -293,8 +294,7 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     # iterate through each of the eventbases and check if all of them were triggered.
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        alarm = strategy(dm, possible_event, criticality,
-                         new_id, earliest_time)
+        alarm = strategy(dm, possible_event, criticality, earliest_time)
 
         # Determine if any of the alarms were not triggered.
         # If so, the event failed and we return None.
@@ -311,13 +311,12 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     # If we exit the if, all events occured so we create and return an alarm.
     # TODO Finalize the description.
     description = 'All events were triggered.'
-    return create_alarm(alarm_base, new_id, first_alarm_time,
-                        description, criticality)
+    return create_alarm(alarm_base, first_alarm_time, description, criticality)
 
 
 def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
                      criticality: AlarmCriticality, new_id: int,
-                     earliest_time: datetime) -> Alarm | None:
+                     earliest_time: datetime) -> (list[Alarm], list[tuple[datetime, bool]]):
     """
     Checks that any of the event bases in <alarm_base> occurred, and returns an appropriate
     Alarm. Otherwise, returns None.
@@ -344,7 +343,7 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
             # Create a description for the alarm. #TODO Finalize the description.
             description = (f'Any alarm was triggered with the following description: '
                            f'{alarm.event.description}.')
-            return create_alarm(alarm_base, new_id, alarm.event.time, description, criticality)
+            return create_alarm(alarm_base, alarm.event.time, description, criticality)
 
     # If we exit the loop without returning, no alarm triggered, so the 'anyevent' did not happen.
     return None

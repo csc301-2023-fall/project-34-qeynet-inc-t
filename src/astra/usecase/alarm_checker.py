@@ -2,10 +2,6 @@ from typing import Callable
 from astra.data.alarms import *
 from .alarm_strategies import *
 
-# TODO TEST THIS
-
-next_id = 0
-
 
 def get_strategy(base: EventBase) -> Callable:
     """
@@ -44,7 +40,6 @@ def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]],
     'WARNING', 'LOW', 'MEDIUM', HIGH', CRITICAL', all of which map to
     a list
     """
-    global next_id
 
     alarm_bases = dm.alarm_bases
     for alarm_base in alarm_bases:
@@ -52,8 +47,7 @@ def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]],
         criticality = alarm_base.criticality
 
         strategy = get_strategy(base)
-        alarm = strategy(dm, base, criticality, next_id, earliest_time)
+        alarm = strategy(dm, base, criticality, earliest_time)
         if alarm is not None:
-            next_id += 1
             criticality = alarm.criticality
             alarms[criticality].append(alarm)
