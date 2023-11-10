@@ -31,6 +31,7 @@ def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime
     first_time = earliest_time - subtract_time
     return first_time, sequence
 
+
 def create_alarm(event_base: EventBase, id: int, time: datetime, description: str,
                  criticality: AlarmCriticality) -> Alarm:
     """
@@ -50,7 +51,7 @@ def create_alarm(event_base: EventBase, id: int, time: datetime, description: st
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
-                comparison: list[ParameterValue]) -> list[tuple[bool, datetime]]:
+                comparison: ParameterValue) -> (list[tuple[bool, datetime]], list[bool]):
     """
     Checks all telemetry frames in <td> where <condition> returns true
     Note: This should only be used for conditions where only 1 tag is relevant
@@ -58,13 +59,15 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     :param tag: The tag to use for checking conditions
     :param td: Contains all telemetry frames to examine
     :param condition: A function that returns a boolean with parameters
-                      (ParameterValue, list[ParameterValue]
+                      (ParameterValue, ParameterValue
     :param comparison: A list of all ParameterValues to be used as a point of comparison
     :return: A list where each index i refers to the i-th telemetry frame in TelemetryData,
     the boolean in the tuple refers to the associated return from <condition>, and the datetime
-    refers to the associated time of the telemetry frame
+    refers to the associated time of the telemetry frame, and a list of indexes where the condition
+    was False
     """
     cond_met = []
+    false_index = []
     num_frames = td.num_telemetry_frames
     for i in range(num_frames):
         telemetry_frame = td.get_telemetry_frame(i)
@@ -72,12 +75,16 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
         # Note: I believe we don't need to covnert to true value because both sides of
         # comparison would be applied the same transformation anyway
         raw_parameter_value = get_tag_param_value(i, tag, td)
+        cond_frame_met = condition(raw_parameter_value, comparison)
 
-        cond_met.append((condition(raw_parameter_value, comparison), telemetry_frame.time))
-    return cond_met
+        cond_met.append((cond_frame_met, telemetry_frame.time))
+        if not cond_frame_met:
+            false_index.append(i)
+    return cond_met, false_index
 
 
-def forward_checking(tuples: list[tuple[bool, datetime]], persistence) -> int:
+def forward_checking(tuples: list[tuple[bool, datetime]], persistence,
+                     false_indexes: list[bool]) -> list[datetime]:
     """
     Checks if there exists any sequence of booleans amongst tuples in <tuples>
     where all booleans are true and associated datetimes are every datetime in
@@ -86,46 +93,42 @@ def forward_checking(tuples: list[tuple[bool, datetime]], persistence) -> int:
     :param tuples: Contains tuples indicating whether an alarm condition was
     met, and the time associated with the telemetry frame 
     :param persistence: How much time in seconds the alarm condition must be met for
-    :return: The first index in the last sequence satisfying the persistence check. Returns
+    :param false_indexes: Lists all indexes in <tuples> where the first element is false
+    :return: The first index in the all sequences satisfying the persistence check. Returns
     -1 if no such sequence exists
     
-    PRECONDITION: <tuples is sorted by ascending datetime
+    PRECONDITION: <tuples> is sorted by ascending datetime
     """
-    last = -1
-    first_index = 0
-    currently_raise_alarm = False
-    first_time = tuples[0][1]
-    end_time = first_time + datetime.timedelta(seconds=persistence)
+    if len(false_indexes) == 0:
+        # Indicates that we have all trues, hence we only need to check if the period of time
+        # is long enough
+        first_time = tuples[0][1]
+        last_time = tuples[len(tuples) - 1][1]
+        if last_time - first_time >= persistence:
+            return [first_time]
+    else:
+        times = []
+        for i in range(len(false_indexes) + 1):
+            if i == 0:
+                # checking the start of the list to the first false
+                first_index = 0
+                last_index = false_indexes[0] - 1
+            elif i == len(false_indexes):
+                # checking the last false to the end of the list
+                first_index = false_indexes[i - 1] + 1
+                last_index = len(tuples) - 1
+            else:
+                # checking between false occurrences
+                first_index = false_indexes[i - 1] + 1
+                last_index = false_indexes[i] - 1
 
-    for i in range(len(tuples)):
-        check_tuple = tuples[i]
+            if first_index < last_index:
+                first_time = tuples[first_index][1]
+                last_time = tuples[last_index][1]
+                if last_time - first_time >= persistence:
+                    times.append(first_time)
 
-        if check_tuple[1] > end_time:
-            # Indicates were now outside the persistence check range
-            if currently_raise_alarm:
-                # Never saw False in the range, so indicate an alarm at the start
-                last = first_index
-
-        if not tuples[0]:
-            # Alarm condition was not met, so reset this condition
-            currently_raise_alarm = False
-        else:
-            if not currently_raise_alarm:
-                # indicates a new start for persitence check
-
-                # redundancy here if the very first one is true, but can't think of elegant
-                # solution
-                first_index = i
-                currently_raise_alarm = True
-                first_time = check_tuple[1]
-                end_time = first_time + datetime.timedelta(seconds=persistence)
-
-    if persistence == 0 and last == -1 and currently_raise_alarm:
-        # edge case if the last tuple should be the returned value when persistence
-        # check need not be applied
-        last = first_index
-
-    return last
+        return times
 
 
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
@@ -212,7 +215,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
     ...
 
 
-def setpoint_cond(param_value: ParameterValue, setpoint: list[ParameterValue]) -> bool:
+def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool:
     """
     Checks if param_value is at it's associated setpoint exactly
 
@@ -338,7 +341,6 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
 
         # Determine if any of the alarms are triggered. If so, we create and return an alarm for it.
         if alarm is not None:
-
             # Create a description for the alarm. #TODO Finalize the description.
             description = (f'Any alarm was triggered with the following description: '
                            f'{alarm.event.description}.')
@@ -346,4 +348,3 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
 
     # If we exit the loop without returning, no alarm triggered, so the 'anyevent' did not happen.
     return None
-
