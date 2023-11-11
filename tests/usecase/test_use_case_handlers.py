@@ -1,3 +1,4 @@
+import queue
 from copy import copy
 from datetime import datetime
 
@@ -22,7 +23,6 @@ config = pd.DataFrame(
         ]
     }
 )
-
 
 telemetry_0 = pd.DataFrame(
     {
@@ -98,7 +98,7 @@ def test_dashboard_no_filter(telemetry_file: str, tablereturn: TableReturn):
     expected = copy(tablereturn)
 
     assert (
-        actual == expected
+            actual == expected
     )
 
 
@@ -133,7 +133,7 @@ def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
     expected.table = tablereturn.table[1:]
 
     assert (
-        actual == expected
+            actual == expected
     )
 
 
@@ -173,5 +173,97 @@ def test_dashboard_all_filters(telemetry_file: str, tablereturn: TableReturn):
     expected.table = []
 
     assert (
-        actual == expected
+            actual == expected
     )
+
+
+def test_search_tags_default_empty_cache():
+    "Simply testing the algorithm returns all tags and does not change cache"
+    tags = ['abcde', 'abc', 'a', 'bc', 'fgh', 'lm', 'ae']
+    cache = dict()
+    cache[''] = tags.copy()
+    eviction = queue.Queue()
+
+    check = DashboardHandler.search_tags('', cache, eviction)
+    assert check == tags
+    assert cache == {'': tags}
+
+
+def test_search_tags_default_one_cache():
+    """Testing that searching for the empty string exclusively returns
+    all tags and does not modify the cache"""
+    tags = ['abcde', 'abc', 'a', 'bc', 'fgh', 'lm', 'ae']
+    cache = dict()
+    cache[''] = tags.copy()
+    cache['abcde'] = ['abcde']
+    eviction = queue.Queue()
+
+    check = DashboardHandler.search_tags('', cache, eviction)
+    assert check == tags
+    assert cache == {'': tags, 'abcde': ['abcde']}
+
+
+def test_search_tags_new_search():
+    """Testing that searching for a new string that has a match in tags
+    returns a subset of tags and modifies cache and eviction"""
+    tags = ['abcde', 'abc', 'a', 'bc', 'fgh', 'lm', 'ae']
+    cache = dict()
+    cache[''] = tags.copy()
+    eviction = queue.Queue()
+
+    check = DashboardHandler.search_tags('abcde', cache, eviction)
+    assert check == ['abcde']
+    assert cache == {'': tags, 'abcde': ['abcde']}
+    assert eviction.get() == 'abcde'
+
+
+def test_search_tags_no_duplicates():
+    """Testing that when we search an exactly cached string, neither cache nor eviction
+    is modified"""
+    tags = ['abcde', 'abc', 'a', 'bc', 'fgh', 'lm', 'ae']
+    cache = dict()
+    cache[''] = tags.copy()
+    eviction = queue.Queue()
+
+    DashboardHandler.search_tags('abcde', cache, eviction)
+    check = DashboardHandler.search_tags('abcde', cache, eviction)
+    assert check == ['abcde']
+    assert cache == {'': tags, 'abcde': ['abcde']}
+    assert eviction.get() == 'abcde'
+    assert eviction.empty()
+
+
+def test_search_tags_eviction():
+    """Testing that once 20 searches occur, the next search evicts the oldest search option
+    from both the cache and queue"""
+    tags = ['abcde', 'abc', 'a', 'bc', 'fgh', 'lm', 'ae']
+    cache = dict()
+    cache[''] = tags.copy()
+    eviction = queue.Queue()
+
+    DashboardHandler.search_tags('abcde', cache, eviction)
+    DashboardHandler.search_tags('a', cache, eviction)
+    DashboardHandler.search_tags('b', cache, eviction)
+    DashboardHandler.search_tags('c', cache, eviction)
+    DashboardHandler.search_tags('d', cache, eviction)
+    DashboardHandler.search_tags('e', cache, eviction)
+    DashboardHandler.search_tags('f', cache, eviction)
+    DashboardHandler.search_tags('g', cache, eviction)
+    DashboardHandler.search_tags('h', cache, eviction)
+    DashboardHandler.search_tags('i', cache, eviction)
+    DashboardHandler.search_tags('j', cache, eviction)
+    DashboardHandler.search_tags('k', cache, eviction)
+    DashboardHandler.search_tags('l', cache, eviction)
+    DashboardHandler.search_tags('m', cache, eviction)
+    DashboardHandler.search_tags('n', cache, eviction)
+    DashboardHandler.search_tags('o', cache, eviction)
+    DashboardHandler.search_tags('p', cache, eviction)
+    DashboardHandler.search_tags('q', cache, eviction)
+    DashboardHandler.search_tags('r', cache, eviction)
+    DashboardHandler.search_tags('s', cache, eviction)
+
+    check = DashboardHandler.search_tags('t', cache, eviction)
+    assert check == []
+    assert len(cache) == 21
+    # The function already evicted abcde, so 'a' should be the next one
+    assert eviction.get() == 'a'
