@@ -71,7 +71,7 @@ class DashboardRequestReceiver(RequestReceiver):
         # Add all tags to the shown tags by default.
         cls.filters.tags = all_tags
 
-        if len(cls.search_cache == 0):
+        if len(cls.search_cache) == 0:
             cls.search_cache[''] = all_tags
 
         # Set the index to the first index by default.
