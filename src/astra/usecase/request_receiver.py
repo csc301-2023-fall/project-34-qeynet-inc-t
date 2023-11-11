@@ -1,3 +1,4 @@
+import queue
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Iterable
@@ -46,11 +47,15 @@ class DashboardRequestReceiver(RequestReceiver):
 
     filters = None
     handler = DashboardHandler
+    search_cache: dict[str: list[Tag]]
+    search_eviction: queue
 
     @classmethod
     def __init__(cls):
         cls.handler = DashboardHandler()
         cls.filters = DashboardFilters(None, None, None, None, None)
+        cls.search_cache = dict()
+        cls.search_eviction = queue.Queue()
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
@@ -65,6 +70,9 @@ class DashboardRequestReceiver(RequestReceiver):
 
         # Add all tags to the shown tags by default.
         cls.filters.tags = all_tags
+
+        if len(cls.search_cache == 0):
+            cls.search_cache[''] = all_tags
 
         # Set the index to the first index by default.
         if cls.filters.index is None:
@@ -119,9 +127,9 @@ class DashboardRequestReceiver(RequestReceiver):
     @classmethod
     def set_shown_tags(cls, tags: Iterable[Tag]):
         """
-        sets <tags> to the set of tags to be shown
+        sets <cls.filters.tags> to the set of tags to be shown
 
-        PRECONDITION: <tag> is an element of <cls.tags>
+        PRECONDITION: <tag> is an element of <cls.filters.tags>
 
         :param tags: a set of tags to show
         """
@@ -171,7 +179,7 @@ class DashboardRequestReceiver(RequestReceiver):
     @classmethod
     def set_start_time(cls, start_time: datetime):
         """
-        Modifies <cls.start_time> to be equal to <start_time>
+        Modifies <cls.filters.start_time> to be equal to <start_time>
 
         :param start_time: the datetime to be set
         """
@@ -180,11 +188,23 @@ class DashboardRequestReceiver(RequestReceiver):
     @classmethod
     def set_end_time(cls, end_time: datetime):
         """
-        Modifies <cls.end_time> to be equal to <end_time>
+        Modifies <cls.filters.end_time> to be equal to <end_time>
 
         :param end_time: the datetime to be set
         """
         cls.filters.end_time = end_time
+
+    @classmethod
+    def search_tags(cls, search: str) -> list[Tag]:
+        """
+        Finds all tags in <cls.filters.tags> where <search> is a substring
+
+        :param search: The substring to search for
+        :return: A list of all satisfying tags
+        """
+        if len(cls.search_cache) == 0:
+            return []
+        return cls.handler.search_tags(search, cls.search_cache, cls.search_eviction)
 
 
 class DataRequestReceiver(RequestReceiver):

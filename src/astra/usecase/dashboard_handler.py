@@ -1,3 +1,4 @@
+import queue
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable
@@ -14,6 +15,8 @@ DESCRIPTION = 'DESCRIPTION'
 DESCENDING = '<'
 DATA = 'DATA'
 CONFIG = 'CONFIG'
+# For now, this choice is somewhat arbitrary
+CACHE_SIZE = 20
 
 
 @dataclass
@@ -61,6 +64,42 @@ class DashboardHandler(UseCaseHandler):
     """DashboardHandler is a child class of UseCaseHandler that defines
     data filtering requested by the Telemetry Dashboard
     """
+
+    @staticmethod
+    def search_tags(search: str, cache: dict[str: Iterable[Tag]], eviction: queue) -> list[Tag]:
+        """
+        Searches for all tags where <search> is a substring of the tag
+
+        :param search: The substring to search for
+        :param cache: Stores CACHE_SIZE + 1 keys, where each key matches a previous <search>
+        value and maps to a list of all tags where <search> is a substring. Also maps ""
+        to all tags for the current device. Is mutated by this function
+        :param eviction: Stores the order in which keys were added to the cache in case
+        eviction is neccessary
+        :return: A list of all tags where <search> is a substring
+        """
+        # First, finding the closest matching search value in the cache
+        closest = ''
+        max_len = 0
+        for prev_search in cache:
+            if prev_search in search and len(prev_search) > max_len:
+                closest = prev_search
+                max_len = len(prev_search)
+
+        if closest == search:
+            return cache[search]
+        matching = []
+        for tag in cache[closest]:
+            if search in tag:
+                matching.append(tag)
+        if search != "":
+            cache[search] = matching
+            eviction.put(search)
+
+        if len(cache) == CACHE_SIZE + 2:
+            remove = eviction.get()
+            cache.pop(remove)
+        return matching
 
     @classmethod
     def _eval_param_value(cls, tag_parameter: Parameter,
