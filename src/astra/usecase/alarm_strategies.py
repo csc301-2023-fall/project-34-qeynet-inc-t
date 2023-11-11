@@ -10,6 +10,7 @@ from astra.data.telemetry_data import TelemetryData
 
 next_id = EventID(0)
 
+
 # TODO: if alarm descriptions are "formulaic", extract helper method for making alarms from list
 
 
@@ -87,6 +88,30 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
         if not cond_frame_met:
             false_index.append(i)
     return cond_met, false_index
+
+
+def find_alarm_indexes(first_indexes: list[int],
+                       alarm_conditions: list[tuple[bool, datetime]]) -> list[bool]:
+    """
+    Finds the telemetry frames where an alarm is considered active
+
+    :param first_indexes: A list of all first indexes where an alarm condition becomes active
+    :param alarm_conditions: A list of booleans where each i-th element represents that the
+    i-th telemetry has met alarm conditions
+    :return: A list of i booleans where the i-th boolean indicates if the associated telemetry
+    frame has an alarm condition active
+    """
+    alarm_active = []
+    alarm_considered = False
+    for i in range(len(alarm_conditions)):
+        if i in first_indexes:
+            alarm_considered = True
+
+        if alarm_considered and not alarm_conditions[i][0]:
+            alarm_active.append(True)
+        else:
+            alarm_active.append(False)
+    return alarm_active
 
 
 def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
@@ -181,7 +206,7 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, dateti
 
 def static_check(dm: DataManager, alarm_base: StaticEventBase,
                  criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[tuple[datetime, bool]]):
+        -> (list[Alarm], list[bool]):
     """
     Checks if in the telemetry frames with times in the range
     (<earliest_time> - <alarm_base.persistence> -> present), there exists
@@ -193,10 +218,8 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
-    :return:  A list of all alarms that should be newly raised, and tuple
-    where each i-th element refers to the i-th telemetry frame in the appropriate
-    timeframe, where the first element indicates if the alarm condition was met, and
-    the second indicates the associated time
+    :return:  A list of all alarms that should be newly raised, and a list of bools
+    where each index i represents that the associated telemetry frame has an alarm active
     """
 
     # Calculating the range of time that needs to be checked
@@ -220,12 +243,13 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
         new_alarm = create_alarm(alarm_base, timestamp, description, criticality)
         alarms.append(new_alarm)
 
-    return alarms, cond_met
+    alarm_frames = find_alarm_indexes(alarm_indexes, cond_met)
+    return alarms, alarm_frames
 
 
 def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
                     criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[tuple[datetime, bool]]):
+        -> (list[Alarm], list[bool]):
     ...
 
 
@@ -242,7 +266,7 @@ def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool
 
 def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
                    criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[tuple[datetime, bool]]):
+        -> (list[Alarm], list[bool]):
     """
     Checks if in the telemetry frames with times in the range
     (<earliest_time> - <alarm_base.persistence> -> present), there exists
@@ -254,10 +278,8 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
-    :return: A list of all alarms that should be newly raised, and tuple
-    where each i-th element refers to the i-th telemetry frame in the appropriate
-    timeframe, where the first element indicates if the alarm condition was met, and
-    the second indicates the associated time
+    :return: A list of all alarms that should be newly raised, and a list of bools
+    where each index i represents that the associated telemetry frame has an alarm active
     """
 
     first_time, sequence = find_first_time(alarm_base, earliest_time)
@@ -279,21 +301,24 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
         description = "setpoint value recorded"
         new_alarm = create_alarm(alarm_base, timestamp, description, criticality)
         alarms.append(new_alarm)
-    return alarms, cond_met
+
+    alarm_frames = find_alarm_indexes(first_indexes, cond_met)
+    return alarms, alarm_frames
 
 
 def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
                              criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[tuple[datetime, bool]]):
+        -> (list[Alarm], list[bool]):
     ...
 
 
 def all_events_check(dm: DataManager, alarm_base: AllEventBase,
                      criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[tuple[datetime, bool]]):
+        -> (list[Alarm], list[bool]):
     """
-    Checks that all event bases in <alarm_base> have occurred, and returns an appropriate
-    Alarm. Otherwise, returns None.
+    Checks that all event bases in <alarm_base> have occurred, and returns appropriate
+    Alarms, and a list of bools where each index i represents that the associated telemetry
+    frame has an alarm active
 
     :param dm: The source of all data known to the program
     :param alarm_base: Defines events to check
@@ -332,10 +357,11 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
 
 def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
                      criticality: AlarmCriticality, new_id: int,
-                     earliest_time: datetime) -> (list[Alarm], list[tuple[datetime, bool]]):
+                     earliest_time: datetime) -> (list[Alarm], list[bool]):
     """
-    Checks that any of the event bases in <alarm_base> occurred, and returns an appropriate
-    Alarm. Otherwise, returns None.
+    Checks that any of the event bases in <alarm_base> occurred, and returns a appropraite alarms,
+    and a list of bools where each index i represents that the associated telemetry
+    frame has an alarm active
 
     :param dm: The source of all data known to the program
     :param alarm_base: Defines events to check
