@@ -7,6 +7,7 @@ from .use_case_handlers import UseCaseHandler
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
 from astra.data.parameters import DisplayUnit, Parameter, ParameterValue, Tag
+from .utils import eval_param_value
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -102,24 +103,6 @@ class DashboardHandler(UseCaseHandler):
         return matching
 
     @classmethod
-    def _eval_param_value(cls, tag_parameter: Parameter,
-                          tag_data: ParameterValue | None) -> ParameterValue | None:
-        """
-        Converts the raw <tag_data> into its true value using the
-        parameter multiplier and constant
-
-        :param tag_parameter: Parameter data for the relevant tag
-        :param tag_data: The raw data in the telemetry frame
-        :return: The converted parameter value
-        """
-        if type(tag_data) is bool or tag_data is None:
-            return tag_data
-        else:
-            multiplier = tag_parameter.display_units.multiplier
-            constant = tag_parameter.display_units.constant
-            return tag_data * multiplier + constant
-
-    @classmethod
     def _format_param_value(cls, tag_data: ParameterValue | None, units: DisplayUnit | None) -> str:
         """
         Formats the <tag_data> with the given units
@@ -161,11 +144,11 @@ class DashboardHandler(UseCaseHandler):
             # creating the string for the tag value
             raw_tag_data = td.get_parameter_values(tag)
             raw_timestamp_data = raw_tag_data[timestamp]
-            tag_data = cls._eval_param_value(tag_parameters, raw_timestamp_data)
+            tag_data = eval_param_value(tag_parameters, raw_timestamp_data)
 
             # creating the string for the tag setpoint value
             raw_tag_setpoint_value = tag_parameters.setpoint
-            tag_setpoint_value = cls._eval_param_value(
+            tag_setpoint_value = eval_param_value(
                 tag_parameters, raw_tag_setpoint_value)
 
             tag_value = cls._format_param_value(tag_data, tag_parameters.display_units)
