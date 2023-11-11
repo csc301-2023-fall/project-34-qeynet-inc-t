@@ -113,7 +113,7 @@ class View(Tk):
         dashboard_table.heading("tag", text="Tag", anchor=CENTER, command=self.toggle_tag)
         dashboard_table.heading("description", text="Description", anchor=CENTER,
                                 command=self.toggle_description)
-        dashboard_table.heading("value", text="Value", anchor=CENTER, command=self.toggle_value)
+        dashboard_table.heading("value", text="Value", anchor=CENTER)
         dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
         dashboard_table.bind('<Double-1>', self.double_click_table_row)
 
@@ -169,35 +169,30 @@ class View(Tk):
         This method is the toggle action for the tag header
         in the dashboard table
         """
-        self.dashboard_view_model.toggle_sort("TAG")
-        self.refresh_table()
+        if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
+            self.dashboard_view_model.toggle_sort("TAG")
+            self.refresh_table()
 
     def toggle_description(self) -> None:
         """
         This method is the toggle action for the description header
         in the dashboard table
         """
-        self.dashboard_view_model.toggle_sort("DESCRIPTION")
-        self.refresh_table()
-
-    def toggle_value(self) -> None:
-        """
-        This method is the toggle action for the value header
-        in the dashboard table
-        """
-        self.dashboard_view_model.toggle_sort("VALUE")
-        self.refresh_table()
+        if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
+            self.dashboard_view_model.toggle_sort("DESCRIPTION")
+            self.refresh_table()
 
     def double_click_table_row(self, event) -> None:
         """
         This method specifies what happens if a double click were to happen
         in the dashboard table
         """
-        cur_item = self.dashboard_table.focus()
+        if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
+            cur_item = self.dashboard_table.focus()
 
-        region = self.dashboard_table.identify("region", event.x, event.y)
-        if region != "heading":
-            self.open_new_window(self.dashboard_table.item(cur_item)['values'])
+            region = self.dashboard_table.identify("region", event.x, event.y)
+            if region != "heading":
+                self.open_new_window(self.dashboard_table.item(cur_item)['values'])
 
     def refresh_table(self) -> None:
         """
