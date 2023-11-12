@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Self
 
 from astra.data import telemetry_manager
-from astra.data.alarms import AlarmCriticality, AlarmPriority
+from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority
 from astra.data.database import db_manager
 from astra.data.parameters import DisplayUnit, Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
@@ -95,8 +95,11 @@ class DataManager:
         return self._parameters
 
     @property
+    def alarm_bases(self) -> Iterable[AlarmBase]:
+        ...
+
+    @property
     def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:
-        # TODO: write docstring and implement
         ...
 
     @staticmethod
