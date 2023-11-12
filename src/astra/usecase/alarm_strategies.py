@@ -280,10 +280,84 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     return alarms, alarm_frames
 
 
+def upper_threshold_cond(param_value: ParameterValue, upper_threshold: ParameterValue) -> bool:
+    """checks if <param_value> is above the upper threshold
+
+    :param param_value: The true value of the given parameter
+    :param upper_threshold: TYhe upper threshold to compare against
+    :return A boolean indicating if <param_value> exceeds the threshold
+    """
+    return param_value > upper_threshold
+
+
+def lower_threshold_cond(param_value: ParameterValue, lower_threshold: ParameterValue) -> bool:
+    """checks if <param_value> is below the lower threshold
+
+    :param param_value: The true value of the given parameter
+    :param lower_threshold: TYhe upper threshold to compare against
+    :return A boolean indicating if <param_value> exceeds the threshold
+    """
+    return param_value < lower_threshold
+
+
 def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
                     criticality: AlarmCriticality, earliest_time: datetime) \
         -> (list[Alarm], list[bool]):
-    ...
+    """
+    Checks if in the telemetry frames with times in the range
+    (<earliest_time> - <alarm_base.persistence> -> present), there exists
+    a sequence lasting <alarm_base.persistence> seconds where a) <alarm_base.tag>
+    reported values above <alarm_base.upper_threshold> or b) <alarm_base.tag> reported
+    values below <alarm)_base.lower_threshold>
+
+    :param dm: All data known to the program
+    :param alarm_base: Stores all parties related to the check
+    :param criticality: The base criticality of the alarm
+    :param earliest_time: The earliest time from a set of the most recently added
+    telemetry frames
+    :return: A list of all alarms that should be newly raised, and a list of bools
+    where each index i represents that the associated telemetry frame has an alarm active
+    """
+    first_time, sequence = find_first_time(alarm_base, earliest_time)
+    tag = alarm_base.tag
+    telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
+
+    upper_threshold = alarm_base.upper_threshold
+    lower_threshold = alarm_base.lower_threshold
+
+    alarms = []
+    lower_alarm_frames = []
+    upper_alarm_frames = []
+    if lower_threshold is not None:
+        # Checking + generating all alarms for crossing the lower threshold
+        lower_cond_met, lower_false_indexes = check_conds(telemetry_data, tag, setpoint_cond,
+                                                          upper_threshold)
+        lower_alarm_indexes = persistence_check(lower_cond_met, sequence, lower_false_indexes)
+        lower_first_indexes = []
+        for alarm_index in lower_alarm_indexes:
+            lower_first_indexes.append(alarm_index[0])
+            description = "lower threshold crossed"
+            new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
+            alarms.append(new_alarm)
+        lower_alarm_frames = find_alarm_indexes(lower_first_indexes, lower_cond_met)
+    if upper_threshold is not None:
+        # Checking + generating all alarms for crossing the upper threshold
+        upper_cond_met, upper_false_indexes = check_conds(telemetry_data, tag, setpoint_cond,
+                                                          lower_threshold)
+        upper_alarm_indexes = persistence_check(upper_cond_met, sequence, upper_false_indexes)
+        upper_first_indexes = []
+        for alarm_index in upper_alarm_indexes:
+            upper_first_indexes.append(alarm_index[0])
+            description = "upper threshold crossed"
+            new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
+            alarms.append(new_alarm)
+        upper_alarm_frames = find_alarm_indexes(upper_first_indexes, upper_cond_met)
+
+    # combining all results
+    all_alarm_frames = []
+    for i in range(len(lower_alarm_frames)):
+        all_alarm_frames.append(lower_alarm_frames[i] or upper_alarm_frames[i])
+    return alarms, all_alarm_frames
 
 
 def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool:
@@ -322,7 +396,7 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     setpoint = alarm_base.setpoint
 
     # Checking which frames have tag values at setpoint and indicating it in <cond_met> in order
-    cond_met, false_indexes = check_conds(telemetry_data, tag, setpoint_cond, [setpoint])
+    cond_met, false_indexes = check_conds(telemetry_data, tag, setpoint_cond, setpoint)
 
     alarm_indexes = persistence_check(cond_met, sequence, false_indexes)
 
@@ -424,7 +498,6 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
         strategy = get_strategy(possible_event)
         alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
         inner_alarm_indexes.append(alarm_indexes)
-
 
     # now, iterate through the all previous lists and find where any alarms was unanimously raised
     conds_met = []
