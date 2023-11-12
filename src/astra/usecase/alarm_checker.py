@@ -50,4 +50,5 @@ def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]],
         alarm = strategy(dm, base, criticality, earliest_time)
         if alarm is not None:
             criticality = alarm.criticality
-            alarms[criticality].append(alarm)
+            priority = dm.alarm_priority_matrix[timedelta(seconds=0)][criticality]
+            alarms[priority].append(alarm)

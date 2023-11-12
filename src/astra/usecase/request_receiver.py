@@ -5,7 +5,7 @@ from typing import Any, Iterable
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
-from ..data.alarms import Alarm
+from ..data.alarms import Alarm, AlarmPriority
 from ..data.parameters import Tag
 from .alarm_checker import check_alarms
 
@@ -220,7 +220,7 @@ class DataRequestReceiver(RequestReceiver):
         cls.file = file
 
     @classmethod
-    def get_alarms(cls) -> list[Alarm]:
+    def get_alarms(cls) -> dict[AlarmPriority: list[Alarm]]:
         return cls.alarms
 
     @classmethod
@@ -230,6 +230,7 @@ class DataRequestReceiver(RequestReceiver):
         on the filename provided.
         :param dm: The interface for getting all data known to the program
         """
+        cls.alarms = dict()
         return dm.from_device_name(cls.file)
 
     @classmethod
