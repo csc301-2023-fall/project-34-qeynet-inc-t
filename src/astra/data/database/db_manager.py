@@ -165,12 +165,30 @@ def get_tags_for_device(device_name: str) -> list[tuple[str, dict]]:
         device_name (str): the name of the device
 
     Returns:
-        list[(str, dict)]: a list of tuples of (tag_name, tag_parameter)
+        list[tuple[str, dict]]: a list of tuples of (tag_name, tag_parameter)
     """
     with Session.begin() as session:
         select_stmt = (
             select(Tag.tag_name, Tag.tag_parameter)
             .where(Tag.device_id == Device.device_id)
+            .where(Device.device_name == device_name)
+        )
+        return session.execute(select_stmt).all()
+
+
+def get_alarm_base_info(device_name: str) -> list[tuple[str, dict]]:
+    """
+        return all alarm info for the given device
+    Args:
+        device_name (str): the name of the device
+
+    Returns:
+        list[tuple[str, dict]]: a list of tuples of (alarm_criticality, alarm_data)
+    """
+    with Session.begin() as session:
+        select_stmt = (
+            select(Alarm.alarm_criticality, Alarm.alarm_data)
+            .where(Alarm.device_id == Device.device_id)
             .where(Device.device_name == device_name)
         )
         return session.execute(select_stmt).all()
