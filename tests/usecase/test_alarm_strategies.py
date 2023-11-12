@@ -44,7 +44,7 @@ class MyTestCase(unittest.TestCase):
         false_indexes = []
 
         actual = persistence_check(conditions, persistence, false_indexes)
-        expected = [0]
+        expected = [(0, 0)]
 
         self.assertEqual(actual, expected)
 
@@ -87,11 +87,11 @@ class MyTestCase(unittest.TestCase):
         conditions = [(True, datetime.now() - timedelta(seconds=60)),
                       (True, datetime.now() - timedelta(seconds=50)),
                       (True, datetime.now() - timedelta(seconds=10))]
-        persistence = 30
+        persistence = 20
         false_indexes = []
 
         actual = persistence_check(conditions, persistence, false_indexes)
-        expected = [0]
+        expected = [(0, 2)]
 
         self.assertEqual(actual, expected)
 
@@ -144,7 +144,7 @@ class MyTestCase(unittest.TestCase):
         false_indexes = [0]
 
         actual = persistence_check(conditions, persistence, false_indexes)
-        expected = [1]
+        expected = [(1, 2)]
 
         self.assertEqual(actual, expected)
 
@@ -199,7 +199,7 @@ class MyTestCase(unittest.TestCase):
         false_indexes = [2]
 
         actual = persistence_check(conditions, persistence, false_indexes)
-        expected = [0]
+        expected = [(0, 1)]
 
         self.assertEqual(actual, expected)
 
@@ -255,7 +255,7 @@ class MyTestCase(unittest.TestCase):
         false_indexes = [2]
 
         actual = persistence_check(conditions, persistence, false_indexes)
-        expected = [0, 3]
+        expected = [(0, 1), (3, 4)]
 
         self.assertEqual(actual, expected)
 

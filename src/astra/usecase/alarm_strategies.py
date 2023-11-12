@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from astra.data.alarms import *
 from astra.data.data_manager import DataManager
 from .alarm_checker import get_strategy
-from .utils import eval_param_value, get_tag_param_value, get_tag_params
-from typing import Callable, Iterable, Tuple, List
+from .utils import get_tag_param_value
+from typing import Callable
 from astra.data.telemetry_data import TelemetryData
 
 next_id = EventID(0)
@@ -38,20 +38,29 @@ def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime
     return first_time, sequence
 
 
-def create_alarm(event_base: EventBase, time: datetime, description: str,
+def create_alarm(alarm_indexes: tuple[int, int], td: TelemetryData, description: str,
+                 event_base: EventBase,
                  criticality: AlarmCriticality) -> Alarm:
     """
-    Creates and returns an Alarm with the given attributes.
+    Uses information on telemetry indexes to create an appropriate alarm
 
-    :param event_base: The event base for the alarm.
-    :param time: The time at which the event occured.
-    :param description: The description of the event that triggered the alarm.
-    :param criticality: The criticality of this alarm.
-    :return: An Alarm with the given attributes.
+    :param alarm_indexes: A tuple listing the index where an alarm condition is first met,
+    and another listing the first where the persistence time check is met
+    :param td: All telemetry data relevant to the alarm being checked
+    :param description: Describes information about the event
+    :param event_base: The underlying type of alarm that occured
+    :param criticality: The base importance of the alarm
+    :return: An alarm detailing a certain event that has occured
     """
     global next_id
 
-    event = Event(event_base, next_id, time, description)
+    register_frame = td.get_telemetry_frame(alarm_indexes[0])
+    register_timestamp = register_frame.time
+
+    confirm_frame = td.get_telemetry_frame(alarm_indexes[1])
+    confirm_timestamp = confirm_frame.time
+
+    event = Event(event_base, next_id, register_timestamp, confirm_timestamp, description)
     next_id += 1
 
     return Alarm(event, criticality)
@@ -114,8 +123,29 @@ def find_alarm_indexes(first_indexes: list[int],
     return alarm_active
 
 
-def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
-                      false_indexes: list[int]) -> list[int]:
+def find_confirm_time(tuples: list[tuple[bool, datetime]], persistence: float) -> int:
+    """
+    Finds the first time when the persistence duration has been met
+
+    :param tuples: Contains tuples indicating whether an alarm condition was
+    met, and the time associated with the telemetry frame
+    :param persistence: How much time in seconds the alarm condition must be met for
+    :return: The first index where the persistence timeframe had been met
+
+    PRECONDITION: The last time in <tuples> is >= the exact time the persistence duration was met
+    """
+    best_index = len(tuples) - 1
+    exact_confirm_time = tuples[0][1] + timedelta(seconds=persistence)
+    for i in range(1, len(tuples)):
+        index = -i
+        if tuples[i][1] < exact_confirm_time:
+            return best_index
+        best_index = len(tuples) - i
+    return best_index
+
+
+def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
+                      false_indexes: list[int]) -> list[tuple[int, int]]:
     """
     Checks if there exists any sequence of booleans amongst tuples in <tuples>
     where all booleans are true and associated datetimes are every datetime in
@@ -125,20 +155,22 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
     met, and the time associated with the telemetry frame 
     :param persistence: How much time in seconds the alarm condition must be met for
     :param false_indexes: Lists all indexes in <tuples> where the first element is false
-    :return: The first index in the all sequences satisfying the persistence check. Returns
-    [] if no such sequence exists
+    :return: The first index in the all sequences satisfying the persistence check, and the
+    last index in all sequences satisfying the check. Returns [] if no such sequence exists
     
     PRECONDITION: <tuples> is sorted by ascending datetime, and indexes in <false_indexes>
     are listed iff the associated tuple in <tuples> stores false
     """
+
+    times = []
     if len(false_indexes) == 0:
         # Indicates that we have all trues, hence we only need to check if the period of time
         # is long enough
         first_time = tuples[0][1]
         last_time = tuples[len(tuples) - 1][1]
         if last_time - first_time >= timedelta(seconds=persistence):
-            return [0]
-        return []
+            register_time = find_confirm_time(tuples, persistence)
+            times.append((0, register_time))
     else:
         times = []
         for i in range(len(false_indexes) + 1):
@@ -155,12 +187,13 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
                 first_index = false_indexes[i - 1] + 1
                 last_index = false_indexes[i] - 1
 
-            if first_index < last_index:
+            if first_index <= last_index:
                 first_time = tuples[first_index][1]
                 last_time = tuples[last_index][1]
                 if last_time - first_time >= timedelta(seconds=persistence):
-                    times.append(first_index)
-        return times
+                    register_time = find_confirm_time(tuples[first_index:last_index + 1], persistence) + first_index
+                    times.append((first_index, register_time))
+    return times
 
 
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
@@ -234,17 +267,16 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     cond_met, false_indexes = repeat_checker(telemetry_data, tag)
 
     alarm_indexes = persistence_check(cond_met, sequence, false_indexes)
-    if not alarm_indexes:
-        return [], cond_met
+
     alarms = []
+    first_indexes = []
     for index in alarm_indexes:
-        relevant_frame = telemetry_data.get_telemetry_frame(index)
-        timestamp = relevant_frame.time
+        first_indexes.append(index[0])
         description = "static alarm triggered"
-        new_alarm = create_alarm(alarm_base, timestamp, description, criticality)
+        new_alarm = create_alarm(index, telemetry_data, description, alarm_base, criticality)
         alarms.append(new_alarm)
 
-    alarm_frames = find_alarm_indexes(alarm_indexes, cond_met)
+    alarm_frames = find_alarm_indexes(first_indexes, cond_met)
     return alarms, alarm_frames
 
 
@@ -292,15 +324,14 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     # Checking which frames have tag values at setpoint and indicating it in <cond_met> in order
     cond_met, false_indexes = check_conds(telemetry_data, tag, setpoint_cond, [setpoint])
 
-    first_indexes = persistence_check(cond_met, sequence, false_indexes)
-    if not first_indexes:
-        return [], cond_met
+    alarm_indexes = persistence_check(cond_met, sequence, false_indexes)
+
+    first_indexes = []
     alarms = []
-    for index in first_indexes:
-        relevant_frame = telemetry_data.get_telemetry_frame(index)
-        timestamp = relevant_frame.time
+    for alarm_index in alarm_indexes:
+        first_indexes.append(alarm_index[0])
         description = "setpoint value recorded"
-        new_alarm = create_alarm(alarm_base, timestamp, description, criticality)
+        new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
         alarms.append(new_alarm)
 
     alarm_frames = find_alarm_indexes(first_indexes, cond_met)
@@ -329,31 +360,41 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     :return: An Alarm containing all data about the recent event, or None if the check
     is not satisfied
     """
-
+    first_time, sequence = find_first_time(alarm_base, earliest_time)
     possible_events = alarm_base.event_bases
-    first_alarm_time = None
+    telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
 
-    # iterate through each of the eventbases and check if all of them were triggered.
+    # iterate through each of the eventbases and get their list indicating where alarm conditions where met
+    inner_alarm_indexes = []
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        alarm = strategy(dm, possible_event, criticality, earliest_time)
+        alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
+        inner_alarm_indexes.append(alarm_indexes)
 
-        # Determine if any of the alarms were not triggered.
-        # If so, the event failed and we return None.
-        if alarm is None:
-            return None
-        else:
-            # Track the first event to happen to return its time.
-            # TODO clarify if this is the correct time.
-            if first_alarm_time is None:
-                first_alarm_time = alarm.event.time
-            else:
-                first_alarm_time = min(first_alarm_time, alarm.event.time)
+    # now, iterate through the all previous lists and find where alarms were unanimously raised
+    conds_met = []
+    false_indexes = []
+    for i in range(len(inner_alarm_indexes[0])):
+        telemetry_frame = telemetry_data.get_telemetry_frame(i)
+        telemetry_time = telemetry_frame.time
+        frame_meets_condition = True
+        for j in range(len(inner_alarm_indexes)):
+            frame_meets_condition = frame_meets_condition and inner_alarm_indexes[j][i]
+        conds_met.append((frame_meets_condition, telemetry_time))
+        if not frame_meets_condition:
+            false_indexes.append(i)
 
-    # If we exit the if, all events occured so we create and return an alarm.
-    # TODO Finalize the description.
-    description = 'All events were triggered.'
-    return create_alarm(alarm_base, first_alarm_time, description, criticality)
+    # create the appropriate alarms
+    alarm_indexes = persistence_check(conds_met, sequence, false_indexes)
+    alarms = []
+    first_indexes = []
+    for alarm_index in alarm_indexes:
+        first_indexes.append(alarm_index[0])
+        description = 'All events were triggered.'
+        new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
+        alarms.append(new_alarm)
+    alarm_frames = find_alarm_indexes(first_indexes, conds_met)
+    return alarms, alarm_frames
 
 
 def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
@@ -374,19 +415,38 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     is not satisfied
     """
 
-    eventbases = alarm_base.event_bases
+    first_time, sequence = find_first_time(alarm_base, earliest_time)
+    possible_events = alarm_base.event_bases
+    telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
 
-    # iterate through each of the eventbases and check if any of them are triggered.
-    for eventbase in eventbases:
-        strategy = get_strategy(eventbase)
-        alarm = strategy(dm, eventbase, criticality, new_id, earliest_time)
+    inner_alarm_indexes = []
+    for possible_event in possible_events:
+        strategy = get_strategy(possible_event)
+        alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
+        inner_alarm_indexes.append(alarm_indexes)
 
-        # Determine if any of the alarms are triggered. If so, we create and return an alarm for it.
-        if alarm is not None:
-            # Create a description for the alarm. #TODO Finalize the description.
-            description = (f'Any alarm was triggered with the following description: '
-                           f'{alarm.event.description}.')
-            return create_alarm(alarm_base, alarm.event.time, description, criticality)
 
-    # If we exit the loop without returning, no alarm triggered, so the 'anyevent' did not happen.
-    return None
+    # now, iterate through the all previous lists and find where any alarms was unanimously raised
+    conds_met = []
+    false_indexes = []
+    for i in range(len(inner_alarm_indexes[0])):
+        telemetry_frame = telemetry_data.get_telemetry_frame(i)
+        telemetry_time = telemetry_frame.time
+        frame_meets_condition = False
+        for j in range(len(inner_alarm_indexes)):
+            frame_meets_condition = frame_meets_condition or inner_alarm_indexes[j][i]
+        conds_met.append((frame_meets_condition, telemetry_time))
+        if not frame_meets_condition:
+            false_indexes.append(i)
+
+    # create the appropriate alarms
+    alarm_indexes = persistence_check(conds_met, sequence, false_indexes)
+    alarms = []
+    first_indexes = []
+    for alarm_index in alarm_indexes:
+        first_indexes.append(alarm_index[0])
+        description = 'Any events was triggered.'
+        new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
+        alarms.append(new_alarm)
+    alarm_frames = find_alarm_indexes(first_indexes, conds_met)
+    return alarms, alarm_frames
