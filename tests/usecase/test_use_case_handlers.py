@@ -74,6 +74,8 @@ MOCKTABLE1 = TableReturn(
     2
 )
 DEVICE = 'DEVICE'
+DATA = 'DATA'
+CONFIG = 'CONFIG'
 
 
 @pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
@@ -115,8 +117,6 @@ def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
     filter_args.tags.remove('A3')  # remove the first tag from the display.
     actual = DashboardHandler.get_data(data, filter_args)
 
-    DashboardHandler.update_data(actual)
-
     # avoid alias of the table object.
     expected = copy(tablereturn)
 
@@ -150,6 +150,64 @@ def test_dashboard_all_filters(telemetry_file: str, tablereturn: TableReturn):
     # remove all rows from the table.
     expected.removed = tablereturn.table
     expected.table = []
+
+    assert (
+        actual == expected
+    )
+
+
+def test_dashboard_sort_ascending():
+    """
+    A test case for the dashboard use case handler using an ascending sort on
+    the <DATA> column.
+    """
+
+    data = DataManager.from_device_name(DEVICE)
+    start_time = data.add_data_from_file(telemetry_0)
+
+    # creates a datatable and adds data to it and retrieves the data.
+    filter_args = DashboardFilters(('>', DATA), 0, data.tags, start_time, None)
+    actual = DashboardHandler.get_data(data, filter_args)
+
+    # avoid alias of the table object.
+    expected = copy(MOCKTABLE0)
+
+    # sort the table by the <DATA> column.
+    # TODO: confirm this works.
+    expected_copy = copy(MOCKTABLE0)
+    expected[0] = expected_copy[2]
+    expected[1] = expected_copy[1]
+    expected[2] = expected_copy[3]
+    expected[3] = expected_copy[0]
+
+    assert (
+        actual == expected
+    )
+
+
+def test_dashboard_sort_descending():
+    """
+    A test case for the dashboard use case handler using an descending sort on
+    the <DATA> column.
+    """
+
+    data = DataManager.from_device_name(DEVICE)
+    start_time = data.add_data_from_file(telemetry_0)
+
+    # creates a datatable and adds data to it and retrieves the data.
+    filter_args = DashboardFilters(('<', DATA), 0, data.tags, start_time, None)
+    actual = DashboardHandler.get_data(data, filter_args)
+
+    # avoid alias of the table object.
+    expected = copy(MOCKTABLE0)
+
+    # sort the table by the <DATA> column.
+    # TODO: confirm this works.
+    expected_copy = copy(MOCKTABLE0)
+    expected[0] = expected_copy[0]
+    expected[1] = expected_copy[3]
+    expected[2] = expected_copy[1]
+    expected[3] = expected_copy[2]
 
     assert (
         actual == expected
