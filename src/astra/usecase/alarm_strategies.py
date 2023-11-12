@@ -1,5 +1,5 @@
 import datetime
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from astra.data.alarms import *
 from astra.data.data_manager import DataManager
@@ -27,10 +27,10 @@ def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime
 
     # Calculating the range of time that needs to be checked
     if alarm_base.persistence is None:
-        subtract_time = datetime.timedelta(seconds=0)
+        subtract_time = timedelta(seconds=0)
         sequence = 0
     else:
-        subtract_time = datetime.timedelta(seconds=alarm_base.persistence)
+        subtract_time = timedelta(seconds=alarm_base.persistence)
         sequence = alarm_base.persistence
 
     # Getting all Telemetry Frames associated with the relevant timeframe
@@ -81,6 +81,7 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
 
         # Note: I believe we don't need to convert to true value because both sides of
         # comparison would be applied the same transformation anyway
+        # TODO: this might be buggy and slow
         raw_parameter_value = get_tag_param_value(i, tag, td)
         cond_frame_met = condition(raw_parameter_value, comparison)
 
@@ -107,7 +108,7 @@ def find_alarm_indexes(first_indexes: list[int],
         if i in first_indexes:
             alarm_considered = True
 
-        if alarm_considered and not alarm_conditions[i][0]:
+        if alarm_considered and alarm_conditions[i][0]:
             alarm_active.append(True)
         else:
             alarm_active.append(False)
@@ -126,16 +127,17 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
     :param persistence: How much time in seconds the alarm condition must be met for
     :param false_indexes: Lists all indexes in <tuples> where the first element is false
     :return: The first index in the all sequences satisfying the persistence check. Returns
-    -1 if no such sequence exists
+    [] if no such sequence exists
     
-    PRECONDITION: <tuples> is sorted by ascending datetime
+    PRECONDITION: <tuples> is sorted by ascending datetime, and indexes in <false_indexes>
+    are listed iff the associated tuple in <tuples> stores false
     """
     if len(false_indexes) == 0:
         # Indicates that we have all trues, hence we only need to check if the period of time
         # is long enough
         first_time = tuples[0][1]
         last_time = tuples[len(tuples) - 1][1]
-        if last_time - first_time >= persistence:
+        if last_time - first_time >= timedelta(seconds=persistence):
             return [0]
         return []
     else:
@@ -157,7 +159,7 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence,
             if first_index < last_index:
                 first_time = tuples[first_index][1]
                 last_time = tuples[last_index][1]
-                if last_time - first_time >= persistence:
+                if last_time - first_time >= timedelta(seconds=persistence):
                     times.append(first_index)
         return times
 
