@@ -5,8 +5,9 @@ from typing import Any, Iterable
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
+from ..data.alarms import Alarm
 from ..data.parameters import Tag
-
+from .alarm_checker import check_alarms
 
 DATA = 'DATA'
 CONFIG = 'CONFIG'
@@ -212,19 +213,22 @@ class DataRequestReceiver(RequestReceiver):
     """
 
     file = None
+    alarms = None
 
     @classmethod
     def set_filename(cls, file):
         cls.file = file
 
     @classmethod
+    def get_alarms(cls) -> list[Alarm]:
+        return cls.alarms
+
+    @classmethod
     def create(cls, dm: DataManager) -> DataManager:
         """
         create is a method that creates a new data table and returns it based
         on the filename provided.
-        :param model: The model of currently shown data
         :param dm: The interface for getting all data known to the program
-        :param device_name: the name of the file to create the data table from.
         """
         return dm.from_device_name(cls.file)
 
@@ -233,4 +237,5 @@ class DataRequestReceiver(RequestReceiver):
         """
         update is a method that updates the database based on the filename provided.
         """
-        previous_data.add_data_from_file(cls.file)
+        earliest_time = previous_data.add_data_from_file(cls.file)
+        check_alarms(dm, cls.alarms, earliest_time)
