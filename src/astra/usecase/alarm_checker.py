@@ -26,7 +26,7 @@ def get_strategy(base: EventBase) -> Callable:
             return any_events_check
 
 
-def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]],
+def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: set[Alarm]],
                  earliest_time: datetime) -> None:
     """
     Goes through all possible alarms to check and, if any exists, adds them to <alarms>
@@ -51,4 +51,8 @@ def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: list[Alarm]],
         if alarm is not None:
             criticality = alarm.criticality
             priority = dm.alarm_priority_matrix[timedelta(seconds=0)][criticality]
-            alarms[priority].append(alarm)
+
+            if priority in alarms:
+                alarms[priority].add(alarm)
+            else:
+                alarm[priority] = {alarm}

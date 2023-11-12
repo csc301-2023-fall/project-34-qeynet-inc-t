@@ -220,7 +220,7 @@ class DataRequestReceiver(RequestReceiver):
         cls.file = file
 
     @classmethod
-    def get_alarms(cls) -> dict[AlarmPriority: list[Alarm]]:
+    def get_alarms(cls) -> dict[AlarmPriority: set[Alarm]]:
         return cls.alarms
 
     @classmethod
