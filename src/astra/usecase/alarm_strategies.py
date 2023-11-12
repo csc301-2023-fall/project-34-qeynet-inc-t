@@ -78,14 +78,13 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     num_frames = td.num_telemetry_frames
     for i in range(num_frames):
         telemetry_frame = td.get_telemetry_frame(i)
+        telemetry_time = telemetry_frame.time
 
-        # Note: I believe we don't need to convert to true value because both sides of
-        # comparison would be applied the same transformation anyway
-        # TODO: this might be buggy and slow
-        raw_parameter_value = get_tag_param_value(i, tag, td)
+        tag_values = td.get_parameter_values(tag)
+        raw_parameter_value = tag_values[telemetry_time]
         cond_frame_met = condition(raw_parameter_value, comparison)
 
-        cond_met.append((cond_frame_met, telemetry_frame.time))
+        cond_met.append((cond_frame_met, telemetry_time))
         if not cond_frame_met:
             false_index.append(i)
     return cond_met, false_index
