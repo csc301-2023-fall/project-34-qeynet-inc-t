@@ -1,9 +1,10 @@
 """This module defines the DataManager, the main data access interface for the use case subteam."""
 from collections.abc import Iterable, Mapping
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Self
 
 from astra.data import telemetry_manager
+from astra.data.alarms import AlarmCriticality, AlarmPriority
 from astra.data.database import db_manager
 from astra.data.parameters import DisplayUnit, Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
@@ -92,6 +93,11 @@ class DataManager:
     def parameters(self) -> Mapping[Tag, Parameter]:
         """Tag -> parameter mapping for the device of this DataManager."""
         return self._parameters
+
+    @property
+    def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:
+        # TODO: write docstring and implement
+        ...
 
     @staticmethod
     def add_data(filename: str) -> datetime:
