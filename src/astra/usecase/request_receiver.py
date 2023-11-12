@@ -239,4 +239,4 @@ class DataRequestReceiver(RequestReceiver):
         update is a method that updates the database based on the filename provided.
         """
         earliest_time = previous_data.add_data_from_file(cls.file)
-        check_alarms(dm, cls.alarms, earliest_time)
+        check_alarms(previous_data, cls.alarms, earliest_time)

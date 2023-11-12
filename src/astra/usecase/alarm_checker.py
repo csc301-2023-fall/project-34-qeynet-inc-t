@@ -3,29 +3,6 @@ from astra.data.alarms import *
 from .alarm_strategies import *
 
 
-def get_strategy(base: EventBase) -> Callable:
-    """
-    Matches an unknown form of EventBase to the correct strategy to check them
-
-    :param base: An EventBase to evaluate
-    """
-    match base:
-        case RateOfChangeEventBase():
-            return rate_of_change_check
-        case StaticEventBase():
-            return static_check
-        case ThresholdEventBase():
-            return threshold_check
-        case SetpointEventBase():
-            return setpoint_check
-        case SOEEventBase():
-            return sequence_of_events_check
-        case AllEventBase():
-            return all_events_check
-        case _:
-            return any_events_check
-
-
 def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: set[Alarm]],
                  earliest_time: datetime) -> None:
     """

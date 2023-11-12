@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 
 from astra.data.alarms import *
 from astra.data.data_manager import DataManager
-from .alarm_checker import get_strategy
 from .utils import get_tag_param_value
 from typing import Callable
 from astra.data.telemetry_data import TelemetryData
@@ -12,6 +11,28 @@ next_id = EventID(0)
 
 
 # TODO: if alarm descriptions are "formulaic", extract helper method for making alarms from list
+
+def get_strategy(base: EventBase) -> Callable:
+    """
+    Matches an unknown form of EventBase to the correct strategy to check them
+
+    :param base: An EventBase to evaluate
+    """
+    match base:
+        case RateOfChangeEventBase():
+            return rate_of_change_check
+        case StaticEventBase():
+            return static_check
+        case ThresholdEventBase():
+            return threshold_check
+        case SetpointEventBase():
+            return setpoint_check
+        case SOEEventBase():
+            return sequence_of_events_check
+        case AllEventBase():
+            return all_events_check
+        case _:
+            return any_events_check
 
 
 def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime, datetime):
@@ -217,17 +238,24 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, dateti
     num_frames = td.num_telemetry_frames
     sequences_of_static = []
     false_index = []
-    i = 1
 
     # First frame is vacuously a sequence of static values
     sequences_of_static.append((True, td.get_telemetry_frame(0).time))
 
     # Iterate over each frame and add a true value to the list if the value is the same as the
     # previous one.
+    tag_values = td.get_parameter_values(tag)
     for i in range(1, num_frames):
+        if i == 1:
+            prev_frame = td.get_telemetry_frame(i - 1)
+            prev_frame_time = prev_frame.time
+            last_value = tag_values[prev_frame_time]
+        else:
+            last_value = curr_value
+
         curr_frame = td.get_telemetry_frame(i)
-        curr_value = get_tag_param_value(i, tag, td)
-        last_value = get_tag_param_value(i - 1, tag, td)
+        frame_time = curr_frame.time
+        curr_value = tag_values[frame_time]
 
         if curr_value == last_value:
             sequences_of_static.append((True, curr_frame.time))
