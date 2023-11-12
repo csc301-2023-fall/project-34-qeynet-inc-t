@@ -7,7 +7,10 @@ from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
 from ..data.parameters import Tag
 
-
+TAG = 'TAG'
+DESCRIPTION = 'DESCRIPTION'
+DESCENDING = '>'
+ASCENDING = '<'
 DATA = 'DATA'
 CONFIG = 'CONFIG'
 
@@ -162,8 +165,8 @@ class DashboardRequestReceiver(RequestReceiver):
         :param previous_table: the previous table that was in the view.
         :returns: True if the sorting filter was successfully updated and False otherwise.
         """
-        valid_sorting_directions = {'>', '<'}
-        valid_columns = {DATA, CONFIG}
+        valid_sorting_directions = {ASCENDING, DESCENDING}
+        valid_columns = {TAG, DESCRIPTION}
 
         # Determine if the sorting filter is valid.
         if sort[0] not in valid_sorting_directions:
