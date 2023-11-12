@@ -7,7 +7,7 @@ import pytest
 
 from astra.data.data_manager import DataManager
 from astra.data.parameters import DisplayUnit
-from astra.usecase.dashboard_handler import TableReturn, DashboardHandler
+from astra.usecase.dashboard_handler import DashboardFilters, TableReturn, DashboardHandler
 
 config = pd.DataFrame(
     {
@@ -84,21 +84,18 @@ def test_dashboard_no_filter(telemetry_file: str, tablereturn: TableReturn):
     We expect the full table to be returned.
     """
     # creates a data manager and adds data to it.
-    data = DataManager.from_device_name(DEVICE)
+    data = DataManager(DEVICE)
     start_time = data.add_data_from_file(telemetry_file)
 
     # creates a datatable and adds data to it and retrieves the data.
-    DashboardHandler.set_index(0)
-    DashboardHandler.set_shown_tag(data.tags)
-    DashboardHandler.set_start_time(start_time)
-    DashboardHandler.set_end_time(None)
-    actual = DashboardHandler.get_data(data)
+    filter_args = DashboardFilters(None, 0, data.tags, start_time, None)
+    actual = DashboardHandler.get_data(data, filter_args)
 
     # Avoid alias of the table object.
     expected = copy(tablereturn)
 
     assert (
-            actual == expected
+        actual == expected
     )
 
 
@@ -114,14 +111,9 @@ def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
     start_time = data.add_data_from_file(telemetry_file)
 
     # creates a datatable and adds data to it and retrieves the data.
-    DashboardHandler.set_index(0)
-    DashboardHandler.set_shown_tag(data.tags)
-    DashboardHandler.set_start_time(start_time)
-    DashboardHandler.set_end_time(None)
-    actual = DashboardHandler.get_data(data)
-
-    # remove a tag from the display and update it.
-    DashboardHandler.remove_shown_tag('A3')
+    filter_args = DashboardFilters(None, 0, data.tags, start_time, None)
+    filter_args.tags.remove('A3')  # remove the first tag from the display.
+    actual = DashboardHandler.get_data(data, filter_args)
 
     DashboardHandler.update_data(actual)
 
@@ -133,7 +125,7 @@ def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
     expected.table = tablereturn.table[1:]
 
     assert (
-            actual == expected
+        actual == expected
     )
 
 
@@ -149,21 +141,8 @@ def test_dashboard_all_filters(telemetry_file: str, tablereturn: TableReturn):
     start_time = data.add_data_from_file(telemetry_file)
 
     # creates a datatable and adds data to it and retrieves the data.
-    DashboardHandler.set_index(0)
-    DashboardHandler.set_shown_tag(data.tags)
-    DashboardHandler.set_start_time(start_time)
-    DashboardHandler.set_end_time(None)
-    actual = DashboardHandler.get_data(data)
-
-    # remove the tags from the display and update between each.
-    DashboardHandler.remove_shown_tag('A3')
-    DashboardHandler.update_data(actual)
-    DashboardHandler.remove_shown_tag('B1')
-    DashboardHandler.update_data(actual)
-    DashboardHandler.remove_shown_tag('B4')
-    DashboardHandler.update_data(actual)
-    DashboardHandler.remove_shown_tag('C1')
-    DashboardHandler.update_data(actual)
+    filter_args = DashboardFilters(None, 0, [], start_time, None)
+    actual = DashboardHandler.get_data(data, filter_args)
 
     # avoid alias of the table object.
     expected = copy(tablereturn)
@@ -173,7 +152,7 @@ def test_dashboard_all_filters(telemetry_file: str, tablereturn: TableReturn):
     expected.table = []
 
     assert (
-            actual == expected
+        actual == expected
     )
 
 
