@@ -8,7 +8,8 @@ from astra.data.data_manager import DataManager
 from ..data.parameters import Tag
 
 
-# Not sure if this is necessary anymore, request receivers should just be some modules?
+DATA = 'DATA'
+CONFIG = 'CONFIG'
 
 
 class RequestReceiver(ABC):
@@ -42,9 +43,6 @@ class DashboardRequestReceiver(RequestReceiver):
     and updating the sorting filter to be applied.
     """
 
-    # TODO what is the type of the table that we are receiving?
-    # TODO where do we send the data.
-
     filters = None
     handler = DashboardHandler
     search_cache: dict[str: list[Tag]]
@@ -60,7 +58,7 @@ class DashboardRequestReceiver(RequestReceiver):
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
         """
-        create is a method that creates the initial data table,
+        Create is a method that creates the initial data table,
         with all tags shown, no sorting applied and at the first index.
         :param model: The model of currently shown data
         :param dm: Contains all data stored by the program to date.
@@ -92,7 +90,7 @@ class DashboardRequestReceiver(RequestReceiver):
     def change_index(cls, index: int) -> bool:
         """
         change_index changes the index of the datatable
-        that we are viewing and then updates the view.
+        that we are viewing.
         It returns True if it was successful and False otherwise.
         :param dm: The interface for getting all data known to the program
         :param index: the index of the datatable that we want to change to.
@@ -110,7 +108,7 @@ class DashboardRequestReceiver(RequestReceiver):
     def add_shown_tag(cls, add: str) -> bool:
         """
         add_shown_tag is a method that adds a tag to the set of tags
-        that we are viewing and then updates the view.
+        that we are viewing.
         It returns True if it was successful and False otherwise.
         :param add: the tag that we want to add to the set of tags that we are viewing.
         :param previous_table: the previous table that was in the view.
@@ -122,12 +120,13 @@ class DashboardRequestReceiver(RequestReceiver):
             cls.filters.tags.append(add)
             return True
         else:
-            return False  # Tag was already in the set of tags that we are viewing.
+            # Tag was already in the set of tags that we are viewing.
+            return False
 
     @classmethod
     def set_shown_tags(cls, tags: Iterable[Tag]):
         """
-        sets <cls.filters.tags> to the set of tags to be shown
+        Sets <cls.filters.tags> to the set of tags to be shown
 
         PRECONDITION: <tag> is an element of <cls.filters.tags>
 
@@ -138,7 +137,7 @@ class DashboardRequestReceiver(RequestReceiver):
     @classmethod
     def remove_shown_tag(cls, remove: str) -> bool:
         """
-        Remove a tag from the set of tags that we are viewing and update the view.
+        Remove a tag from the set of tags that we are viewing.
         It returns True if it was successful and False otherwise.
         :param previous_table: The previous table that was in the view.
         :param remove: The tag that we want to remove from the set of tags that we are viewing.
@@ -154,7 +153,7 @@ class DashboardRequestReceiver(RequestReceiver):
     @classmethod
     def update_sort(cls, sort: tuple[str, str]) -> bool:
         """
-        Updates the sorting filter to be applied
+        Updates the sorting filter to be applied.
         It returns True if the sorting filter was successfully applied and False otherwise.
         :param sort: the first value in the tuple for this key will
              be either ">", indicating sorting by increasing values,
@@ -164,7 +163,7 @@ class DashboardRequestReceiver(RequestReceiver):
         :returns: True if the sorting filter was successfully updated and False otherwise.
         """
         valid_sorting_directions = {'>', '<'}
-        valid_columns = {'TAG', 'DESCRIPTION'}  # TODO confirm this
+        valid_columns = {DATA, CONFIG}
 
         # Determine if the sorting filter is valid.
         if sort[0] not in valid_sorting_directions:
