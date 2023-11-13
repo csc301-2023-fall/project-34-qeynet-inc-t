@@ -162,14 +162,31 @@ class AlarmHandler(UseCaseHandler):
                 alarm_description = alarm.event.description
 
                 new_row = [alarm_id, alarm_priority, alarm_criticality, alarm_register_time,
-                           alarm_confirm_time, alarm_type, alarm_tags, alarm_description]
+                           alarm_confirm_time, alarm_type, alarm_tags, alarm_description, alarm]
                 if cls._determine_toggled(alarm, filter_args, priority):
                     shown.append(new_row)
                 else:
-                    shown.append(removed)
+                    removed.append(removed)
 
         return_table = TableReturn(shown, removed)
         return return_table
 
-    def update_data(self, prev_data: Any, filter_args: any, dm: DataManager = None):
-        pass
+    @classmethod
+    def update_data(cls, prev_data: TableReturn, filter_args: any, dm: DataManager = None) -> None:
+        """
+        Updates the previous data returned by get_data to apply any new filters
+
+        :param prev_data: The data returned by the last call to cls.get_data
+        :param filter_args: Describes all filters to apply to the table
+        :param dm: Contains all data known to the program
+        """
+        for row in prev_data.table:
+            alarm = row[9]
+            if not cls._determine_toggled(alarm, filter_args, row[1]):
+                prev_data.removed.append(row)
+                prev_data.table.remove(row)
+        for row in prev_data.removed:
+            alarm = row[9]
+            if cls._determine_toggled(alarm, filter_args, row[1]):
+                prev_data.table.append(row)
+                prev_data.removed.remove(row)
