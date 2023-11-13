@@ -66,14 +66,29 @@ class View(Tk):
         tab_control.pack(expand=1, fill="both")
 
         # elements of dashboard_frame
+        self.dashboard_search_bar = StringVar()
+
+        filter_tags = Frame(dashboard_frame)
+        filter_tags.config(background='#fff')
+        filter_tags.grid(sticky='W', row=0, column=0, rowspan=20)
+        Label(filter_tags, text="Parameters to display", background='#fff').grid(row=0, column=0, columnspan=2)
+        Label(filter_tags, text="Search", background='#fff').grid(row=1, column=0)
+        Entry(filter_tags, textvariable=self.dashboard_search_bar).grid(row=1, column=1)
+        (Button(filter_tags, text="Check all search results",
+                wraplength=80, command=self.update_time).grid(row=2, column=0, rowspan=2)) # TODO
+        (Button(filter_tags, text="Uncheck all search results",
+                wraplength=80, command=self.update_time).grid(row=2, column=1, rowspan=2)) # TODO
+        table_test = ttk.Treeview(filter_tags, height=12, show='tree')
+        table_test.grid(row=4, column=0, columnspan=2)
+
         add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
-        add_data_button.grid(sticky="W", row=0, column=0)
+        add_data_button.grid(sticky="W", row=0, column=1)
 
         self.start_time = StringVar()
         self.end_time = StringVar()
 
         dashboard_time_range_row = Frame(dashboard_frame)
-        dashboard_time_range_row.grid(sticky='W', row=1, column=0)
+        dashboard_time_range_row.grid(sticky='W', row=1, column=1)
         Label(dashboard_time_range_row, text='From').grid(row=0, column=0)
         Entry(dashboard_time_range_row, textvariable=self.start_time).grid(row=0, column=1)
         Label(dashboard_time_range_row, text='to').grid(row=0, column=2)
@@ -85,7 +100,7 @@ class View(Tk):
         self.dashboard_frame_navigation_text = StringVar(value='Frame --- at ---')
 
         dashboard_frame_navigation_row = Frame(dashboard_frame)
-        dashboard_frame_navigation_row.grid(sticky='W', row=2, column=0)
+        dashboard_frame_navigation_row.grid(sticky='W', row=2, column=1)
         Button(dashboard_frame_navigation_row, text='|<',
                command=self.first_frame).grid(row=0, column=0)
         Button(dashboard_frame_navigation_row, text='<',
@@ -104,7 +119,7 @@ class View(Tk):
         dashboard_table = ttk.Treeview(dashboard_frame, height=10, padding=3)
         self.dashboard_table = dashboard_table
         dashboard_table['columns'] = ("tag", "description", "value", "setpoint")
-        dashboard_table.grid(sticky="W", row=10, column=0)
+        dashboard_table.grid(sticky="W", row=10, column=1)
         dashboard_table.column("#0", width=0, stretch=NO)
         dashboard_table.column("tag", anchor=CENTER, width=80)
         dashboard_table.column("description", anchor=CENTER, width=100)
