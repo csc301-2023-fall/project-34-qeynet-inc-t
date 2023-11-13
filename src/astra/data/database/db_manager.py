@@ -232,10 +232,12 @@ def num_telemetry_frames(
     with Session.begin() as session:
         if device:
             device_name = device.device_name
-            tag_id_name = get_tag_id_name(device_name)
-            tag_ids = [tag_id for tag_id, _ in tag_id_name]
+            # tag_id_name = get_tag_id_name(device_name)
+            # tag_ids = [tag_id for tag_id, _ in tag_id_name]
             select_stmt = select(func.count(Data.timestamp.distinct())).where(
-                Data.tag_id.in_(tag_ids)
+                Device.device_name == device_name,
+                Tag.device_id == Device.device_id,
+                Tag.tag_id == Data.tag_id,
             )
             if start_time is not None:
                 select_stmt = select_stmt.where(Data.timestamp >= start_time)
@@ -269,11 +271,19 @@ def get_timestamp_by_index(
     with Session.begin() as session:
         if device:
             device_name = device.device_name
-            tag_id_name = get_tag_id_name(device_name)
-            tag_ids = [tag_id for tag_id, _ in tag_id_name]
+            # tag_id_name = get_tag_id_name(device_name)
+            # tag_ids = [tag_id for tag_id, _ in tag_id_name]
             select_stmt = (
                 select(Data.timestamp)
-                .where(Data.tag_id.in_(tag_ids))
+                .where(
+                    Device.device_name == device_name,
+                )
+                .where(
+                    Tag.device_id == Device.device_id,
+                )
+                .where(
+                    Tag.tag_id == Data.tag_id,
+                )
                 .group_by(Data.timestamp)
                 .order_by(Data.timestamp)
                 .limit(index + 1)
