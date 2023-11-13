@@ -1,9 +1,7 @@
-from typing import Callable
-from astra.data.alarms import *
 from .alarm_strategies import *
 
 
-def check_alarms(dm: DataManager, alarms: dict[AlarmCriticality: set[Alarm]],
+def check_alarms(dm: DataManager, alarms: dict[AlarmPriority, set[Alarm]],
                  earliest_time: datetime) -> None:
     """
     Goes through all possible alarms to check and, if any exists, adds them to <alarms>
