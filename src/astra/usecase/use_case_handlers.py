@@ -1,6 +1,24 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from astra.data.data_manager import DataManager
+
+@dataclass
+class TableReturn:
+    """A container for the output of get_data() and output_data() in
+    of certain UseCaseHandlers
+
+    :param columns: An ordered list of column names to be displayed
+    :param timestamp: The timestamp of the currently shown telemetry frame
+    :param table: an ordered list of lists containing data for each row
+    :param removed: an unordered list of lists containing data for tags
+    not currently shown
+    """
+    timestamp: datetime
+    table: list[list[str]]
+    removed: list[list[str]]
+    frame_quantity: int
 
 
 class UseCaseHandler(ABC):

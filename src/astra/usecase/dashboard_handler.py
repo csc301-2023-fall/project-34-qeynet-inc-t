@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable
 
-from .use_case_handlers import UseCaseHandler
+from .use_case_handlers import UseCaseHandler, TableReturn
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
-from astra.data.parameters import DisplayUnit, Parameter, ParameterValue, Tag
+from astra.data.parameters import DisplayUnit, ParameterValue, Tag
 from .utils import eval_param_value
 
 SORT = 'SORT'
@@ -18,23 +18,6 @@ DATA = 'DATA'
 CONFIG = 'CONFIG'
 # For now, this choice is somewhat arbitrary
 CACHE_SIZE = 20
-
-
-@dataclass
-class TableReturn:
-    """A container for the output of get_data() and output_data() in
-    DashBoardHandler
-
-    :param columns: An ordered list of column names to be displayed
-    :param timestamp: The timestamp of the currently shown telemetry frame
-    :param table: an ordered list of lists containing data for each row
-    :param removed: an unordered list of lists containing data for tags
-    not currently shown
-    """
-    timestamp: datetime
-    table: list[list[str]]
-    removed: list[list[str]]
-    frame_quantity: int
 
 
 @dataclass

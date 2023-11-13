@@ -10,7 +10,7 @@ from typing import List, Iterable
 
 from ..data.data_manager import DataManager
 from ..data.parameters import Tag
-from ..usecase.dashboard_handler import TableReturn
+from ..usecase.use_case_handlers import TableReturn
 from ..usecase.request_receiver import DashboardRequestReceiver, DataRequestReceiver
 
 
