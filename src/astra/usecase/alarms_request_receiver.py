@@ -12,11 +12,9 @@ class AlarmsRequestReceiver(RequestReceiver):
     AlarmsRequestReceiver is a class that implements the RequestReceiver interface.
     It handles requests from the alarms tab, such as creating the initial data table,
     updating the currently represented information, changing the index of the datatable
-    that we are viewing, adding or removing a tag from the set of tags that we are viewing,
-    and updating the sorting filter to be applied.
+    that we are viewing, adding or removing priorities, criticalities or types
+    from the sets of them that we are viewing, and updating the sorting filter to be applied.
     """
-
-    # TODO move to its own module.
 
     filters = None
     handler = AlarmsHandler
@@ -35,6 +33,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         Create is a method that creates the initial data table,
         with all priorities/types/criticalities shown, no sorting applied and at the first index.
+
         :param model: The model of currently shown data
         :param dm: Contains all data stored by the program to date.
         """
@@ -66,15 +65,18 @@ class AlarmsRequestReceiver(RequestReceiver):
     def update(cls, previous_data: TableReturn, dm: DataManager = None):
         """
         update is a method that updates the currently represented information
+
+        :param previous_data: The previous table that was in the view and we want to update.
+        :param dm: Contains all data stored by the program to date.
         """
         cls.handler.update_data(previous_data, cls.filters)
 
     @classmethod
     def change_index(cls, index: int) -> bool:
         """
-        change_index changes the index of the datatable
-        that we are viewing.
-        It returns True if it was successful and False otherwise.
+        change_index changes the index of the datatable that we are viewing.
+        It returns True if it successfully changed to a valid index and False otherwise.
+
         :param dm: The interface for getting all data known to the program
         :param index: the index of the datatable that we want to change to.
         :returns: True if the index was successfully changed and False otherwise.
@@ -86,10 +88,9 @@ class AlarmsRequestReceiver(RequestReceiver):
     def add_shown_priority(cls, add: str) -> bool:
         """
         add_shown_priority is a method that adds a priority to the set of priorities
-        that we are viewing.
-        It returns True if it was successful and False otherwise.
+        that we are viewing. It returns True if it was successful and False otherwise.
+
         :param add: the priority that we want to add to the set of priorities that we are viewing.
-        :param previous_table: the previous table that was in the view.
         :returns: True if the priority was successfully added and False otherwise.
         """
 
@@ -105,11 +106,10 @@ class AlarmsRequestReceiver(RequestReceiver):
     def add_shown_criticality(cls, add: str) -> bool:
         """
         add_shown_criticality is a method that adds a criticality to the set of criticalities
-        that we are viewing.
-        It returns True if it was successful and False otherwise.
-        :param add: the criticality that we want to add to the set of criticalities that we 
+        that we are viewing. It returns True if it was successful and False otherwise.
+
+        :param add: the criticality that we want to add to the set of criticalities that we
         are viewing.
-        :param previous_table: the previous table that was in the view.
         :returns: True if the criticality was successfully added and False otherwise.
         """
 
@@ -124,11 +124,10 @@ class AlarmsRequestReceiver(RequestReceiver):
     @classmethod
     def add_shown_type(cls, add: str) -> bool:
         """
-        add_shown_type is a method that adds a type to the set of types
-        that we are viewing.
+        add_shown_type is a method that adds a type to the set of types that we are viewing.
         It returns True if it was successful and False otherwise.
+
         :param add: the type that we want to add to the set of types that we are viewing.
-        :param previous_table: the previous table that was in the view.
         :returns: True if the type was successfully added and False otherwise.
         """
 
@@ -178,6 +177,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         Remove a priority from the set of priorities that we are viewing.
         It returns True if it was successful and False otherwise.
+
         :param previous_table: The previous table that was in the view.
         :param remove: The priority that we want to remove from the set of priorities that 
         we are viewing.
@@ -196,6 +196,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         Remove a criticality from the set of criticalities that we are viewing.
         It returns True if it was successful and False otherwise.
+
         :param previous_table: The previous table that was in the view.
         :param remove: The criticality that we want to remove from the set of criticalities that
         we are viewing.
@@ -215,6 +216,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         Remove a type from the set of types that we are viewing.
         It returns True if it was successful and False otherwise.
+
         :param previous_table: The previous table that was in the view.
         :param remove: The type that we want to remove from the set of types that we are viewing.
         :return: True if the type was successfully removed and False otherwise.
@@ -232,6 +234,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         Updates the sorting filter to be applied.
         It returns True if the sorting filter was successfully applied and False otherwise.
+
         :param sort: the first value in the tuple for this key will
              be either ">", indicating sorting by increasing values,
              and "<" indicating sorting by decreasing values. The second
