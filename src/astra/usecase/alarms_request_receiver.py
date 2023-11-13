@@ -178,7 +178,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         Remove a priority from the set of priorities that we are viewing.
         It returns True if it was successful and False otherwise.
 
-        :param remove: The priority that we want to remove from the set of priorities that 
+        :param remove: The priority that we want to remove from the set of priorities that
         we are viewing.
         :return: True if the priority was successfully removed and False otherwise.
         """

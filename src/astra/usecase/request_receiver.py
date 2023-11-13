@@ -61,7 +61,7 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         Create is a method that creates the initial data table,
         with all tags shown, no sorting applied and at the first index.
-        
+
         :param model: The model of currently shown data
         :param dm: Contains all data stored by the program to date.
         """
@@ -93,7 +93,7 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         change_index changes the index of the datatable
         that we are viewing. It returns True if it was successful and False otherwise.
-        
+
         :param dm: The interface for getting all data known to the program
         :param index: the index of the datatable that we want to change to.
         :returns: True if the index was successfully changed and False otherwise.
@@ -111,7 +111,7 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         add_shown_tag is a method that adds a tag to the set of tags
         that we are viewing. It returns True if it was successful and False otherwise.
-        
+
         :param add: the tag that we want to add to the set of tags that we are viewing.
         :param previous_table: the previous table that was in the view.
         :returns: True if the tag was successfully added and False otherwise.
@@ -141,7 +141,7 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         Remove a tag from the set of tags that we are viewing.
         It returns True if it was successful and False otherwise.
-        
+
         :param previous_table: The previous table that was in the view.
         :param remove: The tag that we want to remove from the set of tags that we are viewing.
         :return: True if the tag was successfully removed and False otherwise.
@@ -158,7 +158,7 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         Updates the sorting filter to be applied.
         It returns True if the sorting filter was successfully applied and False otherwise.
-        
+
         :param sort: the first value in the tuple for this key will
              be either ">", indicating sorting by increasing values,
              and "<" indicating sorting by decreasing values. The second
@@ -230,7 +230,7 @@ class DataRequestReceiver(RequestReceiver):
         """
         create is a method that creates a new data table and returns it based
         on the filename provided.
-        
+
         :param dm: The interface for getting all data known to the program
         """
         cls.alarms = dict()
