@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Iterable
 from .use_case_handlers import AlarmsHandler, AlarmsFilters  # , ReturnType
+from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
-from ..data.alarms import Alarm, AlarmPriority, AlarmCriticality
+from ..data.alarms import AlarmPriority, AlarmCriticality
 from ..data.parameters import Tag
-from .alarm_checker import check_alarms
+
 
 class AlarmsRequestReceiver(RequestReceiver):
     """
@@ -22,7 +23,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
     @classmethod
     def __init__(cls):
-        cls.handler = DashboardHandler()
+        cls.handler = AlarmsHandler()
         cls.filters = AlarmsFilters(None, None, None, None, None, None, None)
         # maybe make this inherit from dashboard filters
         # Im assuming the alarms filter will have:
@@ -38,8 +39,10 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param dm: Contains all data stored by the program to date.
         """
 
-        criticalities = [AlarmCriticality.WARNING, LOW, MEDIUM, HIGH, CRITICAL]
-        priorities = [WARNING, LOW, MEDIUM, HIGH, CRITICAL]
+        criticalities = [AlarmCriticality.WARNING, AlarmCriticality.LOW,
+                         AlarmCriticality.MEDIUM, AlarmCriticality.HIGH, AlarmCriticality.CRITICAL]
+        priorities = [AlarmPriority.WARNING, AlarmPriority.LOW,
+                      AlarmPriority.MEDIUM, AlarmPriority.HIGH, AlarmPriority.CRITICAL]
 
         # add all priorities and criticalities to the shown priorities and criticalities by default
         cls.filters.criticalities = criticalities
