@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable
 
-from .use_case_handlers import UseCaseHandler, TableReturn
+from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
 from astra.data.parameters import DisplayUnit, ParameterValue, Tag
@@ -198,7 +198,7 @@ class DashboardHandler(UseCaseHandler):
         include, remove = cls._add_rows_to_output(filter_args.tags, dm, telemetry_data, timestamp)
         frame_quantity = telemetry_data.num_telemetry_frames
 
-        return_data = TableReturn(timestamp, include, remove, frame_quantity)
+        return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp)
 
         # Next, determine if any sorting was requested
         cls._sort_output(return_data, filter_args.sort)
@@ -206,7 +206,7 @@ class DashboardHandler(UseCaseHandler):
         return return_data
 
     @classmethod
-    def update_data(cls, previous_table: TableReturn, filter_args: DashboardFilters,
+    def update_data(cls, previous_table: TelemetryTableReturn, filter_args: DashboardFilters,
                     dm: DataManager = None):
         """
         An implementation of update_data for the Telemetry Dashboard to update fields

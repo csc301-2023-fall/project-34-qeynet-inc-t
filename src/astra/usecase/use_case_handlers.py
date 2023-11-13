@@ -4,21 +4,31 @@ from datetime import datetime
 from typing import Any
 from astra.data.data_manager import DataManager
 
+
 @dataclass
 class TableReturn:
     """A container for the output of get_data() and output_data() in
     of certain UseCaseHandlers
 
-    :param columns: An ordered list of column names to be displayed
-    :param timestamp: The timestamp of the currently shown telemetry frame
+
     :param table: an ordered list of lists containing data for each row
     :param removed: an unordered list of lists containing data for tags
     not currently shown
     """
-    timestamp: datetime
     table: list[list[str]]
     removed: list[list[str]]
+
+
+@dataclass
+class TelemetryTableReturn(TableReturn):
+    """
+    An extension of TableReturn describing more details about the table
+
+    :param frame_quantity: The number of shown frames
+    :param timestamp: The timestamp of the currently shown telemetry frame
+    """
     frame_quantity: int
+    timestamp: datetime
 
 
 class UseCaseHandler(ABC):
@@ -33,7 +43,7 @@ class UseCaseHandler(ABC):
     """
 
     @abstractmethod
-    def get_data(self, dm: DataManager, filter_args: any):
+    def get_data(self, dm: Any, filter_args: any):
         """
         get_data is a method that processes the data according to determined
         filters by each child class
