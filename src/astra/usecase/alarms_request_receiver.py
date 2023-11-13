@@ -178,7 +178,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         Remove a priority from the set of priorities that we are viewing.
         It returns True if it was successful and False otherwise.
 
-        :param previous_table: The previous table that was in the view.
         :param remove: The priority that we want to remove from the set of priorities that 
         we are viewing.
         :return: True if the priority was successfully removed and False otherwise.
@@ -197,7 +196,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         Remove a criticality from the set of criticalities that we are viewing.
         It returns True if it was successful and False otherwise.
 
-        :param previous_table: The previous table that was in the view.
         :param remove: The criticality that we want to remove from the set of criticalities that
         we are viewing.
         :return: True if the criticality was successfully removed and False otherwise.
@@ -217,7 +215,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         Remove a type from the set of types that we are viewing.
         It returns True if it was successful and False otherwise.
 
-        :param previous_table: The previous table that was in the view.
         :param remove: The type that we want to remove from the set of types that we are viewing.
         :return: True if the type was successfully removed and False otherwise.
         """
@@ -239,7 +236,6 @@ class AlarmsRequestReceiver(RequestReceiver):
              be either ">", indicating sorting by increasing values,
              and "<" indicating sorting by decreasing values. The second
              value will indicate the name of the column to sort by.
-        :param previous_table: the previous table that was in the view.
         :returns: True if the sorting filter was successfully updated and False otherwise.
         """
         valid_sorting_directions = {'>', '<'}
