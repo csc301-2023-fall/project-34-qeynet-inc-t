@@ -15,8 +15,8 @@ class TableReturn:
     :param removed: an unordered list of lists containing data for tags
     not currently shown
     """
-    table: list[list[str]]
-    removed: list[list[str]]
+    table: list[list]
+    removed: list[list]
 
 
 @dataclass
