@@ -153,10 +153,12 @@ class DashboardViewModel:
         # Case 1: untoggle the tag
         if tag in self._toggled_tags:
             self._toggled_tags.remove(tag)
+            self.model.request_receiver.remove_shown_tag(tag)
         # Otherwise, toggle the tag
         else:
             self._toggled_tags.append(tag)
+            self.model.request_receiver.add_shown_tag(tag)
         # In either case, refresh the table entries
-        self.model.request_receiver.set_shown_tags(self._toggled_tags)
+
         self.model.receive_updates()
         self.update_table_entries()

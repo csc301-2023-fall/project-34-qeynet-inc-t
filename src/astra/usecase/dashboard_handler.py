@@ -55,7 +55,7 @@ class DashboardFilters:
 
     sort: tuple[str, str] | None
     index: int | None
-    tags: Iterable[Tag] | None
+    tags: set[Tag] | None
     start_time: datetime | None
     end_time: datetime | None
 

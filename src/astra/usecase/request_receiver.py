@@ -70,7 +70,7 @@ class DashboardRequestReceiver(RequestReceiver):
         all_tags = dm.tags
 
         # Add all tags to the shown tags by default.
-        cls.filters.tags = all_tags
+        cls.filters.tags = set(all_tags)
 
         if len(cls.search_cache) == 0:
             cls.search_cache[''] = all_tags
@@ -120,7 +120,7 @@ class DashboardRequestReceiver(RequestReceiver):
 
         # Determine if we can add the tag to the set of tags that we are viewing.
         if add not in cls.filters.tags:
-            cls.filters.tags.append(add)
+            cls.filters.tags.add(add)
             return True
         else:
             # Tag was already in the set of tags that we are viewing.
@@ -148,7 +148,7 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         # Determine if we can remove the tag from the set of tags that we are viewing.
         if remove in cls.filters.tags:
-            cls.filters.remove(remove)
+            cls.filters.tags.remove(remove)
             return True
         else:
             return False  # Tag was not in the set of tags that we are viewing.
