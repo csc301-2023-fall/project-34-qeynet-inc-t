@@ -22,12 +22,13 @@ def check_alarms(dm: DataManager, alarms: dict[AlarmPriority, set[Alarm]],
         criticality = alarm_base.criticality
 
         strategy = get_strategy(base)
-        alarm = strategy(dm, base, criticality, earliest_time)
-        if alarm is not None:
-            criticality = alarm.criticality
-            priority = dm.alarm_priority_matrix[timedelta(seconds=0)][criticality]
+        alarm_list = strategy(dm, base, criticality, earliest_time)
+        if alarm_list is not None and alarm_list[0]:
+            for alarm in alarm_list[0]:
+                criticality = alarm.criticality
+                priority = dm.alarm_priority_matrix[timedelta(seconds=0)][criticality]
 
-            if priority in alarms:
-                alarms[priority].add(alarm)
-            else:
-                alarm[priority] = {alarm}
+                if priority in alarms:
+                    alarms[priority].add(alarm)
+                else:
+                    alarms[priority] = {alarm}
