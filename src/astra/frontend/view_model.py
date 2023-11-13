@@ -23,6 +23,8 @@ class DashboardViewModel:
     _time: datetime.datetime
     _table_entries: List[list]
     _num_frames: int
+    _tag_list: List[Tag]
+    _toggled_tags: List[Tag]
 
     def __init__(self) -> None:
         """
@@ -33,6 +35,8 @@ class DashboardViewModel:
         self._table_entries = []
         self._time = None
         self._num_frames = 0
+        self._tag_list = []
+        self._toggled_tags = []
 
     def get_table_entries(self) -> List[list]:
         """
@@ -88,8 +92,8 @@ class DashboardViewModel:
         self.model.receive_updates()
         self.update_table_entries()
 
-    def toggle_tag(self, tags: Iterable[Tag]) -> None:
-        self.model.request_receiver.set_shown_tags(tags)
+    # def toggle_tag(self, tags: Iterable[Tag]) -> None:
+    #     self.model.request_receiver.set_shown_tags(tags)
 
     def toggle_start_time(self, start: datetime) -> None:
         self.model.request_receiver.set_start_time(start)
@@ -129,3 +133,30 @@ class DashboardViewModel:
         data_receiver = DataRequestReceiver
         data_receiver.set_filename(file)
         data_receiver.update(dm)
+
+    def search_tags(self, search: str):
+        self._tag_list = self.model.request_receiver.search_tags(search)
+
+    def get_tag_list(self):
+        to_return = []
+        for tag in self._tag_list:
+            to_return.append(tag)
+        for tag in self._toggled_tags:
+            if tag not in self._tag_list:
+                to_return.append(tag)
+        return to_return
+    
+    def get_toggled_tags(self):
+        return self._toggled_tags
+
+    def toggle_tag(self, tag: Tag):
+        # Case 1: untoggle the tag
+        if tag in self._toggled_tags:
+            self._toggled_tags.remove(tag)
+        # Otherwise, toggle the tag
+        else:
+            self._toggled_tags.append(tag)
+        # In either case, refresh the table entries
+        self.model.request_receiver.set_shown_tags(self._toggled_tags)
+        self.model.receive_updates()
+        self.update_table_entries()

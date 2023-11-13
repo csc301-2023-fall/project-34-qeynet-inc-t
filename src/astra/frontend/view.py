@@ -15,6 +15,7 @@ from astra.data import config_manager
 from astra.data.data_manager import DataManager
 from .view_draw_functions import draw_frameview
 from .view_model import DashboardViewModel
+from ..data.parameters import Tag
 
 config_path = filedialog.askopenfilename(title='Select config file')
 if not config_path:
@@ -74,12 +75,18 @@ class View(Tk):
         Label(filter_tags, text="Parameters to display", background='#fff').grid(row=0, column=0, columnspan=2)
         Label(filter_tags, text="Search", background='#fff').grid(row=1, column=0)
         Entry(filter_tags, textvariable=self.dashboard_search_bar).grid(row=1, column=1)
+        self.dashboard_search_bar.trace_add("write", self.search_bar_change)
         (Button(filter_tags, text="Check all search results",
                 wraplength=80, command=self.update_time).grid(row=2, column=0, rowspan=2)) # TODO
         (Button(filter_tags, text="Uncheck all search results",
                 wraplength=80, command=self.update_time).grid(row=2, column=1, rowspan=2)) # TODO
-        table_test = ttk.Treeview(filter_tags, height=12, show='tree')
-        table_test.grid(row=4, column=0, columnspan=2)
+        tag_table = ttk.Treeview(filter_tags, height=12, show='tree')
+        self.tag_table = tag_table
+        tag_table['columns'] = ("tag")
+        tag_table.column("#0", width=0, stretch=NO)
+        tag_table.column("tag")
+        tag_table.grid(row=4, column=0, columnspan=2)
+        tag_table.bind('<ButtonRelease-1>', self.toggle_tag_table_row)
 
         add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
         add_data_button.grid(sticky="W", row=0, column=1)
@@ -340,3 +347,30 @@ class View(Tk):
         self.dashboard_frame_navigation_text.set(
             f"Frame {curr}/{total} at {time}"
         )
+
+    def update_searched_tags(self):
+        for tag in self.tag_table.get_children():
+            self.tag_table.delete(tag)
+        for tag in self.dashboard_view_model.get_tag_list():
+            check = " "
+            if tag in self.dashboard_view_model.get_toggled_tags():
+                check = "x"
+            self.tag_table.insert("", END, value=(f"[{check}] {tag}",))
+
+    def search_bar_change(self, *args):
+        del args
+        self.dashboard_view_model.search_tags(self.dashboard_search_bar.get())
+        self.update_searched_tags()
+
+    def toggle_tag_table_row(self, event):
+        cur_item = self.tag_table.focus()
+        try:
+            tag_str = self.tag_table.item(cur_item)['values'][0][4:]
+        except IndexError:
+            # Do nothing
+            return
+        tag = Tag(tag_str)
+        self.dashboard_view_model.toggle_tag(tag)
+        self.update_searched_tags()
+        self.refresh_table()
+
