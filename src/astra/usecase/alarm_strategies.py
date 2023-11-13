@@ -7,6 +7,8 @@ from .utils import get_tag_param_value
 from typing import Callable
 from astra.data.telemetry_data import TelemetryData
 
+
+UNACKNOWLEDGED = 'UA'
 next_id = EventID(0)
 
 
@@ -84,7 +86,7 @@ def create_alarm(alarm_indexes: tuple[int, int], td: TelemetryData, description:
     event = Event(event_base, next_id, register_timestamp, confirm_timestamp, description)
     next_id += 1
 
-    return Alarm(event, criticality)
+    return Alarm(event, criticality, UNACKNOWLEDGED)
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
