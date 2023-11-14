@@ -162,3 +162,7 @@ class DashboardViewModel:
 
         self.model.receive_updates()
         self.update_table_entries()
+
+class AlarmsViewModel:
+    
+    pass

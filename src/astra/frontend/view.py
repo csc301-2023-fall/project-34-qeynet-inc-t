@@ -14,7 +14,7 @@ from tkinter.ttk import Treeview
 from astra.data import config_manager
 from astra.data.data_manager import DataManager
 from .view_draw_functions import draw_frameview
-from .view_model import DashboardViewModel
+from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.parameters import Tag
 
 config_path = filedialog.askopenfilename(title='Select config file')
@@ -47,18 +47,21 @@ class View(Tk):
         super().__init__()
         self.title("View Prototype")
         self.dashboard_view_model = DashboardViewModel()
+        self.alarms_view_model = AlarmsViewModel
 
         # tab widget
         tab_control = ttk.Notebook(self)
 
         # frames corresponding to each tab
         dashboard_frame = ttk.Frame(tab_control)
+        alarms_frame = ttk.Frame(tab_control)
         tableview_frame = ttk.Frame(tab_control)
         graphview_frame = ttk.Frame(tab_control)
         frameview_frame = ttk.Frame(tab_control)
 
         # adding the tabs to the tab control
         tab_control.add(dashboard_frame, text='Dashboard')
+        tab_control.add(alarms_frame, text='Alarms')
         tab_control.add(tableview_frame, text='Table view')
         tab_control.add(graphview_frame, text='Graph view')
         tab_control.add(frameview_frame, text='Frame view')
@@ -69,18 +72,18 @@ class View(Tk):
         # elements of dashboard_frame
         self.dashboard_search_bar = StringVar()
 
-        filter_tags = Frame(dashboard_frame)
-        filter_tags.config(background='#fff')
-        filter_tags.grid(sticky='W', row=0, column=0, rowspan=20)
-        Label(filter_tags, text="Parameters to display", background='#fff').grid(row=0, column=0, columnspan=2)
-        Label(filter_tags, text="Search", background='#fff').grid(row=1, column=0)
-        Entry(filter_tags, textvariable=self.dashboard_search_bar).grid(row=1, column=1)
+        dashboard_filter_tags = Frame(dashboard_frame)
+        dashboard_filter_tags.config(background='#fff')
+        dashboard_filter_tags.grid(sticky='W', row=0, column=0, rowspan=20)
+        Label(dashboard_filter_tags, text="Parameters to display", background='#fff').grid(row=0, column=0, columnspan=2)
+        Label(dashboard_filter_tags, text="Search", background='#fff').grid(row=1, column=0)
+        Entry(dashboard_filter_tags, textvariable=self.dashboard_search_bar).grid(row=1, column=1)
         self.dashboard_search_bar.trace_add("write", self.search_bar_change)
-        (Button(filter_tags, text="Check all search results",
+        (Button(dashboard_filter_tags, text="Check all search results",
                 wraplength=80, command=self.update_time).grid(row=2, column=0, rowspan=2)) # TODO
-        (Button(filter_tags, text="Uncheck all search results",
+        (Button(dashboard_filter_tags, text="Uncheck all search results",
                 wraplength=80, command=self.update_time).grid(row=2, column=1, rowspan=2)) # TODO
-        tag_table = ttk.Treeview(filter_tags, height=12, show='tree')
+        tag_table = ttk.Treeview(dashboard_filter_tags, height=12, show='tree')
         self.tag_table = tag_table
         tag_table['columns'] = ("tag")
         tag_table.column("#0", width=0, stretch=NO)
@@ -139,6 +142,45 @@ class View(Tk):
         dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
         dashboard_table.bind('<Double-1>', self.double_click_table_row)
 
+        
+        # elements of alarms_frame
+        
+        # alarms notifications
+        alarms_notifications = Frame(alarms_frame)
+        alarms_notifications.config(background='#fff')
+        alarms_notifications.grid(sticky='W', row=0, column=0, rowspan=20)
+        
+        # alarms filters (for the table)
+        
+        # alarms table
+        alarms_table_frame = Frame(alarms_frame)
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
+        alarms_table = ttk.Treeview(alarms_frame, height=10, padding=3)
+        self.alarms_table = alarms_table
+        alarms_table['columns'] = ("ID", "Priority", "Criticality", "Registered", "Confirmed", "Type", "Parameter(s)", "Description")
+        alarms_table.grid(sticky="W", row=2, column=1)
+        alarms_table.column("#0", width=0, stretch=NO)
+        alarms_table.column("ID", anchor=CENTER, width=80)
+        alarms_table.column("Priority", anchor=CENTER, width=80)
+        alarms_table.column("Criticality", anchor=CENTER, width=80)
+        alarms_table.column("Registered", anchor=CENTER, width=80)
+        alarms_table.column("Confirmed", anchor=CENTER, width=80)
+        alarms_table.column("Parameter(s)", anchor=CENTER, width=100)
+        alarms_table.column("Description", anchor=CENTER, width=100)
+        '''
+        
+        
+        alarms_table.heading("tag", text="Tag", anchor=CENTER, command=self.toggle_tag)
+        alarms_table.heading("Description", text="Description", anchor=CENTER,
+                                command=self.toggle_description)
+        alarms_table.heading("value", text="Value", anchor=CENTER)
+        alarms_table.heading("setpoint", text="Setpoint", anchor=CENTER)
+        alarms_table.bind('<Double-1>', self.double_click_table_row)
+        '''
+        
+        
         # elements of tableview_frame
         tableview_table_frame = Frame(tableview_frame)
         tableview_table_frame.grid(sticky="W", row=0, column=0)
