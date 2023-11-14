@@ -1,12 +1,9 @@
 import datetime
-import math
-from datetime import datetime, timedelta
+from datetime import timedelta
 from itertools import pairwise
-from threading import Lock, Thread
-
+from threading import Lock
 from astra.data.alarms import *
 from astra.data.data_manager import DataManager
-from .utils import get_tag_param_value
 from typing import Callable
 from astra.data.telemetry_data import TelemetryData
 

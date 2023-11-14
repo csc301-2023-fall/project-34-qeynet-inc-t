@@ -1,5 +1,3 @@
-from threading import Lock, Thread
-
 from .alarm_strategies import *
 
 
