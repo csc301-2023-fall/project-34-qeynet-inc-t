@@ -1,14 +1,10 @@
 import queue
-from copy import copy
 from datetime import datetime
-
 import pandas as pd
-import pytest
-
-from astra.data.data_manager import DataManager
 from astra.data.parameters import DisplayUnit
 from astra.usecase.dashboard_handler import TableReturn, DashboardHandler
 
+"""
 config = pd.DataFrame(
     {
         'tag': ['A3', 'B1', 'B4', 'C1'],
@@ -75,7 +71,6 @@ MOCKTABLE1 = TableReturn(
 )
 DEVICE = 'DEVICE'
 
-"""
 @pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
                                                          (MOCKTELEMETRY1, MOCKTABLE1)])
 def test_dashboard_no_filter(telemetry_file: str, tablereturn: TableReturn):
