@@ -220,6 +220,21 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
     return times
 
 
+def fall_threshold_check():
+    """
+    Returns a list of tuples, (bool, datetime), where the bool is
+    True IFF the rate of change from the datetime until the <time_window> time
+    is above the <rise_threshold>. It is false otherwise. There is one tuple
+    for each time in <td>.
+    It also returns a list of indices of the first list, where the bool is False.
+    """
+    pass
+
+
+def rise_threshold_check():
+    pass
+
+
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
                          criticality: AlarmCriticality, earliest_time: datetime) \
         -> (list[Alarm], list[tuple[datetime, bool]]):
@@ -239,10 +254,12 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     :return:  A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active.
     """
-    
+    # TODO figure out correct time window searching.
     # as in, if the window (frame 1) -> (time frame 1 + time_window) reaches a threshold rate of
     # change, then we consider it true on alarm conditions
+    # and we just evaluate from endpoint to endpoint for the rate of change within the time window
 
+    alarms = []
     # Calculating the range of time that needs to be checked
     first_time, sequence = find_first_time(alarm_base, earliest_time)
 
@@ -250,22 +267,53 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     tag = alarm_base.tag
     telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
 
-    # Check which frames share the same value as the previous frame.
-    cond_met, false_indexes = repeat_checker(telemetry_data, tag)
+    # Check which indices satisfy the rate of rise threshold.
+    if alarm_base.rate_of_rise_threshold is not None:
+        rise_cond_met, rise_false_indices = rise_threshold_check(
+            telemetry_data, tag, alarm_base.rate_of_rise_threshold, alarm_base.time_window)
 
-    alarm_indexes = persistence_check(cond_met, sequence, false_indexes)
+        # check which sequences satisfy persistence
+        rise_alarm_indices = persistence_check(rise_cond_met, sequence, rise_false_indices)
 
-    alarms = []
-    first_indexes = []
-    for index in alarm_indexes:
-        first_indexes.append(index[0])
-        description = "static alarm triggered"
-        new_alarm = create_alarm(
-            index, telemetry_data, description, alarm_base, criticality)
-        alarms.append(new_alarm)
+        # generate the alarms based on the given indices and add them to the return list
+        rise_first_indices = []
+        for alarm_index in rise_alarm_indices:
+            rise_first_indices.append(alarm_index[0])
+            description = "rise rate-of-change threshold crossed"
+            new_alarm = create_alarm(alarm_index, telemetry_data,
+                                     description, alarm_base, criticality)
+            alarms.append(new_alarm)
 
-    alarm_frames = find_alarm_indexes(first_indexes, cond_met)
-    return alarms, alarm_frames
+        # Gets the indices of frames where the alarm is active
+        rise_alarm_frames = find_alarm_indexes(rise_first_indices, rise_cond_met)
+
+    # Check which indices satisfy the rate of fall threshold.
+    if alarm_base.rate_of_fall_threshold is not None:
+        fall_cond_met, fall_false_indices = fall_threshold_check(
+            telemetry_data, tag, alarm_base.rate_of_fall_threshold)
+
+        # check which sequences satisfy persistence
+        fall_alarm_indices = persistence_check(fall_cond_met, sequence, fall_false_indices)
+
+        # generate the alarms based on the given indices and add them to the return list
+        fall_first_indices = []
+        for alarm_index in fall_alarm_indices:
+            fall_first_indices.append(alarm_index[0])
+            description = "fall rate-of-change threshold crossed"
+            new_alarm = create_alarm(alarm_index, telemetry_data,
+                                     description, alarm_base, criticality)
+            alarms.append(new_alarm)
+
+        # Gets the indices of frames where the alarm is active
+        fall_alarm_frames = find_alarm_indexes(fall_first_indices, fall_cond_met)
+
+    # combining all results.
+    # TODO: make sure this works.
+    all_alarm_frames = []
+    for i in range(len(fall_alarm_frames)):
+        all_alarm_frames.append(fall_alarm_frames[i] or rise_alarm_frames[i])
+
+    return alarms, all_alarm_frames
 
 
 def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, datetime]], list[int]]:
