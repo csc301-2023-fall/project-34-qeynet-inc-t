@@ -1,9 +1,12 @@
 from dataclasses import dataclass
-from typing import Iterable, Any
 from datetime import datetime
+from typing import Iterable
 
-from astra.data.alarms import *
+from astra.data.alarms import (AlarmPriority, AlarmCriticality, RateOfChangeEventBase, Alarm,
+                               StaticEventBase, ThresholdEventBase, SetpointEventBase,
+                               SOEEventBase, AllEventBase, EventBase, AnyEventBase)
 from astra.data.data_manager import DataManager
+from astra.data.parameters import Tag
 from astra.usecase.use_case_handlers import UseCaseHandler, TableReturn
 
 PRIORITY = 'PRIORITY'
@@ -12,6 +15,8 @@ TYPE = 'TYPE'
 REGISTERED_DATE = 'REGISTERED_DATE'
 CONFIRMED_DATE = 'CONFIRMED_DATE'
 UNACKNOWLEDGED = 'UA'
+DESCENDING = '>'
+VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
 
 
 @dataclass
@@ -82,9 +87,9 @@ class AlarmsHandler(UseCaseHandler):
         :param event_base: The event base to examine
         :return: A list of all relevant tags to the base
         """
-        if type(event_base) != AllEventBase \
-                and type(event_base) != AnyEventBase \
-                and type(event_base) != SOEEventBase:
+        if type(event_base) is not AllEventBase \
+                and type(event_base) is not AnyEventBase \
+                and type(event_base) is not SOEEventBase:
             return [event_base.tag]
         else:
             all_tags = []
@@ -116,26 +121,55 @@ class AlarmsHandler(UseCaseHandler):
         # Now we need to make sure the alarm fits in the time parameters
         alarm_confirm_time = alarm.event.confirm_time
         alarm_register_time = alarm.event.confirm_time
-        if filter_args.registered_start_time is not None:
+        if filter_args.confirmed_start_time is not None:
             compare_time = filter_args.registered_start_time
             show = show and alarm_confirm_time > compare_time
 
-        if filter_args.registered_end_time is not None:
+        if filter_args.confirmed_end_time is not None:
             compare_time = filter_args.registered_end_time
             show = show and alarm_confirm_time < compare_time
 
         if filter_args.registered_start_time is not None:
-            compare_time = filter_args.registered_start_time
-            show = show and alarm_confirm_time > compare_time
+            register_time = filter_args.registered_start_time
+            show = show and alarm_register_time > register_time
 
         if filter_args.registered_start_time is not None:
-            compare_time = filter_args.registered_start_time
-            show = show and alarm_confirm_time < compare_time
+            register_time = filter_args.registered_start_time
+            show = show and alarm_register_time < register_time
 
         # Finally, checking if we only show unacknowledged alarms
         if filter_args.new:
             show = show and alarm.acknowledgement == UNACKNOWLEDGED
         return show
+
+    @classmethod
+    def _sort_output(cls, return_data: TableReturn, sort: tuple[str, str]):
+        """
+        sorts the <table> field of return_data based on <sort>
+
+        :param return_data: the output container to sort data from
+        :param sort: defines how output should be sorted
+
+        PRECONDITION: The values of sort satisfy the docstrings of the sort field in
+        AlarmsFilters
+        """
+        if sort is not None:
+            # Determining which column to sort by
+            key_index = 0
+            for i in range(len(VALID_SORTING_COLUMNS)):
+                if sort[1] == VALID_SORTING_COLUMNS[i]:
+                    key_index = i
+                    break
+
+            # By default, sorting occurs by ascending values, so a case is
+            # needed to check if it should occur by descending order
+            reverse = False
+            if sort[0] == DESCENDING:
+                reverse = True
+
+            return_data.table = sorted(return_data.table,
+                                       key=lambda x: x[key_index],
+                                       reverse=reverse)
 
     @classmethod
     def get_data(cls, dm: dict[AlarmPriority, set[Alarm]], filter_args: AlarmsFilters) \

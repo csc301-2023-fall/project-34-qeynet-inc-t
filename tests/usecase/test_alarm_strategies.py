@@ -1,6 +1,8 @@
-import datetime
+from datetime import timedelta, datetime
 import unittest
-from astra.usecase.alarm_strategies import *
+
+from astra.data.alarms import EventBase, StaticEventBase
+from astra.usecase.alarm_strategies import find_first_time, persistence_check, find_alarm_indexes
 
 
 class MyTestCase(unittest.TestCase):
@@ -301,7 +303,6 @@ class MyTestCase(unittest.TestCase):
                       (True, datetime.now() - timedelta(seconds=5))]
 
         first_indexes = persistence_check(conditions, persistence, false_indexes)
-
 
         actual = find_alarm_indexes(first_indexes, conditions)
         expected = [False, False, False, False, False]

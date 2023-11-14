@@ -1,15 +1,14 @@
 from datetime import datetime
 from typing import Iterable
 from .use_case_handlers import TableReturn
-from .alarm_handler import AlarmsHandler, AlarmsFilters  # , ReturnType
+from .alarm_handler import AlarmHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
 from ..data.alarms import AlarmPriority, AlarmCriticality
-from ..data.parameters import Tag
-
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+
 
 class AlarmsRequestReceiver(RequestReceiver):
     """
@@ -21,12 +20,12 @@ class AlarmsRequestReceiver(RequestReceiver):
     """
 
     filters = None
-    handler = AlarmsHandler
+    handler = AlarmHandler
 
     @classmethod
     def __init__(cls):
-        cls.handler = AlarmsHandler()
-        cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, True)
+        cls.handler = AlarmHandler()
+        cls.filters = AlarmsFilters(None, None, None, None, None, None, None)
         # maybe make this inherit from dashboard filters
         # Im assuming the alarms filter will have:
         # (sort, index, priority, criticality, alarm_type, start_time, end_time)
@@ -72,19 +71,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param dm: Contains all data stored by the program to date.
         """
         cls.handler.update_data(previous_data, cls.filters)
-
-    @classmethod
-    def change_index(cls, index: int) -> bool:
-        """
-        change_index changes the index of the datatable that we are viewing.
-        It returns True if it successfully changed to a valid index and False otherwise.
-
-        :param dm: The interface for getting all data known to the program
-        :param index: the index of the datatable that we want to change to.
-        :returns: True if the index was successfully changed and False otherwise.
-        """
-
-        cls.filters.index = index
 
     @classmethod
     def add_shown_priority(cls, add: str) -> bool:

@@ -1,19 +1,66 @@
-import datetime
-import math
-from datetime import datetime, timedelta
 from itertools import pairwise
+from threading import Lock
 
-from astra.data.alarms import *
+from astra.data.alarms import (EventID, Alarm, EventBase, RateOfChangeEventBase,
+                               StaticEventBase, ThresholdEventBase, SetpointEventBase,
+                               SOEEventBase, AllEventBase, AlarmCriticality, Event, AnyEventBase,
+                               AlarmPriority)
 from astra.data.data_manager import DataManager
-from .utils import get_tag_param_value
 from typing import Callable
+from astra.data.parameters import Tag, ParameterValue
 from astra.data.telemetry_data import TelemetryData
+from datetime import timedelta, datetime
 
 UNACKNOWLEDGED = 'UA'
 next_id = EventID(0)
 
 
 # TODO: if alarm descriptions are "formulaic", extract helper method for making alarms from list
+
+class AlarmsContainer:
+    """
+    A container for a global alarms dict that utilizes locking for multithreading
+
+    :param alarms: The actual dictionary of alarms held
+    :param mutex: A lock used for mutating cls.alarms
+    """
+    alarms = None
+    mutex = None
+
+    @classmethod
+    def __init__(cls):
+        cls.alarms = dict()
+        cls.mutex = Lock()
+
+    @classmethod
+    def update(cls, dm: DataManager, alarms: list[Alarm]) -> None:
+        """
+        Updates the alarms global variable after acquiring the lock for it
+
+        :param dm: Holds information of data criticality and priority
+        :param alarms: The set of alarms to add to <cls.alarms>
+        """
+        if alarms:
+            with cls.mutex:
+                for alarm in alarms:
+                    criticality = alarm.criticality
+                    priority = dm.alarm_priority_matrix[timedelta(seconds=0)][criticality]
+
+                    if priority in cls.alarms:
+                        cls.alarms[priority].add(alarm)
+                    else:
+                        cls.alarms[priority] = {alarm}
+
+    @classmethod
+    def get_alarms(cls) -> dict[AlarmPriority, set[Alarm]]:
+        """
+        Returns a snallow copy of <cls.alarms>
+
+        :return: A copy of <cls.alarms>
+        """
+        with cls.mutex:
+            return cls.alarms.copy()
+
 
 def get_strategy(base: EventBase) -> Callable:
     """
@@ -89,7 +136,8 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime], descript
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
-                comparison: ParameterValue, persistence: float) -> (list[tuple[int, int]], list[bool]):
+                comparison: ParameterValue, persistence: float) -> (list[tuple[int, int]],
+                                                                    list[bool]):
     """
     Checks all telemetry frames in <td> where <condition> returns true
     Note: This should only be used for conditions where only 1 tag is relevant
@@ -101,13 +149,12 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     :param comparison: ParameterValues to be used as a point of comparison
     :param persistence: How long the condition has to last
     :return: A list of tuples where the first tuple element is the index of telemetry frame where
-    an alarm was registered, and the second is the index of telemetry frame where the alarm was confirmed. Also
-    returns a list of booleans where each index i refers to whether or not the i-th frame of <td> had an active
-    alarm.
+    an alarm was registered, and the second is the index of telemetry frame where the alarm was
+    confirmed. Also returns a list of booleans where each index i refers to whether or not the
+    i-th frame of <td> had an active alarm.
     """
     alarm_data = []
     alarm_indices = []
-    num_frames = td.num_telemetry_frames
     tag_values = td.get_parameter_values(tag)
     all_times = tag_values.keys()
 
@@ -212,7 +259,7 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
     <tuples> within the range of (first datetime in the sequence + persistence seconds)
 
     :param tuples: Contains tuples indicating whether an alarm condition was
-    met, and the time associated with the telemetry frame 
+    met, and the time associated with the telemetry frame
     :param persistence: How much time in seconds the alarm condition must be met for
     :param false_indexes: Lists all indexes in <tuples> where the first element is false
     :return: The first index in the all sequences satisfying the persistence check, and the
@@ -251,7 +298,8 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
                 first_time = tuples[first_index][1]
                 last_time = tuples[last_index][1]
                 if last_time - first_time >= timedelta(seconds=persistence):
-                    register_time = find_confirm_time(tuples[first_index:last_index + 1], persistence) + first_index
+                    register_time = find_confirm_time(tuples[first_index:last_index + 1],
+                                                      persistence) + first_index
                     times.append((first_index, register_time))
     return times
 
@@ -330,6 +378,7 @@ def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
     for each time in <td>.
     It also returns a list of indices of the first list, where the bool is False.
 
+    :param fall_threshold: The value to compare rate of changes against
     :param td: The relevant telemetry data to check. (of the <tag>)
     :param tag: The tag to check the values of.
     :param rise_threshold: The threshold to check against.
@@ -388,7 +437,8 @@ def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
 
 
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
-                         criticality: AlarmCriticality, earliest_time: datetime) \
+                         criticality: AlarmCriticality, earliest_time: datetime,
+                         all_alarms: AlarmsContainer) \
         -> (list[Alarm], list[bool]):
     """
     Checks if in the telemetry frames with times in the range
@@ -403,8 +453,9 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
-    :return:  A list of all alarms that should be newly raised, and a list of bools
-    where each index i represents that the associated telemetry frame has an alarm active.
+    :param all_alarms: Container for the list of all alarms
+    :return:  A list of bools where each index i represents that the associated telemetry frame
+    has an alarm active.
     """
     # TODO figure out correct time window searching.
     # as in, if the window (frame 1) -> (time frame 1 + time_window) reaches a threshold rate of
@@ -469,7 +520,8 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
         else:
             all_alarm_frames = fall_alarm_frames
 
-    return alarms, all_alarm_frames
+    all_alarms.update(dm, alarms)
+    return all_alarm_frames
 
 
 def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, datetime]], list[int]]:
@@ -508,8 +560,9 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, dateti
 
 
 def static_check(dm: DataManager, alarm_base: StaticEventBase,
-                 criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[bool]):
+                 criticality: AlarmCriticality, earliest_time: datetime,
+                 all_alarms: AlarmsContainer) \
+        -> list[bool]:
     """
     Checks if in the telemetry frames with times in the range
     (<earliest_time> - <alarm_base.persistence> -> present), there exists
@@ -521,6 +574,7 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return:  A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -547,7 +601,8 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
         alarms.append(new_alarm)
 
     alarm_frames = find_alarm_indexes(first_indexes, cond_met)
-    return alarms, alarm_frames
+    all_alarms.update(dm, alarms)
+    return alarm_frames
 
 
 def upper_threshold_cond(param_value: ParameterValue, upper_threshold: ParameterValue) -> bool:
@@ -575,8 +630,9 @@ def lower_threshold_cond(param_value: ParameterValue, lower_threshold: Parameter
 
 
 def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
-                    criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[bool]):
+                    criticality: AlarmCriticality, earliest_time: datetime,
+                    all_alarms: AlarmsContainer) \
+        -> list[bool]:
     """
     Checks if in the telemetry frames with times in the range
     (<earliest_time> - <alarm_base.persistence> -> present), there exists
@@ -589,6 +645,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -632,7 +689,8 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
         else:
             all_alarm_frames = upper_alarm_frames
 
-        return alarms, all_alarm_frames
+        all_alarms.update(dm, alarms)
+        return all_alarm_frames
 
 
 def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool:
@@ -649,7 +707,8 @@ def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool
 
 
 def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
-                   criticality: AlarmCriticality, earliest_time: datetime) \
+                   criticality: AlarmCriticality, earliest_time: datetime,
+                   all_alarms: AlarmsContainer) \
         -> (list[Alarm], list[bool]):
     """
     Checks if in the telemetry frames with times in the range
@@ -662,6 +721,7 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -684,11 +744,13 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
         new_alarm = create_alarm(alarm, times, description, alarm_base, criticality)
         alarms.append(new_alarm)
 
-    return alarms, alarm_frames
+    all_alarms.update(dm, alarms)
+    return alarm_frames
 
 
 def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
-                             criticality: AlarmCriticality, earliest_time: datetime) \
+                             criticality: AlarmCriticality, earliest_time: datetime,
+                             all_alarms: AlarmsContainer) \
         -> (list[Alarm], list[bool]):
     """
     Checks that the alarms described in <alarm_base> were all raised and persisted,
@@ -699,6 +761,7 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
     :param criticality: default criticality for the alarm base
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -712,12 +775,13 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         break
     times = list(telemetry_data.get_parameter_values(any_tag).keys())
 
-    # iterate through each of the eventbases and get their list indicating where alarm conditions where met
+    # iterate through each of the eventbases and get their list indicating where alarm conditions
+    # where met
     inner_alarm_indexes = []
     alarm_indexes = []
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
+        alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, all_alarms)
 
         # checking persistence on each alarm raised
         false_indexes = []
@@ -752,11 +816,10 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
             # Now, we go through all alarms raised of the next type and check if it happened in
             # the correct timeframe. If it didnt, prune it from the list of alarms to consider
             for second_event_index in inner_alarm_indexes[i + 1]:
-
                 first_index = second_event_index[0]
                 associated_time = telemetry_data.get_telemetry_frame(first_index).time
-                if (associated_time < minimum_time or
-                        (maximum_time is not None and associated_time > maximum_time)):
+                if (associated_time < minimum_time or (
+                        maximum_time is not None and associated_time > maximum_time)):
                     pruned_indexes.append(second_event_index)
 
             for index in pruned_indexes:
@@ -771,8 +834,8 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         # for now, i assume that a chain of events can only occur once
         first_index = inner_alarm_indexes[0][0][0]
         last_alarm_type_index = len(inner_alarm_indexes) - 1
-        last_index = inner_alarm_indexes[last_alarm_type_index][len(inner_alarm_indexes[
-                                                                        last_alarm_type_index])][1]
+        last_index = inner_alarm_indexes[last_alarm_type_index][
+            len(inner_alarm_indexes[last_alarm_type_index])][1]
         for i in range(0, len(alarm_indexes)):
             if i < first_index or i > last_index:
                 active_indexes.append(False)
@@ -782,12 +845,14 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
                                  "Sequence of events:", alarm_base,
                                  criticality)
         alarms = [new_alarm]
-    return alarms, active_indexes
+    all_alarms.update(dm, alarms)
+    return active_indexes
 
 
 def all_events_check(dm: DataManager, alarm_base: AllEventBase,
-                     criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[bool]):
+                     criticality: AlarmCriticality, earliest_time: datetime,
+                     all_alarms: AlarmsContainer) \
+        -> list[bool]:
     """
     Checks that all event bases in <alarm_base> have occurred, and returns appropriate
     Alarms, and a list of bools where each index i represents that the associated telemetry
@@ -798,6 +863,7 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     :param criticality: default criticality for the alarm base
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -805,11 +871,12 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     possible_events = alarm_base.event_bases
     telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
 
-    # iterate through each of the eventbases and get their list indicating where alarm conditions where met
+    # iterate through each of the eventbases and get their list indicating where alarm conditions
+    # where met
     inner_alarm_indexes = []
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
+        alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, all_alarms)
         inner_alarm_indexes.append(alarm_indexes)
 
     all_tags = dm.tags
@@ -840,12 +907,13 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
         new_alarm = create_alarm(alarm_index, times, description, alarm_base, criticality)
         alarms.append(new_alarm)
     alarm_frames = find_alarm_indexes(first_indexes, conds_met)
-    return alarms, alarm_frames
+    all_alarms.update(dm, alarms)
+    return alarm_frames
 
 
 def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
-                     criticality: AlarmCriticality, new_id: int,
-                     earliest_time: datetime) -> (list[Alarm], list[bool]):
+                     criticality: AlarmCriticality, earliest_time: datetime,
+                     all_alarms: AlarmsContainer) -> list[bool]:
     """
     Checks that any of the event bases in <alarm_base> occurred, and returns a appropraite alarms,
     and a list of bools where each index i represents that the associated telemetry
@@ -854,9 +922,9 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     :param dm: The source of all data known to the program
     :param alarm_base: Defines events to check
     :param criticality: default criticality for the alarm base
-    :param new_id: the id to assign a potential new alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -868,7 +936,7 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     inner_alarm_indexes = []
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
+        alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, all_alarms)
         inner_alarm_indexes.append(alarm_indexes)
 
     all_tags = dm.tags
@@ -899,4 +967,5 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
         new_alarm = create_alarm(alarm_index, times, description, alarm_base, criticality)
         alarms.append(new_alarm)
     alarm_frames = find_alarm_indexes(first_indexes, conds_met)
-    return alarms, alarm_frames
+    all_alarms.update(dm, alarms)
+    return alarm_frames
