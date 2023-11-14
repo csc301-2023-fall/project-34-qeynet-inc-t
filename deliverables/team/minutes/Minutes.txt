@@ -86,4 +86,29 @@ Monday, Oct 30, 11:00-11:50
 - Team clarified subteam divisions
 - Partner presented updates to configuration files
 - New version of Panoptes to be released soon; will be the final version for the team barring exceptional circumstances
-- Next meeting: Tuesday, Nov 7, 11:00
+- Next meeting: Tuesday, Nov 7, 11:00 (later delayed to Nov 9)
+
+Thursday, Nov 9, 15:00-16:30
+- Team presented demo to partner, consisting of the telemetry tab (download shared with partner after the meeting)
+  - Partner gave feedback:
+    - Separate units into their own column in the telemetry table
+    - Make sure to round values in the telemetry table
+    - Make sure the device name is visible while using the program
+    - If there is time, add a special icon for the application window (partner shared helper resources after the meeting)
+  - Further TODOs:
+    - Add searching and filtering for parameters
+    - Make things optimized for full screen
+    - Add ability to manually sort rows of the telemetry table
+    - Make time filtering more ergonomic
+    - Add a scrollbar to the telemetry table
+    - Add indicators for sortability of columns
+- Team asked various questions
+  - Boolean-values parameters should not have display units
+  - Display units will not have null multipliers/constants
+  - Discussed dealing with problems reading from files and/or the database
+  - Alarm checking
+    - Change the format of logical alarms in configuration files (done by the team in Panoptes after the meeting)
+    - Only have logical AND and OR alarms for now
+    - Persistence for compound alarms "stacks" (specifics further clarified after the meeting)
+    - OR alarm description: include the active events involved
+    - Do not perform "merging" of successive alarms of the same kind for now
