@@ -1,4 +1,5 @@
 import datetime
+import math
 from datetime import datetime, timedelta
 from itertools import pairwise
 
@@ -7,7 +8,6 @@ from astra.data.data_manager import DataManager
 from .utils import get_tag_param_value
 from typing import Callable
 from astra.data.telemetry_data import TelemetryData
-
 
 UNACKNOWLEDGED = 'UA'
 next_id = EventID(0)
@@ -404,6 +404,7 @@ def upper_threshold_cond(param_value: ParameterValue, upper_threshold: Parameter
         return param_value > upper_threshold
     return False
 
+
 def lower_threshold_cond(param_value: ParameterValue, lower_threshold: ParameterValue) -> bool:
     """checks if <param_value> is below the lower threshold
 
@@ -414,6 +415,7 @@ def lower_threshold_cond(param_value: ParameterValue, lower_threshold: Parameter
     if param_value is not None:
         return param_value < lower_threshold
     return False
+
 
 def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
                     criticality: AlarmCriticality, earliest_time: datetime) \
@@ -455,6 +457,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
             new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
             alarms.append(new_alarm)
         lower_alarm_frames = find_alarm_indexes(lower_first_indexes, lower_cond_met)
+
     if upper_threshold is not None:
         # Checking + generating all alarms for crossing the upper threshold
         upper_cond_met, upper_false_indexes = check_conds(telemetry_data, tag,
@@ -532,7 +535,89 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
 def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
                              criticality: AlarmCriticality, earliest_time: datetime) \
         -> (list[Alarm], list[bool]):
-    ...
+    """
+    Checks that the alarms described in <alarm_base> were all raised and persisted,
+    and occured within the appropriate time window in correct sequential order.
+
+    :param dm: The source of all data known to the program
+    :param alarm_base: Defines events to check
+    :param criticality: default criticality for the alarm base
+    :param earliest_time: The earliest time from a set of the most recently added
+    telemetry frames
+    :return: A list of all alarms that should be newly raised, and a list of bools
+    where each index i represents that the associated telemetry frame has an alarm active
+    """
+    first_time, sequence = find_first_time(alarm_base, earliest_time)
+    possible_events = alarm_base.event_bases
+    telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
+
+    # iterate through each of the eventbases and get their list indicating where alarm conditions where met
+    inner_alarm_indexes = []
+    alarm_indexes = []
+    for possible_event in possible_events:
+        strategy = get_strategy(possible_event)
+        alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
+
+        # checking persistence on each alarm raised
+        false_indexes = []
+        frame_conditions = []
+        for i in range(0, len(alarm_indexes)):
+            associated_frame = telemetry_data.get_telemetry_frame(i)
+            associated_time = associated_frame.time
+            if not alarm_indexes[i]:
+                false_indexes.append(i)
+            frame_conditions.append((alarm_indexes[i], associated_time))
+        alarm_indexes = persistence_check(frame_conditions, sequence, false_indexes)
+        inner_alarm_indexes.append(alarm_indexes)
+
+    # Now, we go through each interval of times and check if the appropriate sequence occurred
+    for i in range(0, len(alarm_base.intervals)):
+        lower_interval = timedelta(seconds=alarm_base.intervals[i][0])
+        if alarm_base.intervals[i][1] is not None:
+            upper_interval = timedelta(seconds=alarm_base.intervals[i][1])
+        else:
+            upper_interval = math.inf
+        for first_event_index in inner_alarm_indexes[i]:
+            # getting the time interval a chain of events needs to occur in
+            last_index = first_event_index[0]
+            associated_frame = telemetry_data.get_telemetry_frame(last_index)
+            minimum_time = associated_frame.time + lower_interval
+            maximum_time = associated_frame.time + upper_interval
+            pruned_indexes = []
+
+            # Now, we go through all alarms raised of the next type and check if it happened in
+            # the correct timeframe. If it didnt, prune it from the list of alarms to consider
+            for second_event_index in inner_alarm_indexes[i + 1]:
+
+                first_index = second_event_index[0]
+                associated_time = telemetry_data.get_telemetry_frame(first_index).time
+                if associated_time < minimum_time or associated_time > maximum_time:
+                    pruned_indexes.append(second_event_index)
+
+            for index in pruned_indexes:
+                inner_alarm_indexes[i + 1].remove(index)
+
+    active_indexes = [False] * (len(inner_alarm_indexes) - 1)
+    alarms = []
+    if inner_alarm_indexes[len(inner_alarm_indexes) - 1]:
+        # Indicates that at the last chain of events, we had an unpruned alarm, meaning a
+        # sequence occurred
+
+        # for now, i assume that a chain of events can only occur once
+        first_index = inner_alarm_indexes[0][0][0]
+        last_alarm_type_index = len(inner_alarm_indexes) - 1
+        last_index = inner_alarm_indexes[last_alarm_type_index][len(inner_alarm_indexes[
+                                                                        last_alarm_type_index])][1]
+        for i in range(0, len(alarm_indexes)):
+            if i < first_index or i > last_index:
+                active_indexes.append(False)
+            else:
+                active_indexes.append(True)
+        new_alarm = create_alarm((last_index, last_index), telemetry_data,
+                                 "Sequence of events:", alarm_base,
+                                 criticality)
+        alarms = [new_alarm]
+    return alarms, active_indexes
 
 
 def all_events_check(dm: DataManager, alarm_base: AllEventBase,
@@ -548,8 +633,8 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     :param criticality: default criticality for the alarm base
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
-    :return: An Alarm containing all data about the recent event, or None if the check
-    is not satisfied
+    :return: A list of all alarms that should be newly raised, and a list of bools
+    where each index i represents that the associated telemetry frame has an alarm active
     """
     first_time, sequence = find_first_time(alarm_base, earliest_time)
     possible_events = alarm_base.event_bases
@@ -602,8 +687,8 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     :param new_id: the id to assign a potential new alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
-    :return: An Alarm containing all data about the recent event, or None if the check
-    is not satisfied
+    :return: A list of all alarms that should be newly raised, and a list of bools
+    where each index i represents that the associated telemetry frame has an alarm active
     """
 
     first_time, sequence = find_first_time(alarm_base, earliest_time)
