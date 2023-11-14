@@ -73,19 +73,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.handler.update_data(previous_data, cls.filters)
 
     @classmethod
-    def change_index(cls, index: int) -> bool:
-        """
-        change_index changes the index of the datatable that we are viewing.
-        It returns True if it successfully changed to a valid index and False otherwise.
-
-        :param dm: The interface for getting all data known to the program
-        :param index: the index of the datatable that we want to change to.
-        :returns: True if the index was successfully changed and False otherwise.
-        """
-
-        cls.filters.index = index
-
-    @classmethod
     def add_shown_priority(cls, add: str) -> bool:
         """
         add_shown_priority is a method that adds a priority to the set of priorities

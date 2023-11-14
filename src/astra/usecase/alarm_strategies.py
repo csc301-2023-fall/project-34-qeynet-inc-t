@@ -799,8 +799,8 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
             for second_event_index in inner_alarm_indexes[i + 1]:
                 first_index = second_event_index[0]
                 associated_time = telemetry_data.get_telemetry_frame(first_index).time
-                if (associated_time < minimum_time or
-                        (maximum_time is not None and associated_time > maximum_time)):
+                if (associated_time < minimum_time or (
+                        maximum_time is not None and associated_time > maximum_time)):
                     pruned_indexes.append(second_event_index)
 
             for index in pruned_indexes:
@@ -815,8 +815,8 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         # for now, i assume that a chain of events can only occur once
         first_index = inner_alarm_indexes[0][0][0]
         last_alarm_type_index = len(inner_alarm_indexes) - 1
-        last_index = inner_alarm_indexes[last_alarm_type_index][len(inner_alarm_indexes[
-                                                                        last_alarm_type_index])][1]
+        last_index = inner_alarm_indexes[last_alarm_type_index][
+            len(inner_alarm_indexes[last_alarm_type_index])][1]
         for i in range(0, len(alarm_indexes)):
             if i < first_index or i > last_index:
                 active_indexes.append(False)
