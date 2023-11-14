@@ -1,5 +1,6 @@
 import datetime
 from datetime import datetime, timedelta
+from itertools import pairwise
 
 from astra.data.alarms import *
 from astra.data.data_manager import DataManager
@@ -171,14 +172,14 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
     Checks if there exists any sequence of booleans amongst tuples in <tuples>
     where all booleans are true and associated datetimes are every datetime in
     <tuples> within the range of (first datetime in the sequence + persistence seconds)
-    
+
     :param tuples: Contains tuples indicating whether an alarm condition was
     met, and the time associated with the telemetry frame 
     :param persistence: How much time in seconds the alarm condition must be met for
     :param false_indexes: Lists all indexes in <tuples> where the first element is false
     :return: The first index in the all sequences satisfying the persistence check, and the
     last index in all sequences satisfying the check. Returns [] if no such sequence exists
-    
+
     PRECONDITION: <tuples> is sorted by ascending datetime, and indexes in <false_indexes>
     are listed iff the associated tuple in <tuples> stores false
     """
@@ -220,50 +221,84 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
                          criticality: AlarmCriticality, earliest_time: datetime) \
         -> (list[Alarm], list[tuple[datetime, bool]]):
-    ...
+    """
+    Checks if in the telemetry frames with times in the range
+    (<earliest_time> - <alarm_base.persistence> -> present), there exists
+    a sequence lasting <alarm_base.persistence> seconds where:
+    a) <alarm_base.tag> reported a rate of change above <alarm_base.rate_of_rise_threshold>
+    b) <alarm_base.tag> reported a rate of change below <alarm_base.rate_of_fall_threshold>
+    Returns an appropriate Alarm if the check is satisfied
+
+    :param dm: All data known to the program
+    :param alarm_base: Stores all parties related to the check
+    :param criticality: The base criticality of the alarm
+    :param earliest_time: The earliest time from a set of the most recently added
+    telemetry frames
+    :return:  A list of all alarms that should be newly raised, and a list of bools
+    where each index i represents that the associated telemetry frame has an alarm active.
+    """
+    
+    # as in, if the window (frame 1) -> (time frame 1 + time_window) reaches a threshold rate of
+    # change, then we consider it true on alarm conditions
+
+    # Calculating the range of time that needs to be checked
+    first_time, sequence = find_first_time(alarm_base, earliest_time)
+
+    # Getting all Telemetry Frames associated with the relevant timeframe
+    tag = alarm_base.tag
+    telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
+
+    # Check which frames share the same value as the previous frame.
+    cond_met, false_indexes = repeat_checker(telemetry_data, tag)
+
+    alarm_indexes = persistence_check(cond_met, sequence, false_indexes)
+
+    alarms = []
+    first_indexes = []
+    for index in alarm_indexes:
+        first_indexes.append(index[0])
+        description = "static alarm triggered"
+        new_alarm = create_alarm(
+            index, telemetry_data, description, alarm_base, criticality)
+        alarms.append(new_alarm)
+
+    alarm_frames = find_alarm_indexes(first_indexes, cond_met)
+    return alarms, alarm_frames
 
 
 def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, datetime]], list[int]]:
     """
-    Checks all the frames in <td> and returns a list of tuples where each tuple 
+    Checks all the frames in <td> and returns a list of tuples where each tuple
     contains a boolean indicating if the value of <tag> is the same as the previous
     frame, and the datetime associated with the frame.
 
-    :param tag:
+    :param tag: The tag to check the values of.
     :param td: The relevant telemetry data to check.
     :return: A list of tuples where each tuple contains a boolean indicating if the value of
     <tag> is the same as the previous frame, and the datetime associated with the frame.
     """
 
-    num_frames = td.num_telemetry_frames
     sequences_of_static = []
-    false_index = []
+    false_indices = []
 
     # First frame is vacuously a sequence of static values
     sequences_of_static.append((True, td.get_telemetry_frame(0).time))
 
-    # Iterate over each frame and add a true value to the list if the value is the same as the
-    # previous one.
-    tag_values = td.get_parameter_values(tag)
-    for i in range(1, num_frames):
-        if i == 1:
-            prev_frame = td.get_telemetry_frame(i - 1)
-            prev_frame_time = prev_frame.time
-            last_value = tag_values[prev_frame_time]
+    values_at_times = td.get_parameter_values(tag)
+    # Iterate over each pair of timestamps and add a (True, datetime) to the list each time they
+    # are the same or (False, datetime) when they aren't.
+    for prev_time, curr_time in pairwise(values_at_times.keys()):
+        prev_value = values_at_times[prev_time]
+        curr_value = values_at_times[curr_time]
+
+        # Determine if this frame held the same value as the last one
+        if prev_value == curr_value:
+            sequences_of_static.append((True, curr_time))
         else:
-            last_value = curr_value
+            sequences_of_static.append((False, curr_time))
+            false_indices.append(len(sequences_of_static)-1)
 
-        curr_frame = td.get_telemetry_frame(i)
-        frame_time = curr_frame.time
-        curr_value = tag_values[frame_time]
-
-        if curr_value == last_value:
-            sequences_of_static.append((True, curr_frame.time))
-        else:
-            sequences_of_static.append((False, curr_frame.time))
-            false_index.append(i)
-
-    return sequences_of_static, false_index
+    return sequences_of_static, false_indices
 
 
 def static_check(dm: DataManager, alarm_base: StaticEventBase,
