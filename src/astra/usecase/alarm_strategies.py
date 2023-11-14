@@ -91,7 +91,7 @@ def create_alarm(alarm_indexes: tuple[int, int], td: TelemetryData, description:
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
-                comparison: ParameterValue) -> (list[tuple[bool, datetime]], list[int]):
+                comparison: ParameterValue, persistence: float) -> (list[tuple[int, int]], list[bool]):
     """
     Checks all telemetry frames in <td> where <condition> returns true
     Note: This should only be used for conditions where only 1 tag is relevant
@@ -100,27 +100,65 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     :param td: Contains all telemetry frames to examine
     :param condition: A function that returns a boolean with parameters
                       (ParameterValue, ParameterValue
-    :param comparison: A list of all ParameterValues to be used as a point of comparison
-    :return: A list where each index i refers to the i-th telemetry frame in TelemetryData,
-    the boolean in the tuple refers to the associated return from <condition>, and the datetime
-    refers to the associated time of the telemetry frame, and a list of indexes where the condition
-    was False. Also returns a list of indexes where conditions where not mot
+    :param comparison: ParameterValues to be used as a point of comparison
+    :param persistence: How long the condition has to last
+    :return: A list of tuples where the first tuple element is the index of telemetry frame where
+    an alarm was registered, and the second is the index of telemetry frame where the alarm was confirmed. Also
+    returns a list of booleans where each index i refers to whether or not the i-th frame of <td> had an active
+    alarm.
     """
-    cond_met = []
-    false_index = []
+    alarm_data = []
+    alarm_indices = []
     num_frames = td.num_telemetry_frames
     tag_values = td.get_parameter_values(tag)
-    for i in range(num_frames):
-        telemetry_frame = td.get_telemetry_frame(i)
-        telemetry_time = telemetry_frame.time
+    all_times = tag_values.keys()
 
+    # tracking variables for the proceeding loop
+    required_time = datetime.now()
+    active_sequence = False
+    confirmed_alarm = False
+    curr_first_index = -1
+    i = 0
+
+    # Iterate through all frames and keep track of if an active sequence of alarm conditions
+    # being met is occuring
+    for telemetry_time in all_times:
         raw_parameter_value = tag_values[telemetry_time]
         cond_frame_met = condition(raw_parameter_value, comparison)
 
-        cond_met.append((cond_frame_met, telemetry_time))
+        # First time we see true after a false
+        if cond_frame_met and not active_sequence:
+            active_sequence = True
+            required_time = telemetry_time + timedelta(seconds=persistence)
+            curr_first_index = i
+
+        # First frame that satisfies the persistence check
+        if cond_frame_met and telemetry_time >= required_time:
+            if not confirmed_alarm:
+                confirmed_alarm = True
+                alarm_data.append((curr_first_index, i))
+
         if not cond_frame_met:
-            false_index.append(i)
-    return cond_met, false_index
+            if confirmed_alarm:
+                true_indices = [True] * (i - curr_first_index)
+                alarm_indices += true_indices
+                confirmed_alarm = False
+                active_sequence = False
+            elif active_sequence:
+                false_indices = [False] * (i - curr_first_index)
+                alarm_indices += false_indices
+                active_sequence = False
+            alarm_indices.append(False)
+        i += 1
+
+    if confirmed_alarm:
+        true_indices = [True] * (i - curr_first_index)
+        alarm_indices += true_indices
+    elif active_sequence:
+        false_indices = [False] * (i - curr_first_index)
+        alarm_indices += false_indices
+
+    return alarm_data, alarm_indices
 
 
 def find_alarm_indexes(first_indexes: list[int],
@@ -162,7 +200,7 @@ def find_confirm_time(tuples: list[tuple[bool, datetime]], persistence: float) -
     exact_confirm_time = tuples[0][1] + timedelta(seconds=persistence)
     for i in range(1, len(tuples)):
         index = -i
-        if tuples[i][1] < exact_confirm_time:
+        if tuples[index][1] < exact_confirm_time:
             return best_index
         best_index = len(tuples) - i
     return best_index
@@ -242,11 +280,12 @@ def rise_threshold_check(td: TelemetryData, tag: Tag, rise_threshold: float,
     false_indices = []
 
     values_at_times = td.get_parameter_values(tag)
+    times = list(values_at_times.keys())
     # Iterate over each telemetry frame and add a (True, datetime) to the list each time the
     # rate of change is above the threshold for <time_window> seconds after it.
     curr_frame_index = -1
-    for frame_index in range(td.num_telemetry_frames):
-        startpoint_time = td.get_telemetry_frame(frame_index).time
+    frame_index = 0
+    for startpoint_time in times:
         startpoint_value = values_at_times[startpoint_time]
 
         # Starting from the startpoint_time, find the endpoint.
@@ -258,13 +297,12 @@ def rise_threshold_check(td: TelemetryData, tag: Tag, rise_threshold: float,
             curr_value = startpoint_value
         end_time = startpoint_time + timedelta(seconds=time_window)
         while (end_time >= curr_time) and (curr_frame_index < td.num_telemetry_frames - 1):
-
             # Set the current value to be the value at the current time.
             curr_value = values_at_times[curr_time]
 
             # Increment to the next frame, then we will check if it is still within the timeframe.
             curr_frame_index += 1
-            curr_time = td.get_telemetry_frame(curr_frame_index).time
+            curr_time = times[curr_frame_index]
 
         # Once the loop ends, curr_value will be the last value in the timeframe.
         # Or the last frame in <td> will be at curr_frame_index.
@@ -281,7 +319,7 @@ def rise_threshold_check(td: TelemetryData, tag: Tag, rise_threshold: float,
         else:
             high_rising_startpoints.append((False, startpoint_time))
             false_indices.append(frame_index)
-
+        frame_index += 1
     return high_rising_startpoints, false_indices
 
 
@@ -307,11 +345,12 @@ def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
     false_indices = []
 
     values_at_times = td.get_parameter_values(tag)
+    times = list(values_at_times.keys())
     # Iterate over each telemetry frame and add a (True, datetime) to the list each time the
     # rate of change is above the threshold for <time_window> seconds after it.
     curr_frame_index = -1
-    for frame_index in range(td.num_telemetry_frames):
-        startpoint_time = td.get_telemetry_frame(frame_index).time
+    frame_index = 0
+    for startpoint_time in times:
         startpoint_value = values_at_times[startpoint_time]
 
         # Starting from the startpoint_time, find the endpoint.
@@ -324,13 +363,12 @@ def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
         end_time = startpoint_time + timedelta(seconds=time_window)
 
         while (end_time >= curr_time) and (curr_frame_index < td.num_telemetry_frames - 1):
-
             # Set the current value to be the value at the current time.
             curr_value = values_at_times[curr_time]
 
             # Increment to the next frame, then we will check if it is still within the timeframe.
             curr_frame_index += 1
-            curr_time = td.get_telemetry_frame(curr_frame_index).time
+            curr_time = times[curr_frame_index]
 
         # Once the loop ends, curr_value will be the last value in the timeframe.
         # Or the last frame in <td> will be at curr_frame_index.
@@ -347,7 +385,7 @@ def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
         else:
             low_falling_startpoints.append((False, startpoint_time))
             false_indices.append(frame_index)
-
+        frame_index += 1
     return low_falling_startpoints, false_indices
 
 
@@ -465,7 +503,7 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, dateti
             sequences_of_static.append((True, curr_time))
         else:
             sequences_of_static.append((False, curr_time))
-            false_indices.append(len(sequences_of_static)-1)
+            false_indices.append(len(sequences_of_static) - 1)
 
     return sequences_of_static, false_indices
 
@@ -567,30 +605,26 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
     all_alarm_frames = []
     if lower_threshold is not None:
         # Checking + generating all alarms for crossing the lower threshold
-        lower_cond_met, lower_false_indexes = check_conds(telemetry_data, tag, lower_threshold_cond,
-                                                          lower_threshold)
-        lower_alarm_indexes = persistence_check(lower_cond_met, sequence, lower_false_indexes)
+        lower_alarms, lower_alarm_frames = check_conds(telemetry_data, tag, lower_threshold_cond,
+                                                       lower_threshold, sequence)
         lower_first_indexes = []
-        for alarm_index in lower_alarm_indexes:
-            lower_first_indexes.append(alarm_index[0])
+        for alarm in lower_alarms:
+            lower_first_indexes.append(alarm[0])
             description = "lower threshold crossed"
-            new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
+            new_alarm = create_alarm(alarm, telemetry_data, description, alarm_base, criticality)
             alarms.append(new_alarm)
-        lower_alarm_frames = find_alarm_indexes(lower_first_indexes, lower_cond_met)
 
         all_alarm_frames = lower_alarm_frames
     if upper_threshold is not None:
         # Checking + generating all alarms for crossing the upper threshold
-        upper_cond_met, upper_false_indexes = check_conds(telemetry_data, tag,
-                                                          upper_threshold_cond, upper_threshold)
-        upper_alarm_indexes = persistence_check(upper_cond_met, sequence, upper_false_indexes)
+        upper_alarms, upper_alarm_frames = check_conds(telemetry_data, tag, upper_threshold_cond,
+                                                       upper_threshold, sequence)
         upper_first_indexes = []
-        for alarm_index in upper_alarm_indexes:
-            upper_first_indexes.append(alarm_index[0])
+        for alarm in upper_alarms:
+            upper_first_indexes.append(alarm[0])
             description = "upper threshold crossed"
-            new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
+            new_alarm = create_alarm(alarm, telemetry_data, description, alarm_base, criticality)
             alarms.append(new_alarm)
-        upper_alarm_frames = find_alarm_indexes(upper_first_indexes, upper_cond_met)
 
         # combining all results
         if lower_threshold is not None:
@@ -640,19 +674,16 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     setpoint = alarm_base.setpoint
 
     # Checking which frames have tag values at setpoint and indicating it in <cond_met> in order
-    cond_met, false_indexes = check_conds(telemetry_data, tag, setpoint_cond, setpoint)
-
-    alarm_indexes = persistence_check(cond_met, sequence, false_indexes)
+    new_alarms, alarm_frames = check_conds(telemetry_data, tag, setpoint_cond, setpoint, sequence)
 
     first_indexes = []
     alarms = []
-    for alarm_index in alarm_indexes:
-        first_indexes.append(alarm_index[0])
+    for alarm in new_alarms:
+        first_indexes.append(alarms[0])
         description = "setpoint value recorded"
-        new_alarm = create_alarm(alarm_index, telemetry_data, description, alarm_base, criticality)
+        new_alarm = create_alarm(alarm, telemetry_data, description, alarm_base, criticality)
         alarms.append(new_alarm)
 
-    alarm_frames = find_alarm_indexes(first_indexes, cond_met)
     return alarms, alarm_frames
 
 
@@ -675,6 +706,12 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
     possible_events = alarm_base.event_bases
     telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
 
+    all_tags = dm.tags
+    for tag in all_tags:
+        any_tag = tag
+        break
+    times = list(telemetry_data.get_parameter_values(any_tag).keys())
+
     # iterate through each of the eventbases and get their list indicating where alarm conditions where met
     inner_alarm_indexes = []
     alarm_indexes = []
@@ -686,8 +723,7 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         false_indexes = []
         frame_conditions = []
         for i in range(0, len(alarm_indexes)):
-            associated_frame = telemetry_data.get_telemetry_frame(i)
-            associated_time = associated_frame.time
+            associated_time = times[i]
             if not alarm_indexes[i]:
                 false_indexes.append(i)
             frame_conditions.append((alarm_indexes[i], associated_time))
@@ -701,7 +737,7 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         if alarm_base.intervals[i][1] is not None:
             upper_interval = timedelta(seconds=alarm_base.intervals[i][1])
         else:
-            upper_interval = timedelta(seconds=math.inf)
+            upper_interval = None
 
         if not inner_alarm_indexes[i]:
             break
@@ -719,7 +755,8 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
 
                 first_index = second_event_index[0]
                 associated_time = telemetry_data.get_telemetry_frame(first_index).time
-                if associated_time < minimum_time or associated_time > maximum_time:
+                if (associated_time < minimum_time or
+                        (maximum_time is not None and associated_time > maximum_time)):
                     pruned_indexes.append(second_event_index)
 
             for index in pruned_indexes:
@@ -775,12 +812,17 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
         alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
         inner_alarm_indexes.append(alarm_indexes)
 
+    all_tags = dm.tags
+    for tag in all_tags:
+        any_tag = tag
+        break
+    times = list(telemetry_data.get_parameter_values(any_tag).keys())
+
     # now, iterate through the all previous lists and find where alarms were unanimously raised
     conds_met = []
     false_indexes = []
     for i in range(len(inner_alarm_indexes[0])):
-        telemetry_frame = telemetry_data.get_telemetry_frame(i)
-        telemetry_time = telemetry_frame.time
+        telemetry_time = times[i]
         frame_meets_condition = True
         for j in range(len(inner_alarm_indexes)):
             frame_meets_condition = frame_meets_condition and inner_alarm_indexes[j][i]
@@ -829,12 +871,17 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
         alarm, alarm_indexes = strategy(dm, possible_event, criticality, earliest_time)
         inner_alarm_indexes.append(alarm_indexes)
 
+    all_tags = dm.tags
+    for tag in all_tags:
+        any_tag = tag
+        break
+    times = list(telemetry_data.get_parameter_values(any_tag).keys())
+
     # now, iterate through the all previous lists and find where any alarms was unanimously raised
     conds_met = []
     false_indexes = []
     for i in range(len(inner_alarm_indexes[0])):
-        telemetry_frame = telemetry_data.get_telemetry_frame(i)
-        telemetry_time = telemetry_frame.time
+        telemetry_time = times[i]
         frame_meets_condition = False
         for j in range(len(inner_alarm_indexes)):
             frame_meets_condition = frame_meets_condition or inner_alarm_indexes[j][i]
