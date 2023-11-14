@@ -1,5 +1,5 @@
 import queue
-from astra.usecase.dashboard_handler import TableReturn, DashboardHandler
+from astra.usecase.dashboard_handler import DashboardHandler
 
 """
 config = pd.DataFrame(
