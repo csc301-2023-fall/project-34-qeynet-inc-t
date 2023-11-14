@@ -5,7 +5,7 @@ from typing import Iterable
 
 from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
-from astra.data.telemetry_data import TelemetryData, TelemetryFrame
+from astra.data.telemetry_data import TelemetryFrame
 from astra.data.parameters import DisplayUnit, ParameterValue, Tag
 from .utils import eval_param_value
 

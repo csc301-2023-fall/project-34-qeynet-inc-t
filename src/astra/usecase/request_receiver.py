@@ -2,12 +2,13 @@ import queue
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Iterable
+from .alarm_checker import check_alarms
+from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
-from ..data.alarms import Alarm, AlarmPriority
 from ..data.parameters import Tag
-from .alarm_checker import check_alarms
+
 
 TAG = 'TAG'
 DESCRIPTION = 'DESCRIPTION'
@@ -226,7 +227,7 @@ class DataRequestReceiver(RequestReceiver):
         cls.file = file
 
     @classmethod
-    def get_alarms(cls) -> dict[AlarmPriority: set[Alarm]]:
+    def get_alarms(cls) -> AlarmsContainer:
         return cls.alarms
 
     @classmethod
@@ -246,7 +247,8 @@ class DataRequestReceiver(RequestReceiver):
         update is a method that updates the database based on the filename provided.
         """
         if cls.alarms is None:
-            cls.alarms = dict()
+            cls.alarms = AlarmsContainer()
 
         earliest_time = previous_data.add_data_from_file(cls.file)
+
         check_alarms(previous_data, cls.alarms, earliest_time)

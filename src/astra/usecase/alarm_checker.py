@@ -1,7 +1,10 @@
-from .alarm_strategies import *
+from datetime import datetime
+from threading import Thread
+from .alarm_strategies import get_strategy, AlarmsContainer
+from ..data.data_manager import DataManager
 
 
-def check_alarms(dm: DataManager, alarms: dict[AlarmPriority, set[Alarm]],
+def check_alarms(dm: DataManager, alarms: AlarmsContainer,
                  earliest_time: datetime) -> None:
     """
     Goes through all possible alarms to check and, if any exists, adds them to <alarms>
@@ -16,19 +19,14 @@ def check_alarms(dm: DataManager, alarms: dict[AlarmPriority, set[Alarm]],
     a list
     """
 
+    threads = []
     alarm_bases = dm.alarm_bases
     for alarm_base in alarm_bases:
         base = alarm_base.event_base
         criticality = alarm_base.criticality
 
         strategy = get_strategy(base)
-        alarm_list = strategy(dm, base, criticality, earliest_time)
-        if alarm_list is not None and alarm_list[0]:
-            for alarm in alarm_list[0]:
-                criticality = alarm.criticality
-                priority = dm.alarm_priority_matrix[timedelta(seconds=0)][criticality]
-
-                if priority in alarms:
-                    alarms[priority].add(alarm)
-                else:
-                    alarms[priority] = {alarm}
+        new_thread = Thread(target=strategy, args=[dm, base, criticality, earliest_time,
+                                                   alarms])
+        threads.append(new_thread)
+        new_thread.start()
