@@ -32,5 +32,3 @@ def check_alarms(dm: DataManager, alarms: dict[AlarmPriority, set[Alarm]],
                                                    alarm_container])
         threads.append(new_thread)
         new_thread.start()
-
-

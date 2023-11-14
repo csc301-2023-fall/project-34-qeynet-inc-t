@@ -1,12 +1,11 @@
-import datetime
-from datetime import timedelta
+from datetime import timedelta, datetime
 from itertools import pairwise
 from threading import Lock
-from astra.data.alarms import EventID, AlarmPriority, Alarm, EventBase, RateOfChangeEventBase, StaticEventBase, \
-    ThresholdEventBase, SetpointEventBase, SOEEventBase, AllEventBase, AlarmCriticality, Event, AnyEventBase
+from astra.data.alarms import (EventID, AlarmPriority, Alarm, EventBase, RateOfChangeEventBase,
+                               StaticEventBase, ThresholdEventBase, SetpointEventBase,
+                               SOEEventBase, AllEventBase, AlarmCriticality, Event, AnyEventBase)
 from astra.data.data_manager import DataManager
 from typing import Callable
-
 from astra.data.parameters import Tag, ParameterValue
 from astra.data.telemetry_data import TelemetryData
 
@@ -359,6 +358,7 @@ def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
     for each time in <td>.
     It also returns a list of indices of the first list, where the bool is False.
 
+    :param fall_threshold: The value to compare rate of changes against
     :param td: The relevant telemetry data to check. (of the <tag>)
     :param tag: The tag to check the values of.
     :param rise_threshold: The threshold to check against.
@@ -554,6 +554,7 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return:  A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -624,6 +625,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -699,6 +701,7 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -738,6 +741,7 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
     :param criticality: default criticality for the alarm base
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -839,6 +843,7 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     :param criticality: default criticality for the alarm base
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
@@ -896,9 +901,9 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     :param dm: The source of all data known to the program
     :param alarm_base: Defines events to check
     :param criticality: default criticality for the alarm base
-    :param new_id: the id to assign a potential new alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
+    :param all_alarms: Container for the list of all alarms
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
