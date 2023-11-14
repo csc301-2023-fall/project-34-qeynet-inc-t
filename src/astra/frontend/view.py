@@ -74,9 +74,9 @@ class View(Tk):
         Entry(dashboard_filter_tags, textvariable=self.dashboard_search_bar).grid(row=1, column=1)
         self.dashboard_search_bar.trace_add("write", self.search_bar_change)
         (Button(dashboard_filter_tags, text="Check all search results",
-                wraplength=80, command=self.update_time).grid(row=2, column=0, rowspan=2)) # TODO
+                wraplength=80, command=self.select_all_tags).grid(row=2, column=0, rowspan=2)) # TODO
         (Button(dashboard_filter_tags, text="Uncheck all search results",
-                wraplength=80, command=self.update_time).grid(row=2, column=1, rowspan=2)) # TODO
+                wraplength=80, command=self.deselect_all_tags).grid(row=2, column=1, rowspan=2)) # TODO
         tag_table = ttk.Treeview(dashboard_filter_tags, height=12, show='tree')
         self.data_tag_table = tag_table
         tag_table['columns'] = ("tag")
@@ -227,6 +227,8 @@ class View(Tk):
             self.dashboard_view_model.toggle_end_time(None)
             self.dashboard_view_model.choose_frame(self._dm, 0)
             self.refresh_data_table()
+            self.search_bar_change()
+            self.select_all_tags()
             
     
     def sort_alarms(self, tag: str):
@@ -341,6 +343,8 @@ class View(Tk):
         self.dashboard_view_model.toggle_end_time(None)
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_data_table()
+        self.search_bar_change()
+        self.select_all_tags()
         
         try:
             self.alarms_view_model.load_file(self._dm, file)
@@ -449,6 +453,7 @@ class View(Tk):
         self.update_data_table_searched_tags()
 
     def toggle_tag_table_row(self, event):
+        del event
         cur_item = self.data_tag_table.focus()
         try:
             tag_str = self.data_tag_table.item(cur_item)['values'][0][4:]
@@ -457,6 +462,29 @@ class View(Tk):
             return
         tag = Tag(tag_str)
         self.dashboard_view_model.toggle_tag(tag)
+        self.update_data_table_searched_tags()
+        self.refresh_data_table()
+    
+    def select_all_tags(self):
+        # Clone the toggled tags, as it will mutate
+        toggled_tags = set()
+        for tag in self.dashboard_view_model.get_toggled_tags():
+            toggled_tags.add(tag)
+
+        for tag in self.dashboard_view_model.get_tag_list():
+            if tag not in toggled_tags:
+                self.dashboard_view_model.toggle_tag(tag)
+        self.update_data_table_searched_tags()
+        self.refresh_data_table()
+
+    def deselect_all_tags(self):
+        # Clone the toggled tags, as it will mutate
+        toggled_tags = set()
+        for tag in self.dashboard_view_model.get_toggled_tags():
+            toggled_tags.add(tag)
+
+        for tag in toggled_tags:
+            self.dashboard_view_model.toggle_tag(tag)
         self.update_data_table_searched_tags()
         self.refresh_data_table()
 
