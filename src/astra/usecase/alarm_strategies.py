@@ -220,19 +220,130 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
     return times
 
 
-def fall_threshold_check():
+def rise_threshold_check(td: TelemetryData, tag: Tag, rise_threshold: float,
+                         time_window: int) -> (list[tuple[bool, datetime]], list[int]):
     """
     Returns a list of tuples, (bool, datetime), where the bool is
     True IFF the rate of change from the datetime until the <time_window> time
     is above the <rise_threshold>. It is false otherwise. There is one tuple
     for each time in <td>.
     It also returns a list of indices of the first list, where the bool is False.
+
+    :param td: The relevant telemetry data to check. (of the <tag>)
+    :param tag: The tag to check the values of.
+    :param rise_threshold: The threshold to check against.
+    :param time_window: The time window to check over.
+    :return: A list of tuples, (bool, datetime), with the bool indicating if the rate of change
+    surpasses the threshold within the time window. And a list of indices of the first list,
+    where the bool is False.
     """
-    pass
+
+    high_rising_startpoints = []
+    false_indices = []
+
+    values_at_times = td.get_parameter_values(tag)
+    # Iterate over each telemetry frame and add a (True, datetime) to the list each time the
+    # rate of change is above the threshold for <time_window> seconds after it.
+    for frame_index in range(td.num_telemetry_frames()):
+        startpoint_time = td.get_telemetry_frame(frame_index).time
+        startpoint_value = values_at_times[startpoint_time]
+
+        # Starting from the startpoint_time, find the endpoint.
+        # I am considering the endpoint to be WITHIN the timeframe, not after it.
+        # So it could be the case the endpoint is the same as the startpoint.
+        curr_time = startpoint_time
+        curr_frame_index = frame_index
+        curr_value = startpoint_value
+        end_time = startpoint_time + timedelta(seconds=time_window)
+        while (end_time >= curr_time) and ((curr_frame_index + 1) < td.num_telemetry_frames()):
+
+            # Set the current value to be the value at the current time.
+            curr_value = values_at_times[curr_time]
+
+            # Increment to the next frame, then we will check if it is still within the timeframe.
+            curr_frame_index += 1
+            curr_time = td.get_telemetry_frame(curr_frame_index).time
+
+        # Once the loop ends, curr_value will be the last value in the timeframe.
+        # Or the last frame in <td> will be at curr_frame_index.
+        if curr_value == startpoint_value:
+            curr_roc = 0
+        else:
+            # Calculate the rate of change. (difference in value / number of frames)
+            curr_roc = (curr_value - startpoint_value) / ((curr_frame_index - 1) - frame_index)
+
+        # Determine if this index held a high enough rate of change.
+        # and that it is at the end of the timeframe.
+        if curr_roc > rise_threshold and (curr_time >= end_time):
+            high_rising_startpoints.append((True, startpoint_time))
+        else:
+            high_rising_startpoints.append((False, startpoint_time))
+            false_indices.append(frame_index)
+
+    return high_rising_startpoints, false_indices
 
 
-def rise_threshold_check():
-    pass
+def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
+                         time_window: int) -> (list[tuple[bool, datetime]], list[int]):
+    """
+    Returns a list of tuples, (bool, datetime), where the bool is
+    True IFF the rate of change from the datetime until the <time_window> time
+    is below the <fall_threshold>. It is false otherwise. There is one tuple
+    for each time in <td>.
+    It also returns a list of indices of the first list, where the bool is False.
+
+    :param td: The relevant telemetry data to check. (of the <tag>)
+    :param tag: The tag to check the values of.
+    :param rise_threshold: The threshold to check against.
+    :param time_window: The time window to check over.
+    :return: A list of tuples, (bool, datetime), with the bool indicating if the rate of change
+    surpasses the threshold within the time window. And a list of indices of the first list,
+    where the bool is False.
+    """
+
+    low_falling_startpoints = []
+    false_indices = []
+
+    values_at_times = td.get_parameter_values(tag)
+    # Iterate over each telemetry frame and add a (True, datetime) to the list each time the
+    # rate of change is above the threshold for <time_window> seconds after it.
+    for frame_index in range(td.num_telemetry_frames()):
+        startpoint_time = td.get_telemetry_frame(frame_index).time
+        startpoint_value = values_at_times[startpoint_time]
+
+        # Starting from the startpoint_time, find the endpoint.
+        # I am considering the endpoint to be WITHIN the timeframe, not after it.
+        # So it could be the case the endpoint is the same as the startpoint.
+        curr_time = startpoint_time
+        curr_frame_index = frame_index
+        curr_value = startpoint_value
+        end_time = startpoint_time + timedelta(seconds=time_window)
+        while (end_time >= curr_time) and ((curr_frame_index + 1) < td.num_telemetry_frames()):
+
+            # Set the current value to be the value at the current time.
+            curr_value = values_at_times[curr_time]
+
+            # Increment to the next frame, then we will check if it is still within the timeframe.
+            curr_frame_index += 1
+            curr_time = td.get_telemetry_frame(curr_frame_index).time
+
+        # Once the loop ends, curr_value will be the last value in the timeframe.
+        # Or the last frame in <td> will be at curr_frame_index.
+        if curr_value == startpoint_value:
+            curr_roc = 0
+        else:
+            # Calculate the rate of change. (difference in value / number of frames)
+            curr_roc = (curr_value - startpoint_value) / ((curr_frame_index - 1) - frame_index)
+
+        # Determine if this index held a high enough rate of change.
+        # and that it is at the end of the timeframe.
+        if curr_roc < fall_threshold and (curr_time >= end_time):
+            low_falling_startpoints.append((True, startpoint_time))
+        else:
+            low_falling_startpoints.append((False, startpoint_time))
+            false_indices.append(frame_index)
+
+    return low_falling_startpoints, false_indices
 
 
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
@@ -308,7 +419,6 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
         fall_alarm_frames = find_alarm_indexes(fall_first_indices, fall_cond_met)
 
     # combining all results.
-    # TODO: make sure this works.
     all_alarm_frames = []
     for i in range(len(fall_alarm_frames)):
         all_alarm_frames.append(fall_alarm_frames[i] or rise_alarm_frames[i])
