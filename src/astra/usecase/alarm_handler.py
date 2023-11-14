@@ -15,6 +15,8 @@ TYPE = 'TYPE'
 REGISTERED_DATE = 'REGISTERED_DATE'
 CONFIRMED_DATE = 'CONFIRMED_DATE'
 UNACKNOWLEDGED = 'UA'
+DESCENDING = '>'
+VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
 
 
 @dataclass
@@ -139,6 +141,35 @@ class AlarmHandler(UseCaseHandler):
         if filter_args.new:
             show = show and alarm.acknowledgement == UNACKNOWLEDGED
         return show
+
+    @classmethod
+    def _sort_output(cls, return_data: TableReturn, sort: tuple[str, str]):
+        """
+        sorts the <table> field of return_data based on <sort>
+
+        :param return_data: the output container to sort data from
+        :param sort: defines how output should be sorted
+
+        PRECONDITION: The values of sort satisfy the docstrings of the sort field in
+        AlarmsFilters
+        """
+        if sort is not None:
+            # Determining which column to sort by
+            key_index = 0
+            for i in range(len(VALID_SORTING_COLUMNS)):
+                if sort[1] == VALID_SORTING_COLUMNS[i]:
+                    key_index = i
+                    break
+
+            # By default, sorting occurs by ascending values, so a case is
+            # needed to check if it should occur by descending order
+            reverse = False
+            if sort[0] == DESCENDING:
+                reverse = True
+
+            return_data.table = sorted(return_data.table,
+                                       key=lambda x: x[key_index],
+                                       reverse=reverse)
 
     @classmethod
     def get_data(cls, dm: dict[AlarmPriority, set[Alarm]], filter_args: AlarmsFilters) \
