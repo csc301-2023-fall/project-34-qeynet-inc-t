@@ -6,7 +6,7 @@ from typing import Self
 from astra.data import dict_parsing, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority
 from astra.data.database import db_manager
-from astra.data.dict_parsing import ParsingError, Path, PathedDict
+from astra.data.dict_parsing import ParsingError
 from astra.data.parameters import Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 
@@ -50,24 +50,20 @@ class DataManager:
         ]
 
     @staticmethod
-    def _parse_parameter_dict(tag_name: str, parameter_dict: dict) -> Parameter:
+    def _parse_parameter_dict(tag_name: str, parameter_info: object) -> Parameter:
         # Return a Parameter based on the given tag name and parameter information.
         # Raise InternalDatabaseError if the dict cannot be parsed.
         try:
-            return dict_parsing.parse_parameter(
-                Tag(tag_name), PathedDict(Path('<tag>', []), parameter_dict)
-            )
+            return dict_parsing.parse_parameter(Tag(tag_name), parameter_info)
         except ParsingError as e:
             raise InternalDatabaseError(f'failed to parse database tag {tag_name}: {e}')
 
     @staticmethod
-    def _parse_alarm_dict(criticality: str, event_dict: dict) -> AlarmBase:
+    def _parse_alarm_dict(criticality: str, event_info: object) -> AlarmBase:
         # Return an AlarmBase based on the given criticality and event information.
         # Raise InternalDatabaseError if the dict cannot be parsed.
         try:
-            return dict_parsing.parse_alarm_base(
-                criticality, PathedDict(Path('<alarm>', ['event']), event_dict)
-            )
+            return dict_parsing.parse_alarm_base(criticality, event_info)
         except ParsingError as e:
             raise InternalDatabaseError(f'failed to parse database alarm base: {e}')
 

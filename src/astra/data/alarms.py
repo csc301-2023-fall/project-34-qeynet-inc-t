@@ -87,3 +87,4 @@ class AlarmBase:
 class Alarm:
     event: Event
     criticality: AlarmCriticality
+    acknowledgement: str

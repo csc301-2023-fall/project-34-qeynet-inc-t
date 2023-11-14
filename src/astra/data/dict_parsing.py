@@ -194,14 +194,14 @@ class PathedDict:
         return _convert_to_pathed(child_path, _check_type(child_path, value, expected_type))
 
 
-def parse_parameter(tag: Tag, value: PathedDict) -> Parameter:
+def parse_parameter(tag: Tag, value: object) -> Parameter:
     """
     Parse the input into a Parameter object.
 
     :param tag:
         The tag for the Parameter object.
     :param value:
-        A PathedDict representing the dict to parse.
+        The input (should be a dict) to parse.
 
     :raise ParsingError:
         If parsing fails because of missing keys or incorrect types/values.
@@ -209,16 +209,17 @@ def parse_parameter(tag: Tag, value: PathedDict) -> Parameter:
     :return:
         The input, parsed into a Parameter object.
     """
-    parameter_description = value.get('description', str)
-    dtype_string = value.get('dtype', str)
+    parameter_dict = PathedDict(Path('<tag>', []), value)
+    parameter_description = parameter_dict.get('description', str)
+    dtype_string = parameter_dict.get('dtype', str)
     try:
         dtype = {'bool': bool, 'int': int, 'float': float}[dtype_string]
     except KeyError:
         _raise_expected_values_error(
-            value.path.add('dtype'), dtype_string, ['bool', 'int', 'float']
+            parameter_dict.path.add('dtype'), dtype_string, ['bool', 'int', 'float']
         )
-    setpoint = value.get('setpoint', ParameterValue | None)
-    units_dict = value.get('display_units', dict | None)
+    setpoint = parameter_dict.get('setpoint', ParameterValue | None)
+    units_dict = parameter_dict.get('display_units', dict | None)
     if units_dict is not None:
         units_description = units_dict.get('description', str)
         symbol = units_dict.get('symbol', str)
@@ -230,45 +231,47 @@ def parse_parameter(tag: Tag, value: PathedDict) -> Parameter:
     return Parameter(tag, parameter_description, dtype, setpoint, display_units)
 
 
-def _parse_event_base(value: PathedDict) -> EventBase:
+def _parse_event_base(event_dict: PathedDict) -> EventBase:
     # Parse the input into an EventBase.
-    persistence = value.get('persistence', int | float | None)
-    description = value.get('description', str)
-    event_type = value.get('type', str)
+    persistence = event_dict.get('persistence', int | float | None)
+    description = event_dict.get('description', str)
+    event_type = event_dict.get('type', str)
     match event_type:
         case 'rate_of_change':
             return RateOfChangeEventBase(
                 persistence,
                 description,
-                Tag(value.get('tag', str)),
-                value.get('rate_of_fall_threshold', int | float | None),
-                value.get('rate_of_rise_threshold', int | float | None),
-                value.get('time_window', int | float),
+                Tag(event_dict.get('tag', str)),
+                event_dict.get('rate_of_fall_threshold', int | float | None),
+                event_dict.get('rate_of_rise_threshold', int | float | None),
+                event_dict.get('time_window', int | float),
             )
         case 'static':
-            return StaticEventBase(persistence, description, Tag(value.get('tag', str)))
+            return StaticEventBase(persistence, description, Tag(event_dict.get('tag', str)))
         case 'threshold':
             return ThresholdEventBase(
                 persistence,
                 description,
-                Tag(value.get('tag', str)),
-                value.get('lower_threshold', int | float | None),
-                value.get('upper_threshold', int | float | None),
+                Tag(event_dict.get('tag', str)),
+                event_dict.get('lower_threshold', int | float | None),
+                event_dict.get('upper_threshold', int | float | None),
             )
         case 'setpoint':
             return SetpointEventBase(
                 persistence,
                 description,
-                Tag(value.get('tag', str)),
-                value.get('setpoint', ParameterValue),
+                Tag(event_dict.get('tag', str)),
+                event_dict.get('setpoint', ParameterValue),
             )
         case 'sequence_of_events':
             event_bases = [
-                _parse_event_base(event_dict)
-                for event_dict in value.get('events', list).iter(dict, None)
+                _parse_event_base(inner_event_dict)
+                for inner_event_dict in event_dict.get('events', list).iter(dict, None)
             ]
             intervals = []
-            for interval_tuple in value.get('intervals', list).iter(list, len(event_bases) - 1):
+            for interval_tuple in event_dict.get('intervals', list).iter(
+                list, len(event_bases) - 1
+            ):
                 min_interval, max_interval = interval_tuple.tuple_iter(
                     [int | float, int | float | None]
                 )
@@ -279,8 +282,8 @@ def _parse_event_base(value: PathedDict) -> EventBase:
                 persistence,
                 description,
                 [
-                    _parse_event_base(event_dict)
-                    for event_dict in value.get('events', list).iter(dict, None)
+                    _parse_event_base(inner_event_dict)
+                    for inner_event_dict in event_dict.get('events', list).iter(dict, None)
                 ],
             )
         case 'logical_or':
@@ -288,13 +291,13 @@ def _parse_event_base(value: PathedDict) -> EventBase:
                 persistence,
                 description,
                 [
-                    _parse_event_base(event_dict)
-                    for event_dict in value.get('events', list).iter(dict, None)
+                    _parse_event_base(inner_event_dict)
+                    for inner_event_dict in event_dict.get('events', list).iter(dict, None)
                 ],
             )
         case _:
             _raise_expected_values_error(
-                value.path.add('type'),
+                event_dict.path.add('type'),
                 event_type,
                 [
                     'rate_of_change',
@@ -308,14 +311,14 @@ def _parse_event_base(value: PathedDict) -> EventBase:
             )
 
 
-def parse_alarm_base(criticality_string: str, value: PathedDict) -> AlarmBase:
+def parse_alarm_base(criticality_string: str, value: object) -> AlarmBase:
     """
     Parse the input into an AlarmBase.
 
     :param criticality_string:
         The criticality for the AlarmBase.
     :param value:
-        A PathedDict representing the dict to parse.
+        The input (should be a dict) to parse.
 
     :raise ParsingError:
         If parsing fails because of missing keys or incorrect types/values.
@@ -331,5 +334,6 @@ def parse_alarm_base(criticality_string: str, value: PathedDict) -> AlarmBase:
             criticality_string,
             [criticality.value for criticality in AlarmCriticality],
         )
-    event_base = _parse_event_base(value)
+    event_dict = PathedDict(Path('<alarm>', ['event']), value)
+    event_base = _parse_event_base(event_dict)
     return AlarmBase(event_base, criticality)

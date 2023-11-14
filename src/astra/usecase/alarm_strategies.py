@@ -8,6 +8,8 @@ from .utils import get_tag_param_value
 from typing import Callable
 from astra.data.telemetry_data import TelemetryData
 
+
+UNACKNOWLEDGED = 'UA'
 next_id = EventID(0)
 
 
@@ -85,7 +87,7 @@ def create_alarm(alarm_indexes: tuple[int, int], td: TelemetryData, description:
     event = Event(event_base, next_id, register_timestamp, confirm_timestamp, description)
     next_id += 1
 
-    return Alarm(event, criticality)
+    return Alarm(event, criticality, UNACKNOWLEDGED)
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
@@ -107,11 +109,11 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     cond_met = []
     false_index = []
     num_frames = td.num_telemetry_frames
+    tag_values = td.get_parameter_values(tag)
     for i in range(num_frames):
         telemetry_frame = td.get_telemetry_frame(i)
         telemetry_time = telemetry_frame.time
 
-        tag_values = td.get_parameter_values(tag)
         raw_parameter_value = tag_values[telemetry_time]
         cond_frame_met = condition(raw_parameter_value, comparison)
 
@@ -350,8 +352,9 @@ def upper_threshold_cond(param_value: ParameterValue, upper_threshold: Parameter
     :param upper_threshold: TYhe upper threshold to compare against
     :return A boolean indicating if <param_value> exceeds the threshold
     """
-    return param_value > upper_threshold
-
+    if param_value is not None:
+        return param_value > upper_threshold
+    return False
 
 def lower_threshold_cond(param_value: ParameterValue, lower_threshold: ParameterValue) -> bool:
     """checks if <param_value> is below the lower threshold
@@ -360,8 +363,9 @@ def lower_threshold_cond(param_value: ParameterValue, lower_threshold: Parameter
     :param lower_threshold: TYhe upper threshold to compare against
     :return A boolean indicating if <param_value> exceeds the threshold
     """
-    return param_value < lower_threshold
-
+    if param_value is not None:
+        return param_value < lower_threshold
+    return False
 
 def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
                     criticality: AlarmCriticality, earliest_time: datetime) \
@@ -393,8 +397,8 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
     upper_alarm_frames = []
     if lower_threshold is not None:
         # Checking + generating all alarms for crossing the lower threshold
-        lower_cond_met, lower_false_indexes = check_conds(telemetry_data, tag, setpoint_cond,
-                                                          upper_threshold)
+        lower_cond_met, lower_false_indexes = check_conds(telemetry_data, tag, lower_threshold_cond,
+                                                          lower_threshold)
         lower_alarm_indexes = persistence_check(lower_cond_met, sequence, lower_false_indexes)
         lower_first_indexes = []
         for alarm_index in lower_alarm_indexes:
@@ -405,8 +409,8 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
         lower_alarm_frames = find_alarm_indexes(lower_first_indexes, lower_cond_met)
     if upper_threshold is not None:
         # Checking + generating all alarms for crossing the upper threshold
-        upper_cond_met, upper_false_indexes = check_conds(telemetry_data, tag, setpoint_cond,
-                                                          lower_threshold)
+        upper_cond_met, upper_false_indexes = check_conds(telemetry_data, tag,
+                                                          upper_threshold_cond, upper_threshold)
         upper_alarm_indexes = persistence_check(upper_cond_met, sequence, upper_false_indexes)
         upper_first_indexes = []
         for alarm_index in upper_alarm_indexes:
@@ -431,7 +435,9 @@ def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool
     :param setpoint: The setpoint value to compare against
     :return: A boolean indicating if param_value is at the setpoint
     """
-    return param_value == setpoint[0]
+    if param_value is not None:
+        return param_value == setpoint
+    return False
 
 
 def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
