@@ -1,5 +1,7 @@
 from datetime import datetime
 from typing import Iterable
+
+from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import TableReturn
 from .alarm_handler import AlarmHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
@@ -25,13 +27,13 @@ class AlarmsRequestReceiver(RequestReceiver):
     @classmethod
     def __init__(cls):
         cls.handler = AlarmHandler()
-        cls.filters = AlarmsFilters(None, None, None, None, None, None, None)
+        cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
         # maybe make this inherit from dashboard filters
         # Im assuming the alarms filter will have:
         # (sort, index, priority, criticality, alarm_type, start_time, end_time)
 
     @classmethod
-    def create(cls, dm: DataManager) -> TableReturn:
+    def create(cls, dm: AlarmsContainer) -> TableReturn:
         """
         Create is a method that creates the initial data table,
         with all priorities/types/criticalities shown, no sorting applied and at the first index.
@@ -60,7 +62,7 @@ class AlarmsRequestReceiver(RequestReceiver):
             cls.filters.index = 0
 
         # Create the initial table.
-        return cls.handler.get_data(dm, cls.filters)
+        return cls.handler.get_data(dm.get_alarms(), cls.filters)
 
     @classmethod
     def update(cls, previous_data: TableReturn, dm: DataManager = None):
