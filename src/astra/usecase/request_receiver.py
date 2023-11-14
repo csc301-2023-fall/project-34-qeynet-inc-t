@@ -2,12 +2,13 @@ import queue
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Iterable
+from .alarm_checker import check_alarms
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
 from ..data.alarms import Alarm, AlarmPriority
 from ..data.parameters import Tag
-from .alarm_checker import check_alarms
+
 
 DATA = 'DATA'
 CONFIG = 'CONFIG'
@@ -245,4 +246,5 @@ class DataRequestReceiver(RequestReceiver):
             cls.alarms = dict()
 
         earliest_time = previous_data.add_data_from_file(cls.file)
+
         check_alarms(previous_data, cls.alarms, earliest_time)
