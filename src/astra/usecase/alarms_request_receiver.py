@@ -4,7 +4,7 @@ from .use_case_handlers import TableReturn
 from .alarm_handler import AlarmHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
-from ..data.alarms import AlarmPriority, AlarmCriticality, Alarm
+from ..data.alarms import AlarmPriority, AlarmCriticality
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']

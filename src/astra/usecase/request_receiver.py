@@ -7,7 +7,6 @@ from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
-from ..data.alarms import Alarm, AlarmPriority
 from ..data.parameters import Tag
 
 

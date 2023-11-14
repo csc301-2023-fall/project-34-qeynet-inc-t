@@ -3,7 +3,8 @@ from threading import Lock
 
 from astra.data.alarms import (EventID, Alarm, EventBase, RateOfChangeEventBase,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
-                               SOEEventBase, AllEventBase, AlarmCriticality, Event, AnyEventBase, AlarmPriority)
+                               SOEEventBase, AllEventBase, AlarmCriticality, Event, AnyEventBase,
+                               AlarmPriority)
 from astra.data.data_manager import DataManager
 from typing import Callable
 from astra.data.parameters import Tag, ParameterValue
