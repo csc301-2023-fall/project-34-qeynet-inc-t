@@ -8,6 +8,9 @@ from ..data.alarms import AlarmPriority, AlarmCriticality
 from ..data.parameters import Tag
 
 
+VALID_SORTING_DIRECTIONS = {'>', '<'}
+VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+
 class AlarmsRequestReceiver(RequestReceiver):
     """
     AlarmsRequestReceiver is a class that implements the RequestReceiver interface.
@@ -28,7 +31,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         # Im assuming the alarms filter will have:
         # (sort, index, priority, criticality, alarm_type, start_time, end_time)
 
-    # TODO new type for the return.
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
         """
@@ -61,7 +63,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         # Create the initial table.
         return cls.handler.get_data(dm, cls.filters)
 
-    # TODO new type for the previous_data
     @classmethod
     def update(cls, previous_data: TableReturn, dm: DataManager = None):
         """
@@ -141,7 +142,7 @@ class AlarmsRequestReceiver(RequestReceiver):
             return False
 
     @classmethod
-    def set_shown_priorities(cls, priorities: Iterable[Tag]):
+    def set_shown_priorities(cls, priorities: Iterable[AlarmPriority]):
         """
         Sets <cls.filters.priorities> to the set of priorities to be shown
 
@@ -152,7 +153,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.priorities = priorities
 
     @classmethod
-    def set_shown_criticalities(cls, criticalities: Iterable[Tag]):
+    def set_shown_criticalities(cls, criticalities: Iterable[AlarmCriticality]):
         """
         Sets <cls.filters.criticalities> to the set of criticalities to be shown
 
@@ -163,7 +164,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.criticalities = criticalities
 
     @classmethod
-    def set_shown_types(cls, types: Iterable[Tag]):
+    def set_shown_types(cls, types: Iterable[str]):
         """
         Sets <cls.filters.types> to the set of types to be shown
 
@@ -239,13 +240,11 @@ class AlarmsRequestReceiver(RequestReceiver):
              value will indicate the name of the column to sort by.
         :returns: True if the sorting filter was successfully updated and False otherwise.
         """
-        valid_sorting_directions = {'>', '<'}
-        valid_columns = []  # TODO figure out what columns we have
 
         # Determine if the sorting filter is valid.
-        if sort[0] not in valid_sorting_directions:
+        if sort[0] not in VALID_SORTING_DIRECTIONS:
             return False
-        if sort[1] not in valid_columns:
+        if sort[1] not in VALID_SORTING_COLUMNS:
             return False
 
         # both if statements failed, so the filter is valid.
