@@ -31,7 +31,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         # Im assuming the alarms filter will have:
         # (sort, index, priority, criticality, alarm_type, start_time, end_time)
 
-    # TODO new type for the return.
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
         """
@@ -64,7 +63,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         # Create the initial table.
         return cls.handler.get_data(dm, cls.filters)
 
-    # TODO new type for the previous_data
     @classmethod
     def update(cls, previous_data: TableReturn, dm: DataManager = None):
         """
@@ -144,7 +142,7 @@ class AlarmsRequestReceiver(RequestReceiver):
             return False
 
     @classmethod
-    def set_shown_priorities(cls, priorities: Iterable[Tag]):
+    def set_shown_priorities(cls, priorities: Iterable[AlarmPriority]):
         """
         Sets <cls.filters.priorities> to the set of priorities to be shown
 
@@ -155,7 +153,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.priorities = priorities
 
     @classmethod
-    def set_shown_criticalities(cls, criticalities: Iterable[Tag]):
+    def set_shown_criticalities(cls, criticalities: Iterable[AlarmCriticality]):
         """
         Sets <cls.filters.criticalities> to the set of criticalities to be shown
 
@@ -166,7 +164,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.criticalities = criticalities
 
     @classmethod
-    def set_shown_types(cls, types: Iterable[Tag]):
+    def set_shown_types(cls, types: Iterable[str]):
         """
         Sets <cls.filters.types> to the set of types to be shown
 
