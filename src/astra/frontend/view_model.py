@@ -122,9 +122,7 @@ class DashboardViewModel:
 
     def load_file(self, dm: DataManager, file: str):
         """
-        This method has yet to be fully implemented
-        Currently it just asks the view_model to update itself to
-        simulate a file being loaded
+        Loads a telemetry file for the data for the datatable
 
         Args:
             file: the filepath of the telemetry file
@@ -134,6 +132,7 @@ class DashboardViewModel:
         data_receiver = DataRequestReceiver
         data_receiver.set_filename(file)
         data_receiver.update(dm)
+        self.model.receive_new_data(dm)
 
     def search_tags(self, search: str):
         self._tag_list = self.model.request_receiver.search_tags(search)
@@ -188,6 +187,22 @@ class AlarmsViewModel:
         self._table_entries = []
         self._time = None
         
+    def load_file(self, dm: DataManager, file: str):
+        """
+        Loads a telemetry file for its alarms for the alarm table
+
+        Args:
+            file: the filepath of the telemetry file
+            :param file:
+            :param dm:
+        """
+        data_receiver = DataRequestReceiver
+        data_receiver.set_filename(file)
+        self.model.receive_new_data(dm)
+        data_receiver.update(dm)
+        self.model.receive_updates()
+        self.update_table_entries()
+        
     def get_table_entries(self) -> List[list]:
         """
         Getter method to return the entries in the table
@@ -199,6 +214,9 @@ class AlarmsViewModel:
         """
         return self._table_entries
     
+    def get_tag_list(self):
+        return self._priorities, self._criticalities, self._types
+    
     def update_table_entries(self) -> None:
         """
         Updates the table entires to be the same as
@@ -209,10 +227,10 @@ class AlarmsViewModel:
         table_data = self.model.get_data()
 
         self._time = table_data.timestamp
-        self._num_frames = table_data.frame_quantity
         self._table_entries = table_data.table
+        
     
-    def toggle_sort(self, heading: str) -> None:
+    def toggle_sort(self, heading: Tag) -> None:
         """
         Method for toggling sorting on a specific heading
         The headings include (for now):

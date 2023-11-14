@@ -26,7 +26,7 @@ class AlarmsRequestReceiver(RequestReceiver):
     @classmethod
     def __init__(cls):
         cls.handler = AlarmsHandler()
-        cls.filters = AlarmsFilters(None, None, None, None, None, None, None)
+        cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, True)
         # maybe make this inherit from dashboard filters
         # Im assuming the alarms filter will have:
         # (sort, index, priority, criticality, alarm_type, start_time, end_time)

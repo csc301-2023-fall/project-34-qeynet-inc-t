@@ -47,7 +47,7 @@ class View(Tk):
         super().__init__()
         self.title("View Prototype")
         self.dashboard_view_model = DashboardViewModel()
-        self.alarms_view_model = AlarmsViewModel
+        self.alarms_view_model = AlarmsViewModel()
 
         # tab widget
         tab_control = ttk.Notebook(self)
@@ -55,16 +55,10 @@ class View(Tk):
         # frames corresponding to each tab
         dashboard_frame = ttk.Frame(tab_control)
         alarms_frame = ttk.Frame(tab_control)
-        tableview_frame = ttk.Frame(tab_control)
-        graphview_frame = ttk.Frame(tab_control)
-        frameview_frame = ttk.Frame(tab_control)
 
         # adding the tabs to the tab control
         tab_control.add(dashboard_frame, text='Dashboard')
         tab_control.add(alarms_frame, text='Alarms')
-        tab_control.add(tableview_frame, text='Table view')
-        tab_control.add(graphview_frame, text='Graph view')
-        tab_control.add(frameview_frame, text='Frame view')
 
         # packing tab control to make tabs visible
         tab_control.pack(expand=1, fill="both")
@@ -84,7 +78,7 @@ class View(Tk):
         (Button(dashboard_filter_tags, text="Uncheck all search results",
                 wraplength=80, command=self.update_time).grid(row=2, column=1, rowspan=2)) # TODO
         tag_table = ttk.Treeview(dashboard_filter_tags, height=12, show='tree')
-        self.tag_table = tag_table
+        self.data_tag_table = tag_table
         tag_table['columns'] = ("tag")
         tag_table.column("#0", width=0, stretch=NO)
         tag_table.column("tag")
@@ -151,83 +145,115 @@ class View(Tk):
         alarms_notifications.grid(sticky='W', row=0, column=0, rowspan=20)
         
         # alarms filters (for the table)
-        
-        # alarms table
-        alarms_table_frame = Frame(alarms_frame)
+        alarms_tag_table = Frame(alarms_frame)
         style = ttk.Style()
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
-        alarms_table = ttk.Treeview(alarms_frame, height=10, padding=3)
+        alarms_tag_table.grid(sticky="W", row=1, column=1)
+        dangers = ['WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+        types = ['RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'LOGICAL']
+        
+        label = Label(alarms_tag_table, text="filter priority")
+        label.grid(sticky="news", row=0, column=0)
+        button = Button(alarms_tag_table, text=dangers[0], command= lambda: self.flick_criticality(dangers[0]))
+        button.grid(sticky="news", row=0, column=1)
+        button = Button(alarms_tag_table, text=dangers[1], command= lambda: self.flick_criticality(dangers[1]))
+        button.grid(sticky="news", row=0, column=2)
+        button = Button(alarms_tag_table, text=dangers[2], command= lambda: self.flick_criticality(dangers[2]))
+        button.grid(sticky="news", row=0, column=3)
+        button = Button(alarms_tag_table, text=dangers[3], command= lambda: self.flick_criticality(dangers[3]))
+        button.grid(sticky="news", row=0, column=4)
+        button = Button(alarms_tag_table, text=dangers[4], command= lambda: self.flick_criticality(dangers[4]))
+        button.grid(sticky="news", row=0, column=5)
+          
+        label = Label(alarms_tag_table, text="filter criticality")
+        label.grid(sticky="news", row=1, column=0)
+        button = Button(alarms_tag_table, text=dangers[0], command= lambda: self.flick_priority(dangers[0]))
+        button.grid(sticky="news", row=1, column=1)
+        button = Button(alarms_tag_table, text=dangers[1], command= lambda: self.flick_priority(dangers[1]))
+        button.grid(sticky="news", row=1, column=2)
+        button = Button(alarms_tag_table, text=dangers[2], command= lambda: self.flick_priority(dangers[2]))
+        button.grid(sticky="news", row=1, column=3)
+        button = Button(alarms_tag_table, text=dangers[3], command= lambda: self.flick_priority(dangers[3]))
+        button.grid(sticky="news", row=1, column=4)
+        button = Button(alarms_tag_table, text=dangers[4], command= lambda: self.flick_priority(dangers[4]))
+        button.grid(sticky="news", row=1, column=5)
+        
+        label = Label(alarms_tag_table, text="filter type")
+        label.grid(sticky="news", row=2, column=0)
+        button = Button(alarms_tag_table, text=types[0], command= lambda: self.flick_type(types[0]))
+        button.grid(sticky="news", row=2, column=1)
+        button = Button(alarms_tag_table, text=types[1], command= lambda: self.flick_type(types[1]))
+        button.grid(sticky="news", row=2, column=2)
+        button = Button(alarms_tag_table, text=types[2], command= lambda: self.flick_type(types[2]))
+        button.grid(sticky="news", row=2, column=3)
+        button = Button(alarms_tag_table, text=types[3], command= lambda: self.flick_type(types[3]))
+        button.grid(sticky="news", row=2, column=4)
+        button = Button(alarms_tag_table, text=types[4], command= lambda: self.flick_type(types[4]))
+        button.grid(sticky="news", row=2, column=5)
+        button = Button(alarms_tag_table, text=types[5], command= lambda: self.flick_type(types[5]))
+        button.grid(sticky="news", row=2, column=6)
+        # alarms table
+        alarms_table_frame = Frame(alarms_frame)
+        alarms_table_frame.grid(sticky="W", row=2, column=1)
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
+        alarms_table = ttk.Treeview(alarms_table_frame, height=10, padding=3)
         self.alarms_table = alarms_table
+        alarms_table.pack()
         alarms_table['columns'] = ("ID", "Priority", "Criticality", "Registered", "Confirmed", "Type", "Parameter(s)", "Description")
-        alarms_table.grid(sticky="W", row=2, column=1)
         alarms_table.column("#0", width=0, stretch=NO)
         alarms_table.column("ID", anchor=CENTER, width=80)
         alarms_table.column("Priority", anchor=CENTER, width=80)
         alarms_table.column("Criticality", anchor=CENTER, width=80)
         alarms_table.column("Registered", anchor=CENTER, width=80)
         alarms_table.column("Confirmed", anchor=CENTER, width=80)
+        alarms_table.column("Type", anchor=CENTER, width=80)
         alarms_table.column("Parameter(s)", anchor=CENTER, width=100)
         alarms_table.column("Description", anchor=CENTER, width=100)
-        '''
         
-        
-        alarms_table.heading("tag", text="Tag", anchor=CENTER, command=self.toggle_tag)
-        alarms_table.heading("Description", text="Description", anchor=CENTER,
-                                command=self.toggle_description)
-        alarms_table.heading("value", text="Value", anchor=CENTER)
-        alarms_table.heading("setpoint", text="Setpoint", anchor=CENTER)
-        alarms_table.bind('<Double-1>', self.double_click_table_row)
-        '''
-        
-        
-        # elements of tableview_frame
-        tableview_table_frame = Frame(tableview_frame)
-        tableview_table_frame.grid(sticky="W", row=0, column=0)
-
-        dummy_label = Label(tableview_table_frame, text="<Data table>")
-        dummy_label.pack()
-
-        tableview_filters_frame = LabelFrame(tableview_frame, text="Filters on data")
-        tableview_filters_frame.grid(sticky="W", row=1, column=0)
-
-        dummy_label = Label(tableview_filters_frame, text="<Filters>")
-        dummy_label.pack()
-
-        # elements of graphview_frame
-        graphview_graph_frame = Frame(graphview_frame)
-        graphview_graph_frame.grid(sticky="W", row=0, column=0)
-
-        dummy_label = Label(graphview_graph_frame, text="<Embeded MatPlotLib Graph>")
-        dummy_label.pack()
-
-        graphview_filters_frame = LabelFrame(graphview_frame, text="Filters")
-        graphview_filters_frame.grid(sticky="W", row=1, column=0)
-
-        dummy_label = Label(graphview_filters_frame, text="<Filters on data>")
-        dummy_label.pack()
-
-        # elements of frameview_frame
-
-        # dummy values for now
-        frameview_descriptions = [
-            ["<Timestamp - <description for timestamp>", "<more info about timestamp"],
-            ["<value for timestamp"],
-            ["<parameter - <description>", "<More info>", "<More info>"],
-            ["<value for timestamp"],
-            ["<parameter - <description>", "<More info>", "<More info>"],
-            ["<value for timestamp"],
-            ["<parameter - <description>", "<More info>", "<More info>"]
-        ]
-
-        draw_frameview(frameview_frame, frameview_descriptions)
+        alarms_table.heading("ID", text="ID", anchor=CENTER, command= lambda: self.sort_alarms('ID'))
+        alarms_table.heading("Priority", text="Priority", anchor=CENTER, command= lambda: self.sort_alarms('PRIORITY'))
+        alarms_table.heading("Criticality", text="Criticality", anchor=CENTER, command= lambda: self.sort_alarms('CRITICALITY'))
+        alarms_table.heading("Registered", text="Registered", anchor=CENTER, command= lambda: self.sort_alarms('REGISTERED'))
+        alarms_table.heading("Confirmed", text="Confirmed", anchor=CENTER, command= lambda: self.sort_alarms('CONFIRMED'))
+        alarms_table.heading("Type", text="Type", anchor=CENTER, command= lambda: self.sort_alarms('TYPE'))
+        alarms_table.heading("Parameter(s)", text="Parameter(s)", anchor=CENTER)
+        alarms_table.heading("Description", text="Description", anchor=CENTER)
 
         if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
             self.dashboard_view_model.toggle_start_time(None)
             self.dashboard_view_model.toggle_end_time(None)
             self.dashboard_view_model.choose_frame(self._dm, 0)
             self.refresh_data_table()
-
+            
+    
+    def sort_alarms(self, tag: str):
+        self.alarms_view_model.toggle_sort(heading=tag)
+        self.refresh_alarms_table()
+        
+    def flick_priority(self, tag: Tag):
+        self.alarms_view_model.toggle_priority(tag)
+        self.refresh_alarms_table()
+        
+    def flick_criticality(self, tag: Tag):
+        self.alarms_view_model.toggle_criticality(tag)
+        self.refresh_alarms_table()
+        
+    def flick_type(self, tag: Tag):
+        self.alarms_view_model.toggle_type(tag)
+        self.refresh_alarms_table()
+        
+    def update_alarms_table_searched_tags(self):
+        for tag in self.alarms_tag_table.get_children():
+            self.data_tag_table.delete(tag)
+        for tag in self.dashboard_view_model.get_tag_list():
+            check = " "
+            if tag in self.dashboard_view_model.get_toggled_tags():
+                check = "x"
+            self.data_tag_table.insert("", END, value=(f"[{check}] {tag}",))
+        
     def toggle_tag(self) -> None:
         """
         This method is the toggle action for the tag header
@@ -315,6 +341,13 @@ class View(Tk):
         self.dashboard_view_model.toggle_end_time(None)
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_data_table()
+        
+        try:
+            self.alarms_view_model.load_file(self._dm, file)
+        except Exception as e:
+            messagebox.showerror(title='Cannot read telemetry', message=f'{type(e).__name__}: {e}')
+            self.refresh_alarms_table()
+            return
 
     def update_time(self):
         input_start_time = self.start_time.get()
@@ -401,29 +434,29 @@ class View(Tk):
             f"Frame {curr}/{total} at {time}"
         )
 
-    def update_searched_tags(self):
-        for tag in self.tag_table.get_children():
-            self.tag_table.delete(tag)
+    def update_data_table_searched_tags(self):
+        for tag in self.data_tag_table.get_children():
+            self.data_tag_table.delete(tag)
         for tag in self.dashboard_view_model.get_tag_list():
             check = " "
             if tag in self.dashboard_view_model.get_toggled_tags():
                 check = "x"
-            self.tag_table.insert("", END, value=(f"[{check}] {tag}",))
+            self.data_tag_table.insert("", END, value=(f"[{check}] {tag}",))
 
     def search_bar_change(self, *args):
         del args
         self.dashboard_view_model.search_tags(self.dashboard_search_bar.get())
-        self.update_searched_tags()
+        self.update_data_table_searched_tags()
 
     def toggle_tag_table_row(self, event):
-        cur_item = self.tag_table.focus()
+        cur_item = self.data_tag_table.focus()
         try:
-            tag_str = self.tag_table.item(cur_item)['values'][0][4:]
+            tag_str = self.data_tag_table.item(cur_item)['values'][0][4:]
         except IndexError:
             # Do nothing
             return
         tag = Tag(tag_str)
         self.dashboard_view_model.toggle_tag(tag)
-        self.update_searched_tags()
+        self.update_data_table_searched_tags()
         self.refresh_data_table()
 
