@@ -3,10 +3,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable
 
-from .use_case_handlers import UseCaseHandler
+from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryData
-from astra.data.parameters import DisplayUnit, Parameter, ParameterValue, Tag
+from astra.data.parameters import DisplayUnit, ParameterValue, Tag
+from .utils import eval_param_value
 
 SORT = 'SORT'
 TAG = 'TAG'
@@ -17,23 +18,6 @@ DATA = 'DATA'
 CONFIG = 'CONFIG'
 # For now, this choice is somewhat arbitrary
 CACHE_SIZE = 20
-
-
-@dataclass
-class TableReturn:
-    """A container for the output of get_data() and output_data() in
-    DashBoardHandler
-
-    :param columns: An ordered list of column names to be displayed
-    :param timestamp: The timestamp of the currently shown telemetry frame
-    :param table: an ordered list of lists containing data for each row
-    :param removed: an unordered list of lists containing data for tags
-    not currently shown
-    """
-    timestamp: datetime
-    table: list[list[str]]
-    removed: list[list[str]]
-    frame_quantity: int
 
 
 @dataclass
@@ -102,24 +86,6 @@ class DashboardHandler(UseCaseHandler):
         return matching
 
     @classmethod
-    def _eval_param_value(cls, tag_parameter: Parameter,
-                          tag_data: ParameterValue | None) -> ParameterValue | None:
-        """
-        Converts the raw <tag_data> into its true value using the
-        parameter multiplier and constant
-
-        :param tag_parameter: Parameter data for the relevant tag
-        :param tag_data: The raw data in the telemetry frame
-        :return: The converted parameter value
-        """
-        if type(tag_data) is bool or tag_data is None:
-            return tag_data
-        else:
-            multiplier = tag_parameter.display_units.multiplier
-            constant = tag_parameter.display_units.constant
-            return tag_data * multiplier + constant
-
-    @classmethod
     def _format_param_value(cls, tag_data: ParameterValue | None, units: DisplayUnit | None) -> str:
         """
         Formats the <tag_data> with the given units
@@ -161,11 +127,11 @@ class DashboardHandler(UseCaseHandler):
             # creating the string for the tag value
             raw_tag_data = td.get_parameter_values(tag)
             raw_timestamp_data = raw_tag_data[timestamp]
-            tag_data = cls._eval_param_value(tag_parameters, raw_timestamp_data)
+            tag_data = eval_param_value(tag_parameters, raw_timestamp_data)
 
             # creating the string for the tag setpoint value
             raw_tag_setpoint_value = tag_parameters.setpoint
-            tag_setpoint_value = cls._eval_param_value(
+            tag_setpoint_value = eval_param_value(
                 tag_parameters, raw_tag_setpoint_value)
 
             tag_value = cls._format_param_value(tag_data, tag_parameters.display_units)
@@ -232,7 +198,7 @@ class DashboardHandler(UseCaseHandler):
         include, remove = cls._add_rows_to_output(filter_args.tags, dm, telemetry_data, timestamp)
         frame_quantity = telemetry_data.num_telemetry_frames
 
-        return_data = TableReturn(timestamp, include, remove, frame_quantity)
+        return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp)
 
         # Next, determine if any sorting was requested
         cls._sort_output(return_data, filter_args.sort)
@@ -240,7 +206,7 @@ class DashboardHandler(UseCaseHandler):
         return return_data
 
     @classmethod
-    def update_data(cls, previous_table: TableReturn, filter_args: DashboardFilters,
+    def update_data(cls, previous_table: TelemetryTableReturn, filter_args: DashboardFilters,
                     dm: DataManager = None):
         """
         An implementation of update_data for the Telemetry Dashboard to update fields

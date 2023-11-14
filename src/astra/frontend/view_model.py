@@ -10,8 +10,9 @@ from typing import List, Iterable
 
 from ..data.data_manager import DataManager
 from ..data.parameters import Tag
-from ..usecase.dashboard_handler import TableReturn
+from ..usecase.use_case_handlers import TableReturn
 from ..usecase.request_receiver import DashboardRequestReceiver, DataRequestReceiver
+from ..usecase.alarms_request_receiver import AlarmsRequestReceiver
 
 
 class DashboardViewModel:
@@ -164,5 +165,170 @@ class DashboardViewModel:
         self.update_table_entries()
 
 class AlarmsViewModel:
+    """
+    Alarms view model
+    """
     
-    pass
+    _sorting: List[int]
+    _priorities: set[Tag]
+    _criticalities: set[Tag]
+    _types: set[Tag]
+    _time: datetime.datetime
+    _table_entries: List[list]
+    
+    def __init__(self) -> None:
+        """
+        Initializes the view model
+        """
+        self.model = Model(AlarmsRequestReceiver())
+        self._sorting = [1, 1, 1, 1, 1, 1]
+        self._priorities = {'TAG', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE'}
+        self._criticalities = {'TAG', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE'}
+        self._types = {'RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'LOGICAL'}
+        self._table_entries = []
+        self._time = None
+        
+    def get_table_entries(self) -> List[list]:
+        """
+        Getter method to return the entries in the table
+
+        Table entries are stores as a list of lists
+
+        Returns:
+            List[list]: list of table entries
+        """
+        return self._table_entries
+    
+    def update_table_entries(self) -> None:
+        """
+        Updates the table entires to be the same as
+        what is in the model
+        """
+        self._table_entries = []
+        table_data: TableReturn
+        table_data = self.model.get_data()
+
+        self._time = table_data.timestamp
+        self._num_frames = table_data.frame_quantity
+        self._table_entries = table_data.table
+    
+    def toggle_sort(self, heading: str) -> None:
+        """
+        Method for toggling sorting on a specific heading
+        The headings include (for now):
+        - TAG
+        - PRIORITY
+        - CRITICALITY
+        - REGISTERED
+        - CONFIRMED
+        - TYPE
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+
+        if heading == 'ID':
+            self._sorting[0] *= -1
+            sort_value = self._sorting[0]
+        elif heading == 'PRIORITY':
+            self._sorting[1] *= -1
+            sort_value = self._sorting[1]
+        elif heading == 'CRITICALITY':
+            self._sorting[2] *= -1
+            sort_value = self._sorting[2]
+        elif heading == 'REGISTERED':
+            self._sorting[3] *= -1
+            sort_value = self._sorting[3]
+        elif heading == 'CONFIRMED':
+            self._sorting[4] *= -1
+            sort_value = self._sorting[4]
+        elif heading == 'TYPE':
+            self._sorting[5] *= -1
+            sort_value = self._sorting[5]
+
+        if sort_value == 1:
+            # ascending
+            self.model.request_receiver.update_sort(('>', heading))
+        elif sort_value == -1:
+            # descending
+            self.model.request_receiver.update_sort(('<', heading))
+
+        self.model.receive_updates()
+        self.update_table_entries()
+    
+    def toggle_priority(self, tag: Tag):
+        """
+        Method for toggling filtering of specific priority
+        The headings include (for now):
+        - WARNING
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+        if tag not in self._priorities:
+            self._priorities.add(tag)
+        else:
+            self._priorities.remove(tag)
+        
+        self.model.request_receiver.set_shown_priorities(self._priorities)
+        self.model.receive_updates()
+        self.update_table_entries()
+            
+        
+    def toggle_criticality(self, tag: Tag):
+        """
+        Method for toggling filtering of specific criticality
+        The headings include (for now):
+        - WARNING
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+        if tag not in self._criticalities:
+            self._criticalities.add(tag)
+        else:
+            self._criticalities.remove(tag)
+        
+        self.model.request_receiver.set_shown_priorities(self._criticalities)
+        self.model.receive_updates()
+        self.update_table_entries()
+        
+    def toggle_type(self, tag: Tag):
+        """
+        Method for toggling filtering of specific criticality
+        The headings include (for now):
+        - RATE-OF-CHANGE
+        - STATIC
+        - THRESHOLD
+        - SETPOINT
+        - SOE
+        - LOGICAL
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+        if tag not in self._types:
+            self._types.add(tag)
+        else:
+            self._types.remove(tag)
+        
+        self.model.request_receiver.set_shown_priorities(self._types)
+        self.model.receive_updates()
+        self.update_table_entries()
+    

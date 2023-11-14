@@ -5,12 +5,10 @@ from typing import Any, Iterable
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
+from ..data.alarms import Alarm, AlarmPriority
 from ..data.parameters import Tag
+from .alarm_checker import check_alarms
 
-TAG = 'TAG'
-DESCRIPTION = 'DESCRIPTION'
-DESCENDING = '>'
-ASCENDING = '<'
 DATA = 'DATA'
 CONFIG = 'CONFIG'
 
@@ -63,6 +61,7 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         Create is a method that creates the initial data table,
         with all tags shown, no sorting applied and at the first index.
+
         :param model: The model of currently shown data
         :param dm: Contains all data stored by the program to date.
         """
@@ -70,7 +69,7 @@ class DashboardRequestReceiver(RequestReceiver):
         all_tags = dm.tags
 
         # Add all tags to the shown tags by default.
-        cls.filters.tags = set(all_tags)
+        cls.filters.tags = all_tags
 
         if len(cls.search_cache) == 0:
             cls.search_cache[''] = all_tags
@@ -93,8 +92,8 @@ class DashboardRequestReceiver(RequestReceiver):
     def change_index(cls, index: int) -> bool:
         """
         change_index changes the index of the datatable
-        that we are viewing.
-        It returns True if it was successful and False otherwise.
+        that we are viewing. It returns True if it was successful and False otherwise.
+
         :param dm: The interface for getting all data known to the program
         :param index: the index of the datatable that we want to change to.
         :returns: True if the index was successfully changed and False otherwise.
@@ -111,8 +110,8 @@ class DashboardRequestReceiver(RequestReceiver):
     def add_shown_tag(cls, add: str) -> bool:
         """
         add_shown_tag is a method that adds a tag to the set of tags
-        that we are viewing.
-        It returns True if it was successful and False otherwise.
+        that we are viewing. It returns True if it was successful and False otherwise.
+
         :param add: the tag that we want to add to the set of tags that we are viewing.
         :param previous_table: the previous table that was in the view.
         :returns: True if the tag was successfully added and False otherwise.
@@ -120,7 +119,7 @@ class DashboardRequestReceiver(RequestReceiver):
 
         # Determine if we can add the tag to the set of tags that we are viewing.
         if add not in cls.filters.tags:
-            cls.filters.tags.add(add)
+            cls.filters.tags.append(add)
             return True
         else:
             # Tag was already in the set of tags that we are viewing.
@@ -142,6 +141,7 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         Remove a tag from the set of tags that we are viewing.
         It returns True if it was successful and False otherwise.
+
         :param previous_table: The previous table that was in the view.
         :param remove: The tag that we want to remove from the set of tags that we are viewing.
         :return: True if the tag was successfully removed and False otherwise.
@@ -158,15 +158,15 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         Updates the sorting filter to be applied.
         It returns True if the sorting filter was successfully applied and False otherwise.
+
         :param sort: the first value in the tuple for this key will
              be either ">", indicating sorting by increasing values,
              and "<" indicating sorting by decreasing values. The second
              value will indicate the name of the column to sort by.
-        :param previous_table: the previous table that was in the view.
         :returns: True if the sorting filter was successfully updated and False otherwise.
         """
-        valid_sorting_directions = {ASCENDING, DESCENDING}
-        valid_columns = {TAG, DESCRIPTION}
+        valid_sorting_directions = {'>', '<'}
+        valid_columns = {DATA, CONFIG}
 
         # Determine if the sorting filter is valid.
         if sort[0] not in valid_sorting_directions:
@@ -215,20 +215,25 @@ class DataRequestReceiver(RequestReceiver):
     """
 
     file = None
+    alarms = None
 
     @classmethod
     def set_filename(cls, file):
         cls.file = file
 
     @classmethod
+    def get_alarms(cls) -> dict[AlarmPriority: set[Alarm]]:
+        return cls.alarms
+
+    @classmethod
     def create(cls, dm: DataManager) -> DataManager:
         """
         create is a method that creates a new data table and returns it based
         on the filename provided.
-        :param model: The model of currently shown data
+
         :param dm: The interface for getting all data known to the program
-        :param device_name: the name of the file to create the data table from.
         """
+        cls.alarms = dict()
         return dm.from_device_name(cls.file)
 
     @classmethod
@@ -236,4 +241,8 @@ class DataRequestReceiver(RequestReceiver):
         """
         update is a method that updates the database based on the filename provided.
         """
-        previous_data.add_data_from_file(cls.file)
+        if cls.alarms is None:
+            cls.alarms = dict()
+
+        earliest_time = previous_data.add_data_from_file(cls.file)
+        check_alarms(previous_data, cls.alarms, earliest_time)

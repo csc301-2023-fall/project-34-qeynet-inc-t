@@ -226,7 +226,7 @@ class View(Tk):
             self.dashboard_view_model.toggle_start_time(None)
             self.dashboard_view_model.toggle_end_time(None)
             self.dashboard_view_model.choose_frame(self._dm, 0)
-            self.refresh_table()
+            self.refresh_data_table()
 
     def toggle_tag(self) -> None:
         """
@@ -235,7 +235,7 @@ class View(Tk):
         """
         if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
             self.dashboard_view_model.toggle_sort("TAG")
-            self.refresh_table()
+            self.refresh_data_table()
 
     def toggle_description(self) -> None:
         """
@@ -244,7 +244,7 @@ class View(Tk):
         """
         if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
             self.dashboard_view_model.toggle_sort("DESCRIPTION")
-            self.refresh_table()
+            self.refresh_data_table()
 
     def double_click_table_row(self, event) -> None:
         """
@@ -258,7 +258,7 @@ class View(Tk):
             if region != "heading":
                 self.open_new_window(self.dashboard_table.item(cur_item)['values'])
 
-    def refresh_table(self) -> None:
+    def refresh_data_table(self) -> None:
         """
         This method wipes the data from the dashboard table and re-inserts
         the new values
@@ -268,6 +268,17 @@ class View(Tk):
             self.dashboard_table.delete(item)
         for item in self.dashboard_view_model.get_table_entries():
             self.dashboard_table.insert("", END, values=tuple(item))
+            
+    def refresh_alarms_table(self) -> None:
+        """
+        This method wipes the data from the dashboard table and re-inserts
+        the new values
+        """
+        self.change_frame_navigation_text()
+        for item in self.alarms_table.get_children():
+            self.alarms_table.delete(item)
+        for item in self.alarms_view_model.get_table_entries():
+            self.alarms_table.insert("", END, values=tuple(item))
 
     def open_new_window(self, values: list[str]) -> None:
         """
@@ -298,12 +309,12 @@ class View(Tk):
         except Exception as e:
             messagebox.showerror(title='Cannot read telemetry', message=f'{type(e).__name__}: {e}')
             return
-        self.refresh_table()
+        self.refresh_data_table()
 
         self.dashboard_view_model.toggle_start_time(None)
         self.dashboard_view_model.toggle_end_time(None)
         self.dashboard_view_model.choose_frame(self._dm, 0)
-        self.refresh_table()
+        self.refresh_data_table()
 
     def update_time(self):
         input_start_time = self.start_time.get()
@@ -346,14 +357,14 @@ class View(Tk):
         self.dashboard_view_model.toggle_end_time(end_time)
         self.dashboard_current_frame_number = 0
         self.dashboard_view_model.choose_frame(self._dm, 0)
-        self.refresh_table()
+        self.refresh_data_table()
 
     def first_frame(self):
         if self.dashboard_view_model.get_num_frames() == 0:
             return
         self.dashboard_current_frame_number = 0
         self.dashboard_view_model.choose_frame(self._dm, 0)
-        self.refresh_table()
+        self.refresh_data_table()
 
     def last_frame(self):
         if self.dashboard_view_model.get_num_frames() == 0:
@@ -361,7 +372,7 @@ class View(Tk):
         last = self.dashboard_view_model.get_num_frames() - 1
         self.dashboard_current_frame_number = last
         self.dashboard_view_model.choose_frame(self._dm, last)
-        self.refresh_table()
+        self.refresh_data_table()
 
     def decrement_frame(self):
         if self.dashboard_view_model.get_num_frames() == 0:
@@ -370,7 +381,7 @@ class View(Tk):
             self.dashboard_current_frame_number -= 1
         index = self.dashboard_current_frame_number
         self.dashboard_view_model.choose_frame(self._dm, index)
-        self.refresh_table()
+        self.refresh_data_table()
 
     def increment_frame(self):
         if self.dashboard_view_model.get_num_frames() == 0:
@@ -380,7 +391,7 @@ class View(Tk):
             self.dashboard_current_frame_number += 1
         index = self.dashboard_current_frame_number
         self.dashboard_view_model.choose_frame(self._dm, index)
-        self.refresh_table()
+        self.refresh_data_table()
 
     def change_frame_navigation_text(self):
         curr = self.dashboard_current_frame_number + 1
@@ -414,5 +425,5 @@ class View(Tk):
         tag = Tag(tag_str)
         self.dashboard_view_model.toggle_tag(tag)
         self.update_searched_tags()
-        self.refresh_table()
+        self.refresh_data_table()
 
