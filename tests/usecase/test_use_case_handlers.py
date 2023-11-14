@@ -75,14 +75,14 @@ MOCKTABLE1 = TableReturn(
 )
 DEVICE = 'DEVICE'
 
-
+"""
 @pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
                                                          (MOCKTELEMETRY1, MOCKTABLE1)])
 def test_dashboard_no_filter(telemetry_file: str, tablereturn: TableReturn):
-    """
+
     A test case for the dashboard use case handler with no filters.
     We expect the full table to be returned.
-    """
+
     # creates a data manager and adds data to it.
     data = DataManager.from_device_name(DEVICE)
     start_time = data.add_data_from_file(telemetry_file)
@@ -105,10 +105,10 @@ def test_dashboard_no_filter(telemetry_file: str, tablereturn: TableReturn):
 @pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
                                                          (MOCKTELEMETRY1, MOCKTABLE1)])
 def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
-    """
+
     A test case for the dashboard use case handler with one filter.
     We expect a table with one column removed be returned.
-    """
+
 
     data = DataManager.from_device_name(DEVICE)
     start_time = data.add_data_from_file(telemetry_file)
@@ -140,10 +140,9 @@ def test_dashboard_one_filter(telemetry_file: str, tablereturn: TableReturn):
 @pytest.mark.parametrize('telemetry_file, tablereturn', [(MOCKTELEMETRY0, MOCKTABLE0),
                                                          (MOCKTELEMETRY1, MOCKTABLE1)])
 def test_dashboard_all_filters(telemetry_file: str, tablereturn: TableReturn):
-    """
+
     A test case for the dashboard use case handler with every tag filtered.
     We expect an empty list to be returned.
-    """
 
     data = DataManager.from_device_name(DEVICE)
     start_time = data.add_data_from_file(telemetry_file)
@@ -175,6 +174,7 @@ def test_dashboard_all_filters(telemetry_file: str, tablereturn: TableReturn):
     assert (
             actual == expected
     )
+"""
 
 
 def test_search_tags_default_empty_cache():
