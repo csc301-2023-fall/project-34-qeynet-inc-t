@@ -85,9 +85,9 @@ class AlarmHandler(UseCaseHandler):
         :param event_base: The event base to examine
         :return: A list of all relevant tags to the base
         """
-        if type(event_base) != AllEventBase \
-                and type(event_base) != AnyEventBase \
-                and type(event_base) != SOEEventBase:
+        if type(event_base) is not AllEventBase \
+                and type(event_base) is not AnyEventBase \
+                and type(event_base) is not SOEEventBase:
             return [event_base.tag]
         else:
             all_tags = []

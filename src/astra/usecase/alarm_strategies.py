@@ -1,4 +1,3 @@
-from datetime import timedelta, datetime
 from itertools import pairwise
 from threading import Lock
 from astra.data.alarms import (EventID, AlarmPriority, Alarm, EventBase, RateOfChangeEventBase,
@@ -8,6 +7,7 @@ from astra.data.data_manager import DataManager
 from typing import Callable
 from astra.data.parameters import Tag, ParameterValue
 from astra.data.telemetry_data import TelemetryData
+from datetime import timedelta, datetime
 
 UNACKNOWLEDGED = 'UA'
 next_id = EventID(0)
@@ -117,7 +117,8 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime], descript
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
-                comparison: ParameterValue, persistence: float) -> (list[tuple[int, int]], list[bool]):
+                comparison: ParameterValue, persistence: float) -> (list[tuple[int, int]],
+                                                                    list[bool]):
     """
     Checks all telemetry frames in <td> where <condition> returns true
     Note: This should only be used for conditions where only 1 tag is relevant
@@ -129,13 +130,12 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     :param comparison: ParameterValues to be used as a point of comparison
     :param persistence: How long the condition has to last
     :return: A list of tuples where the first tuple element is the index of telemetry frame where
-    an alarm was registered, and the second is the index of telemetry frame where the alarm was confirmed. Also
-    returns a list of booleans where each index i refers to whether or not the i-th frame of <td> had an active
-    alarm.
+    an alarm was registered, and the second is the index of telemetry frame where the alarm was
+    confirmed. Also returns a list of booleans where each index i refers to whether or not the
+    i-th frame of <td> had an active alarm.
     """
     alarm_data = []
     alarm_indices = []
-    num_frames = td.num_telemetry_frames
     tag_values = td.get_parameter_values(tag)
     all_times = tag_values.keys()
 
@@ -240,7 +240,7 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
     <tuples> within the range of (first datetime in the sequence + persistence seconds)
 
     :param tuples: Contains tuples indicating whether an alarm condition was
-    met, and the time associated with the telemetry frame 
+    met, and the time associated with the telemetry frame
     :param persistence: How much time in seconds the alarm condition must be met for
     :param false_indexes: Lists all indexes in <tuples> where the first element is false
     :return: The first index in the all sequences satisfying the persistence check, and the
@@ -279,7 +279,8 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
                 first_time = tuples[first_index][1]
                 last_time = tuples[last_index][1]
                 if last_time - first_time >= timedelta(seconds=persistence):
-                    register_time = find_confirm_time(tuples[first_index:last_index + 1], persistence) + first_index
+                    register_time = find_confirm_time(tuples[first_index:last_index + 1],
+                                                      persistence) + first_index
                     times.append((first_index, register_time))
     return times
 
@@ -755,7 +756,8 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         break
     times = list(telemetry_data.get_parameter_values(any_tag).keys())
 
-    # iterate through each of the eventbases and get their list indicating where alarm conditions where met
+    # iterate through each of the eventbases and get their list indicating where alarm conditions
+    # where met
     inner_alarm_indexes = []
     alarm_indexes = []
     for possible_event in possible_events:
@@ -795,7 +797,6 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
             # Now, we go through all alarms raised of the next type and check if it happened in
             # the correct timeframe. If it didnt, prune it from the list of alarms to consider
             for second_event_index in inner_alarm_indexes[i + 1]:
-
                 first_index = second_event_index[0]
                 associated_time = telemetry_data.get_telemetry_frame(first_index).time
                 if (associated_time < minimum_time or
@@ -851,7 +852,8 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     possible_events = alarm_base.event_bases
     telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
 
-    # iterate through each of the eventbases and get their list indicating where alarm conditions where met
+    # iterate through each of the eventbases and get their list indicating where alarm conditions
+    # where met
     inner_alarm_indexes = []
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
