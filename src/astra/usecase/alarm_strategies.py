@@ -1,8 +1,9 @@
 from itertools import pairwise
 from threading import Lock
-from astra.data.alarms import (EventID, AlarmPriority, Alarm, EventBase, RateOfChangeEventBase,
+
+from astra.data.alarms import (EventID, Alarm, EventBase, RateOfChangeEventBase,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
-                               SOEEventBase, AllEventBase, AlarmCriticality, Event, AnyEventBase)
+                               SOEEventBase, AllEventBase, AlarmCriticality, Event, AnyEventBase, AlarmPriority)
 from astra.data.data_manager import DataManager
 from typing import Callable
 from astra.data.parameters import Tag, ParameterValue
@@ -14,6 +15,7 @@ next_id = EventID(0)
 
 
 # TODO: if alarm descriptions are "formulaic", extract helper method for making alarms from list
+
 class AlarmsContainer:
     """
     A container for a global alarms dict that utilizes locking for multithreading
@@ -25,12 +27,18 @@ class AlarmsContainer:
     mutex = None
 
     @classmethod
-    def __init__(cls, alarms: dict[AlarmPriority, set[Alarm]]):
-        cls.alarms = alarms
+    def __init__(cls):
+        cls.alarms = dict()
         cls.mutex = Lock()
 
     @classmethod
-    def update(cls, dm: DataManager, alarms: list[Alarm]):
+    def update(cls, dm: DataManager, alarms: list[Alarm]) -> None:
+        """
+        Updates the alarms global variable after acquiring the lock for it
+
+        :param dm: Holds information of data criticality and priority
+        :param alarms: The set of alarms to add to <cls.alarms>
+        """
         if alarms:
             with cls.mutex:
                 for alarm in alarms:
@@ -41,6 +49,16 @@ class AlarmsContainer:
                         cls.alarms[priority].add(alarm)
                     else:
                         cls.alarms[priority] = {alarm}
+
+    @classmethod
+    def get_alarms(cls) -> dict[AlarmPriority, set[Alarm]]:
+        """
+        Returns a snallow copy of <cls.alarms>
+
+        :return: A copy of <cls.alarms>
+        """
+        with cls.mutex:
+            return cls.alarms.copy()
 
 
 def get_strategy(base: EventBase) -> Callable:
