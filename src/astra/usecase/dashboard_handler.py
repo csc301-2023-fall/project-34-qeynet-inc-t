@@ -5,7 +5,7 @@ from typing import Iterable
 
 from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
-from astra.data.telemetry_data import TelemetryData
+from astra.data.telemetry_data import TelemetryData, TelemetryFrame
 from astra.data.parameters import DisplayUnit, ParameterValue, Tag
 from .utils import eval_param_value
 
@@ -101,7 +101,7 @@ class DashboardHandler(UseCaseHandler):
         return f'{tag_data} {units.symbol}'
 
     @classmethod
-    def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, td: TelemetryData,
+    def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, tf: TelemetryFrame,
                             timestamp: datetime) -> tuple[list[list[str]], list[list[str]]]:
         """
         Adds tags from <input_tags> and their relevant data to <output_list>
@@ -125,8 +125,7 @@ class DashboardHandler(UseCaseHandler):
             tag_description = tag_parameters.description
 
             # creating the string for the tag value
-            raw_tag_data = td.get_parameter_values(tag)
-            raw_timestamp_data = raw_tag_data[timestamp]
+            raw_timestamp_data = tf.data[tag]
             tag_data = eval_param_value(tag_parameters, raw_timestamp_data)
 
             # creating the string for the tag setpoint value
@@ -195,7 +194,10 @@ class DashboardHandler(UseCaseHandler):
 
         # First, all the return data
         timestamp = telemetry_frame.time
-        include, remove = cls._add_rows_to_output(filter_args.tags, dm, telemetry_data, timestamp)
+        include, remove = cls._add_rows_to_output(
+            filter_args.tags, dm,
+            telemetry_frame,
+            timestamp)
         frame_quantity = telemetry_data.num_telemetry_frames
 
         return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp)
