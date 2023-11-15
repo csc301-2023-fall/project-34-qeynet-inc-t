@@ -32,29 +32,17 @@ Our application will give employees a convenient and smooth GUI to check satelli
 
 The user can upload a local file from their computer and have the information accessible to the program. If there are problems with the file, the upload does not go through and the user is shown an error.
 
-* **See the current status/operating mode of the device**
-
-In just a few clicks, the user can see every major piece of broad information about the device. The information is correct and up-to-date relative to the data known to the program.
-
 * **View telemetry data**
 
-A table containing the data accessible to the program, spanning multiple telemetry frames, is displayed to the user. The user can customize what parameters are displayed for each telemetry frame, and sort the table by a specific parameter.
+The user can see the data (and additional info on the data) associated with a telemetry frame. The user can move between telemetry frames, constrain the time range for the telemetry frames, and choose which parameters for the telemetry frame are shown and in what order.
+
+* **Display warning messages**
+
+When the telemetry data satisfies certain alarm criteria, alarms are created and shown to the user in a dedicated tab. Alarms can be sorted and filtered based on various criteria, most notably the priority of the alarm.
 
 * **Plot selected parameters against time**
 
 Data from telemetry frames is plotted on a graph with time as the independent variable and various user-chosen parameters as dependent variables.
-
-* **View data for a chosen telemetry frame**
-
-The program keeps track of a number of telemetry frames that the user can select between. Doing so displays all data linked to the chosen telemetry frame, along with descriptions of the data.
-
-* **Apply filters to data**
-
-The user can specify and un-specify criteria so that only telemetry frames (if viewing frames) / data points (if viewing a graph) that satisfy the specified criteria are displayed. Criteria include conditions on values for chosen parameters as well as conditions on the alarms that apply to a given frame.
-
-* **Display warning messages**
-
-When unexpected behaviours happen, warnings are displayed on the dashboard, ordered by priority.
 
 * **Emit additional warnings for high-priority alarms (if time permits)**
 
@@ -88,20 +76,16 @@ Describe your Git/GitHub workflow. Essentially, we want to understand how your t
   **_TBA_**
 
  ## Coding Standards and Guidelines
-Python Version: 3.12
 
-Coding Standards:
-
-* Line Length: Length of line should not exceed 100 characters
+We currently have the following standards on code style:
+* Max line Length: 100 characters
 * Strings: Use single quotes for strings by default
 * Docstring Format: reST (same as Panoptes)
-* Autoformatters: none prescribed (use your own if you want, as long as it’s compatible with other code style items)
-  * For Black-Formatter: use with --skip-string-normalization and -l 100
-* Follow the PEP 8 Style Guide if not specified
+* Lint with Flake8; no specific autoformatters prescribed
+* Follow the PEP 8 Style Guide on other matters
 
  ## Licenses 
 
 We will apply the **MIT license** to our codebase. It’s because we're allowed to share the code under an open-source license and the MIT license is such a simple and popular open-source license that meets all our needs.
 
 With the MIT license in our codebase, it grants any person the right to use, modify, and distribute our codebase as long as they include the same copyright notice in their copies.
-
