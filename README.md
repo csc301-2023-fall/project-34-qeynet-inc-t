@@ -57,23 +57,14 @@ For sufficiently high-priority alarms, additional methods of notifying staff are
  **_TBA_**
  
  ## Development requirements
- * What are the technical requirements for a developer to set up on their machine or server (e.g. OS, libraries, etc.)?
- * Briefly describe instructions for setting up and running the application. You should address this part like how one would expect a README doc of real-world deployed application would be.
- * You can see this [example](https://github.com/alichtman/shallow-backup#readme) to get started.
 
-  **_TBA_**
+ Astra can be run on Windows. To install the D3 version, navigate to the D3 release for this repository and download `astra-d3.zip`. Extract the zip, and double-click on `astra-d3.exe` to launch the program. If a Windows Defender popup appears, click "More info" followed by "Run anyway".
  
  ## Deployment and Github Workflow
-​
-Describe your Git/GitHub workflow. Essentially, we want to understand how your team members share codebase, avoid conflicts and deploys the application.
-​
- * Be concise, yet precise. For example, "we use pull-requests" is not a precise statement since it leaves too many open questions - Pull-requests from where to where? Who reviews the pull-requests? Who is responsible for merging them? etc.
- * If applicable, specify any naming conventions or standards you decide to adopt.
- * Describe your overall deployment process from writing code to viewing a live application
- * What deployment tool(s) are you using? And how?
- * Don't forget to **briefly justify why** you chose this workflow or particular aspects of it!
 
-  **_TBA_**
+Ideally, changes are worked on in branches, and when a feature is done, a pull request is made, at least one other team member reviews and provides feedback on the changes to the code, and when the code is deemed ready, the pull request is merged into the main branch. (In practice, deviations from this may occur for various reasons.) There are workflows upon pushing to the repository to run tests and lint the code.
+
+For now, we deploy the application manually, using PyInstaller to create an executable from the source code. In the future, we may switch to a more automatic method of deployment.
 
  ## Coding Standards and Guidelines
 
