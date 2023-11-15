@@ -32,71 +32,62 @@ Our application will give employees a convenient and smooth GUI to check satelli
 
 The user can upload a local file from their computer and have the information accessible to the program. If there are problems with the file, the upload does not go through and the user is shown an error.
 
-* **See the current status/operating mode of the device**
-
-In just a few clicks, the user can see every major piece of broad information about the device. The information is correct and up-to-date relative to the data known to the program.
-
 * **View telemetry data**
 
-A table containing the data accessible to the program, spanning multiple telemetry frames, is displayed to the user. The user can customize what parameters are displayed for each telemetry frame, and sort the table by a specific parameter.
+The user can see the data (and additional info on the data) associated with a telemetry frame. The user can move between telemetry frames, constrain the time range for the telemetry frames, and choose which parameters for the telemetry frame are shown and in what order.
+
+* **Display warning messages**
+
+When the telemetry data satisfies certain alarm criteria, alarms are created and shown to the user in a dedicated tab. Alarms can be sorted and filtered based on various criteria, most notably the priority of the alarm.
 
 * **Plot selected parameters against time**
 
 Data from telemetry frames is plotted on a graph with time as the independent variable and various user-chosen parameters as dependent variables.
-
-* **View data for a chosen telemetry frame**
-
-The program keeps track of a number of telemetry frames that the user can select between. Doing so displays all data linked to the chosen telemetry frame, along with descriptions of the data.
-
-* **Apply filters to data**
-
-The user can specify and un-specify criteria so that only telemetry frames (if viewing frames) / data points (if viewing a graph) that satisfy the specified criteria are displayed. Criteria include conditions on values for chosen parameters as well as conditions on the alarms that apply to a given frame.
-
-* **Display warning messages**
-
-When unexpected behaviours happen, warnings are displayed on the dashboard, ordered by priority.
 
 * **Emit additional warnings for high-priority alarms (if time permits)**
 
 For sufficiently high-priority alarms, additional methods of notifying staff are deployed such as popups or emails.
 
 ## Instructions
- * Clear instructions for how to use the application from the end-user's perspective
- * How do you access it? For example: Are accounts pre-created or does a user register? Where do you start? etc. 
- * Provide clear steps for using each feature described in the previous section.
- * This section is critical to testing your application and must be done carefully and thoughtfully.
 
- **_TBA_**
+On startup, a file dialog will appear asking for a device configuration file. Some sample device configuration files are included in the download.
+
+Once a configuration file is chosen, the GUI for Astra will open. There is currently one functioning tab: the telemetry tab. (Work has also been done for the alarm tab, but it is not ready to show at this time.)
+
+The telemetry tab is where you can input and view telemetry data. To start, press the button for adding telemetry data from a file. A file dialog will appear asking for a telemetry file. Some sample telemetry files are also included in the download. Make sure to select telemetry files that correspond to the appropriate device.
+
+NOTE: telemetry data persists between sessions of the program. If you close and reopen the program, all the read-in telemetry data for a given device will still be there. To reset the state of the program, delete the `astra.db` file that is generated upon the first run of the program. (In the future, there will be more granular ways of managing the state of the program.)
+
+The table on the screen will now be filled with data for the first telemetry frame from the file. You can use arrows above the table to change between different telemetry frames, or the time range filter to view only telemetry frames in a certain time range. The format for the filter is `YYYY-MM-DD hh:mm:ss`; leave a time blank to indicate that there is no bound.
+
+Some columns of the table can be sorted. Click a column header of the table to sort, and click again to sort in the opposite order.
+
+Known issues:
+- The telemetry file reading is currently not very robust. Make sure to select the appropriate files for the appropriate device, to add files for a device in order of timestamp (indicated on the filename of all sample telemetry files), and to add each file only once. The program may behave in unpredictable ways otherwise.
  
  ## Development requirements
- * What are the technical requirements for a developer to set up on their machine or server (e.g. OS, libraries, etc.)?
- * Briefly describe instructions for setting up and running the application. You should address this part like how one would expect a README doc of real-world deployed application would be.
- * You can see this [example](https://github.com/alichtman/shallow-backup#readme) to get started.
 
-  **_TBA_**
+ Astra can be run on Windows. To install the D3 version, navigate to the D3 release for this repository and download `astra-d3.zip`. Extract the zip, and double-click on `astra-d3.exe` to launch the program. If a Windows Defender popup appears, click "More info" followed by "Run anyway".
  
  ## Deployment and Github Workflow
-​
-Describe your Git/GitHub workflow. Essentially, we want to understand how your team members share codebase, avoid conflicts and deploys the application.
-​
- * Be concise, yet precise. For example, "we use pull-requests" is not a precise statement since it leaves too many open questions - Pull-requests from where to where? Who reviews the pull-requests? Who is responsible for merging them? etc.
- * If applicable, specify any naming conventions or standards you decide to adopt.
- * Describe your overall deployment process from writing code to viewing a live application
- * What deployment tool(s) are you using? And how?
- * Don't forget to **briefly justify why** you chose this workflow or particular aspects of it!
 
-  **_TBA_**
+We still largely work in the subteams established in D2: the data subteam, responsible with interacting with the file system (including persistence); the use case subteam, responsible for alarm checking and turning data from the data subteam into a useful format for the frontend subteam; and the frontend subteam, responsible for the GUI. However, we are not strict with the subteams, and members of one subteam can and do help out members of another subteam as needed.
+
+Ideally, changes are worked on in branches, and when a feature is done, a pull request is made, at least one other team member reviews and provides feedback on the changes to the code, and when the code is deemed ready, the pull request is merged into the main branch. (In practice, deviations from this may occur for various reasons.) There are workflows upon pushing to the repository to run tests and lint the code.
+
+For now, we deploy the application manually, using PyInstaller to create an executable from the source code. In the future, we may switch to a more automatic method of deployment.
 
  ## Coding Standards and Guidelines
- Keep this section brief, a maximum of 2-3 lines. You would want to read through this [article](https://www.geeksforgeeks.org/coding-standards-and-guidelines/) to get more context about what this section is for before attempting to answer.
-  * These are 2 optional resources that you might want to go through: [article with High level explanation](https://blog.codacy.com/coding-standards-what-are-they-and-why-do-you-need-them/) and [this article with Detailed Explanation](https://google.github.io/styleguide/)
-​
 
-  **_TBA_**
+We currently have the following standards on code style:
+* Max line Length: 100 characters
+* Strings: Use single quotes for strings by default
+* Docstring Format: reST (same as Panoptes)
+* Lint with Flake8; no specific autoformatters prescribed
+* Follow the PEP 8 Style Guide on other matters
 
  ## Licenses 
 
 We will apply the **MIT license** to our codebase. It’s because we're allowed to share the code under an open-source license and the MIT license is such a simple and popular open-source license that meets all our needs.
 
 With the MIT license in our codebase, it grants any person the right to use, modify, and distribute our codebase as long as they include the same copyright notice in their copies.
-
