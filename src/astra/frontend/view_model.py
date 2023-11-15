@@ -208,8 +208,7 @@ class AlarmsViewModel:
         data_receiver = DataRequestReceiver
         data_receiver.set_filename(file)
         data_receiver.update(dm)
-        alarms = data_receiver.get_alarms()
-        self.model.receive_new_data(alarms)
+        self.model.receive_new_data(dm)
 
     def get_table_entries(self) -> List[list]:
         """

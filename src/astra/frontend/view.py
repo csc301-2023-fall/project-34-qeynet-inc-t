@@ -342,14 +342,12 @@ class View(Tk):
         self.search_bar_change()
         self.select_all_tags()
 
-        """
         try:
             self.alarms_view_model.load_file(self._dm, file)
         except Exception as e:
             messagebox.showerror(title='Cannot read telemetry', message=f'{type(e).__name__}: {e}')
             return
         self.refresh_alarms_table()
-        """
 
     def update_time(self):
         input_start_time = self.start_time.get()
