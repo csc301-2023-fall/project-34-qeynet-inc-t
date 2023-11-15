@@ -47,10 +47,8 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param dm: Contains all data stored by the program to date.
         """
 
-        criticalities = [AlarmCriticality.WARNING, AlarmCriticality.LOW,
-                         AlarmCriticality.MEDIUM, AlarmCriticality.HIGH, AlarmCriticality.CRITICAL]
-        priorities = [AlarmCriticality.WARNING, AlarmCriticality.LOW,
-                      AlarmCriticality.MEDIUM, AlarmCriticality.HIGH, AlarmCriticality.CRITICAL]
+        criticalities = ['WARNING', 'LOW', 'MEDIUM', 'CRITICAL']
+        priorities = ['WARNING', 'LOW', 'MEDIUM', 'CRITICAL']
         # TODO: Switch these back to use AlarmPriority (also sorting methods)
 
         # add all priorities and criticalities to the shown priorities and criticalities by default

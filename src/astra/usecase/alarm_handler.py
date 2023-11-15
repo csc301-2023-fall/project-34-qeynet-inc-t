@@ -110,10 +110,10 @@ class AlarmsHandler(UseCaseHandler):
         """
         show = True
         # First, checking if it satisfies priority requirements
-        show = priority in filter_args.priorities
+        show = priority.name in filter_args.priorities
 
         # Next, checking if it satisfies criticality arguments
-        show = show and alarm.criticality in filter_args.criticalities
+        show = show and alarm.criticality.name in filter_args.criticalities
 
         # Checking if the alarm type matches
         show = show and cls._get_alarm_type(alarm) in filter_args.types
@@ -214,15 +214,22 @@ class AlarmsHandler(UseCaseHandler):
         :param filter_args: Describes all filters to apply to the table
         :param dm: Contains all data known to the program
         """
+        new_table = []
+        new_removed = []
+
         for row in prev_data.table:
             alarm = row[8]
             if not cls._determine_toggled(alarm, filter_args, row[2]):
-                prev_data.removed.append(row)
-                prev_data.table.remove(row)
+                new_removed.append(row)
+            else:
+                new_table.append(row)
         for row in prev_data.removed:
             alarm = row[8]
             if cls._determine_toggled(alarm, filter_args, row[2]):
-                prev_data.table.append(row)
-                prev_data.removed.remove(row)
+                new_table.append(row)
+            else:
+                new_removed.append(row)
 
+        prev_data.table = new_table
+        prev_data.removed = new_removed
         cls._sort_output(prev_data, filter_args.sort)
