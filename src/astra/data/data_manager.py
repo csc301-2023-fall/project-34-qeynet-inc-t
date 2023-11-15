@@ -1,14 +1,41 @@
 """This module defines the DataManager, the main data access interface for the use case subteam."""
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
+from threading import Lock
 from typing import Self
 
 from astra.data import dict_parsing, telemetry_manager
-from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority
+from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
 from astra.data.database import db_manager
 from astra.data.dict_parsing import ParsingError
 from astra.data.parameters import Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
+
+
+class AlarmsContainer:
+    """
+    A container for a global alarms dict that utilizes locking for multithreading
+
+    :param alarms: The actual dictionary of alarms held
+    :param mutex: A lock used for mutating cls.alarms
+    """
+    alarms = None
+    mutex = None
+
+    @classmethod
+    def __init__(cls):
+        cls.alarms = dict()
+        cls.mutex = Lock()
+
+    @classmethod
+    def get_alarms(cls) -> dict[AlarmPriority, set[Alarm]]:
+        """
+        Returns a snallow copy of <cls.alarms>
+
+        :return: A copy of <cls.alarms>
+        """
+        with cls.mutex:
+            return cls.alarms.copy()
 
 
 class DataManager:
@@ -23,6 +50,7 @@ class DataManager:
     _device_name: str
     _parameters: dict[Tag, Parameter]
     _alarm_bases: list[AlarmBase]
+    _alarm_container: AlarmsContainer
 
     def __init__(self, device_name: str):
         """
@@ -48,6 +76,7 @@ class DataManager:
             DataManager._parse_alarm_dict(criticality, event_dict)
             for criticality, event_dict in db_manager.get_alarm_base_info(device_name)
         ]
+        self._alarm_container = AlarmsContainer()
 
     @staticmethod
     def _parse_parameter_dict(tag_name: str, parameter_info: object) -> Parameter:
@@ -85,6 +114,29 @@ class DataManager:
     @property
     def alarm_bases(self) -> Iterable[AlarmBase]:
         return self._alarm_bases
+
+    @property
+    def alarms(self) -> AlarmsContainer:
+        return self._alarm_container
+
+
+    def update_alarms(self, alarms: list[Alarm]) -> None:
+        """
+        Updates the alarms global variable after acquiring the lock for it
+
+        :param dm: Holds information of data criticality and priority
+        :param alarms: The set of alarms to add to <cls.alarms>
+        """
+        if alarms:
+            with self._alarm_container.mutex:
+                for alarm in alarms:
+                    criticality = alarm.criticality
+                    priority = self.alarm_priority_matrix[timedelta(seconds=0)][criticality]
+
+                    if priority in self._alarm_container.alarms:
+                        self.alarms.alarms[priority].add(alarm)
+                    else:
+                        self.alarms.alarms[priority] = {alarm}
 
     @property
     def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:
