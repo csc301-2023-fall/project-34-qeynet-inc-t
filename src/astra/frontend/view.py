@@ -151,7 +151,7 @@ class View(Tk):
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
         alarms_tag_table.grid(sticky="W", row=1, column=1)
         dangers = ['WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
-        types = ['RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'LOGICAL']
+        types = ['RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR']
         
         label = Label(alarms_tag_table, text="filter priority")
         label.grid(sticky="news", row=0, column=0)
@@ -191,8 +191,10 @@ class View(Tk):
         button.grid(sticky="news", row=2, column=4)
         button = Button(alarms_tag_table, text=types[4], command= lambda: self.flick_type(types[4]))
         button.grid(sticky="news", row=2, column=5)
-        button = Button(alarms_tag_table, text=types[5], command= lambda: self.flick_type(types[5]))
+        button = Button(alarms_tag_table, text="LOGICAL AND", command= lambda: self.flick_type(types[5]))
         button.grid(sticky="news", row=2, column=6)
+        button = Button(alarms_tag_table, text="LOGICAL OR", command= lambda: self.flick_type(types[6]))
+        button.grid(sticky="news", row=2, column=7)
         # alarms table
         alarms_table_frame = Frame(alarms_frame)
         alarms_table_frame.grid(sticky="W", row=2, column=1)

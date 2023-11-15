@@ -3,7 +3,7 @@ from typing import Iterable
 
 from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import TableReturn
-from .alarm_handler import AlarmHandler, AlarmsFilters  # , ReturnType
+from .alarm_handler import AlarmsHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
 from ..data.alarms import AlarmPriority, AlarmCriticality
@@ -22,11 +22,11 @@ class AlarmsRequestReceiver(RequestReceiver):
     """
 
     filters = None
-    handler = AlarmHandler
+    handler = AlarmsHandler
 
     @classmethod
     def __init__(cls):
-        cls.handler = AlarmHandler()
+        cls.handler = AlarmsHandler()
         cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
         # maybe make this inherit from dashboard filters
         # Im assuming the alarms filter will have:
@@ -57,9 +57,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         # Add all types to the shown types by default.
         cls.filters.types = all_types
 
-        # Set the index to the first index by default.
-        if cls.filters.index is None:
-            cls.filters.index = 0
 
         # Create the initial table.
         return cls.handler.get_data(dm.get_alarms(), cls.filters)
