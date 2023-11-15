@@ -38,6 +38,42 @@ class AlarmsContainer:
         with cls.mutex:
             return cls.alarms.copy()
 
+    @classmethod
+    def add_alarms(cls, alarms: list[Alarm],
+                   apm: Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]) -> None:
+        """
+        Updates the alarms global variable after acquiring the lock for it
+
+        :param dm: Holds information of data criticality and priority
+        :param apm: Maps information on alarms to correct priority level
+        :param alarms: The set of alarms to add to <cls.alarms>
+        """
+        # TODO: set priority correctly based on time elapsed since alarm
+        new_alarms = []
+        if alarms:
+            # First, add the new alarms to the alarms structure
+            # Because the alarms structure is used in a number of threads, we lock here
+            with cls.mutex:
+                for alarm in alarms:
+                    criticality = alarm.criticality
+                    priority = apm[timedelta(seconds=0)][criticality]
+                    cls.alarms[priority].append(alarm)
+                    new_alarms.append((priority, alarm))
+
+            # Release the mutex as we are no longer using the alarms container
+            # Now, we need to create a timer thread for each alarm
+
+    def _update_priority(self, alarm: Alarm, time: timedelta) -> None:
+        """
+        Uses the alarm priority matrix with <time> to place <alarm> in the correct priority bin
+
+        :param alarm: The alarm to check priority on
+        :param time: Time elapsed since the alarm came into effect
+        """
+
+        with self.mutex:
+            new_priority = self.alarm_priority_matrix[time][alarm.criticality]
+            self.alarms[new_priority].append(alarm)
 
 class DataManager:
     """
@@ -120,21 +156,15 @@ class DataManager:
     def alarms(self) -> AlarmsContainer:
         return self._alarm_container
 
-
-    def update_alarms(self, alarms: list[Alarm]) -> None:
+    def add_alarms(self, alarms: list[Alarm]) -> None:
         """
         Updates the alarms global variable after acquiring the lock for it
 
         :param dm: Holds information of data criticality and priority
         :param alarms: The set of alarms to add to <cls.alarms>
         """
-        # TODO: set priority correctly based on time elapsed since alarm
-        if alarms:
-            with self._alarm_container.mutex:
-                for alarm in alarms:
-                    criticality = alarm.criticality
-                    priority = self.alarm_priority_matrix[timedelta(seconds=0)][criticality]
-                    self.alarms.alarms[priority].append(alarm)
+        self._alarm_container.add_alarms(alarms, self.alarm_priority_matrix)
+
 
     @property
     def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:
@@ -148,8 +178,8 @@ class DataManager:
         w, l, m, h, c = AlarmCriticality
         # fmt: off
         return dict(reversed([
-            (timedelta(minutes= 0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
-            (timedelta(minutes= 5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
+            (timedelta(minutes=0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
+            (timedelta(minutes=5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
             (timedelta(minutes=15), {w: w, l: l, m: m, h: h, c: c}),
             (timedelta(minutes=30), {w: w, l: m, m: h, h: c, c: c}),
         ]))
@@ -173,7 +203,7 @@ class DataManager:
     add_data_from_file = add_data  # Alias for historical reasons
 
     def get_telemetry_data(
-        self, start_time: datetime | None, end_time: datetime | None, tags: Iterable[Tag]
+            self, start_time: datetime | None, end_time: datetime | None, tags: Iterable[Tag]
     ) -> TelemetryData:
         """
         Give access to a collection of telemetry data for the device of this DataManager.

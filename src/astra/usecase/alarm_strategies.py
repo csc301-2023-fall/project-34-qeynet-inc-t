@@ -471,7 +471,7 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
         else:
             all_alarm_frames = fall_alarm_frames
 
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return all_alarm_frames
 
 
@@ -550,7 +550,7 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
         alarms.append(new_alarm)
 
     alarm_frames = find_alarm_indexes(first_indexes, cond_met)
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return alarm_frames
 
 
@@ -637,7 +637,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
         else:
             all_alarm_frames = upper_alarm_frames
 
-        dm.update_alarms(alarms)
+        dm.add_alarms(alarms)
         return all_alarm_frames
 
 
@@ -690,7 +690,7 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
         new_alarm = create_alarm(alarm, times, description, alarm_base, criticality)
         alarms.append(new_alarm)
 
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return alarm_frames
 
 
@@ -790,7 +790,7 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
                                  "Sequence of events:", alarm_base,
                                  criticality)
         alarms = [new_alarm]
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return active_indexes
 
 
@@ -850,7 +850,7 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
         new_alarm = create_alarm(alarm_index, times, description, alarm_base, criticality)
         alarms.append(new_alarm)
     alarm_frames = find_alarm_indexes(first_indexes, conds_met)
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return alarm_frames
 
 
@@ -908,5 +908,5 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
         new_alarm = create_alarm(alarm_index, times, description, alarm_base, criticality)
         alarms.append(new_alarm)
     alarm_frames = find_alarm_indexes(first_indexes, conds_met)
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return alarm_frames
