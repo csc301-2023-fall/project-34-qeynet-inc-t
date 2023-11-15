@@ -206,7 +206,7 @@ class AlarmsHandler(UseCaseHandler):
         return return_table
 
     @classmethod
-    def update_data(cls, prev_data: TableReturn, filter_args: any, dm: DataManager = None) -> None:
+    def update_data(cls, prev_data: TableReturn, filter_args: AlarmsFilters, dm: DataManager = None) -> None:
         """
         Updates the previous data returned by get_data to apply any new filters
 
@@ -216,11 +216,13 @@ class AlarmsHandler(UseCaseHandler):
         """
         for row in prev_data.table:
             alarm = row[8]
-            if not cls._determine_toggled(alarm, filter_args, row[1]):
+            if not cls._determine_toggled(alarm, filter_args, row[2]):
                 prev_data.removed.append(row)
                 prev_data.table.remove(row)
         for row in prev_data.removed:
             alarm = row[8]
-            if cls._determine_toggled(alarm, filter_args, row[1]):
+            if cls._determine_toggled(alarm, filter_args, row[2]):
                 prev_data.table.append(row)
                 prev_data.removed.remove(row)
+
+        cls._sort_output(prev_data, filter_args.sort)
