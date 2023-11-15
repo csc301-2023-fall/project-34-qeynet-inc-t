@@ -49,8 +49,9 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         criticalities = [AlarmCriticality.WARNING, AlarmCriticality.LOW,
                          AlarmCriticality.MEDIUM, AlarmCriticality.HIGH, AlarmCriticality.CRITICAL]
-        priorities = [AlarmPriority.WARNING, AlarmPriority.LOW,
-                      AlarmPriority.MEDIUM, AlarmPriority.HIGH, AlarmPriority.CRITICAL]
+        priorities = [AlarmCriticality.WARNING, AlarmCriticality.LOW,
+                      AlarmCriticality.MEDIUM, AlarmCriticality.HIGH, AlarmCriticality.CRITICAL]
+        # TODO: Switch these back to use AlarmPriority (also sorting methods)
 
         # add all priorities and criticalities to the shown priorities and criticalities by default
         cls.filters.criticalities = criticalities
@@ -131,7 +132,7 @@ class AlarmsRequestReceiver(RequestReceiver):
             return False
 
     @classmethod
-    def set_shown_priorities(cls, priorities: Iterable[AlarmPriority]):
+    def set_shown_priorities(cls, priorities: Iterable[AlarmCriticality]):
         """
         Sets <cls.filters.priorities> to the set of priorities to be shown
 
