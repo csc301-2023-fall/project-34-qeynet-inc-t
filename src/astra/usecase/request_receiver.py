@@ -3,10 +3,9 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Iterable
 from .alarm_checker import check_alarms
-from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
-from astra.data.data_manager import DataManager
+from astra.data.data_manager import DataManager, AlarmsContainer
 from ..data.parameters import Tag
 
 
@@ -74,7 +73,7 @@ class DashboardRequestReceiver(RequestReceiver):
         all_tags = dm.tags
 
         # Add all tags to the shown tags by default.
-        cls.filters.tags = all_tags
+        cls.filters.tags = set(all_tags)
 
         if len(cls.search_cache) == 0:
             cls.search_cache[''] = all_tags
@@ -124,7 +123,7 @@ class DashboardRequestReceiver(RequestReceiver):
 
         # Determine if we can add the tag to the set of tags that we are viewing.
         if add not in cls.filters.tags:
-            cls.filters.tags.append(add)
+            cls.filters.tags.add(add)
             return True
         else:
             # Tag was already in the set of tags that we are viewing.
@@ -251,4 +250,4 @@ class DataRequestReceiver(RequestReceiver):
 
         earliest_time = previous_data.add_data_from_file(cls.file)
 
-        check_alarms(previous_data, cls.alarms, earliest_time)
+        check_alarms(previous_data, earliest_time)
