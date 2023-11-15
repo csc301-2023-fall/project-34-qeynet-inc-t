@@ -3,10 +3,9 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Iterable
 from .alarm_checker import check_alarms
-from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
-from astra.data.data_manager import DataManager
+from astra.data.data_manager import DataManager, AlarmsContainer
 from ..data.parameters import Tag
 
 
@@ -251,4 +250,4 @@ class DataRequestReceiver(RequestReceiver):
 
         earliest_time = previous_data.add_data_from_file(cls.file)
 
-        check_alarms(previous_data, cls.alarms, earliest_time)
+        check_alarms(previous_data, earliest_time)

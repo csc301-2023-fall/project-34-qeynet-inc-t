@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Iterable
 
 from .use_case_handlers import TableReturn
-from .alarm_handler import AlarmHandler, AlarmsFilters  # , ReturnType
+from .alarm_handler import AlarmsHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
 from ..data.alarms import AlarmPriority, AlarmCriticality
@@ -28,11 +28,11 @@ class AlarmsRequestReceiver(RequestReceiver):
     """
 
     filters = None
-    handler = AlarmHandler
+    handler = AlarmsHandler
 
     @classmethod
     def __init__(cls):
-        cls.handler = AlarmHandler()
+        cls.handler = AlarmsHandler()
         cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
         # maybe make this inherit from dashboard filters
         # Im assuming the alarms filter will have:
@@ -64,7 +64,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.types = all_types
 
         # Create the initial table.
-        return cls.handler.get_data(dm.alarms, cls.filters)
+        return cls.handler.get_data(dm.alarms.alarms, cls.filters)
 
     @classmethod
     def update(cls, previous_data: TableReturn, dm: DataManager = None):
