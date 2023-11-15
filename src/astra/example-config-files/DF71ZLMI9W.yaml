@@ -172,14 +172,13 @@ alarms:
       setpoint: 642
       tag: PUMN4782
       type: setpoint
-    lambda: 'lambda a, b, c, d, e, f: a and b and c and d and e and f'
     persistence: null
     tags:
     - HBAQ3839
     - LYLQ3653
     - PUMN4782
     - ZKCP4825
-    type: logical
+    type: logical_and
 - criticality: WARNING
   event:
     description: pH rate of change in pump
