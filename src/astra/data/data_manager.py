@@ -2,7 +2,7 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
-from threading import Lock
+from threading import Lock, Thread, Timer
 from typing import Self
 
 from astra.data import dict_parsing, telemetry_manager
@@ -58,22 +58,34 @@ class AlarmsContainer:
                     criticality = alarm.criticality
                     priority = apm[timedelta(seconds=0)][criticality]
                     cls.alarms[priority].append(alarm)
-                    new_alarms.append((priority, alarm))
+                    new_alarms.append([alarm, priority])
 
-            # Release the mutex as we are no longer using the alarms container
             # Now, we need to create a timer thread for each alarm
+            times = [5, 15, 30]
+            for time in times:
+                duration = time * 60
+                for alarm in new_alarms:
+                    new_timer = Timer(duration, cls._update_priority,
+                                      args=[alarm, timedelta(minutes=time), apm])
+                    new_timer.start()
 
-    def _update_priority(self, alarm: Alarm, time: timedelta) -> None:
+    @classmethod
+    def _update_priority(cls, alarm_data: list[Alarm, AlarmPriority], time: timedelta,
+                         apm: Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]) -> None:
         """
         Uses the alarm priority matrix with <time> to place <alarm> in the correct priority bin
+        NOTE: we pass a list, and not a tuple, as we need to mutate said list
 
-        :param alarm: The alarm to check priority on
+        :param alarm_data: contains the current priority of the alarm and the alarm itself
         :param time: Time elapsed since the alarm came into effect
+        :param apm: Maps information on alarms to correct priority level
         """
 
-        with self.mutex:
-            new_priority = self.alarm_priority_matrix[time][alarm.criticality]
-            self.alarms[new_priority].append(alarm)
+        with cls.mutex:
+            new_priority = apm[time][alarm_data[0].criticality]
+            cls.alarms[alarm_data[1]].remove(alarm_data[0])
+            cls.alarms[new_priority].append(alarm_data[0])
+            alarm_data[1] = new_priority
 
 class DataManager:
     """
