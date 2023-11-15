@@ -57,10 +57,6 @@ class AlarmsRequestReceiver(RequestReceiver):
         # Add all types to the shown types by default.
         cls.filters.types = all_types
 
-        # Set the index to the first index by default.
-        if cls.filters.index is None:
-            cls.filters.index = 0
-
         # Create the initial table.
         return cls.handler.get_data(dm.get_alarms(), cls.filters)
 
