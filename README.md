@@ -49,12 +49,27 @@ Data from telemetry frames is plotted on a graph with time as the independent va
 For sufficiently high-priority alarms, additional methods of notifying staff are deployed such as popups or emails.
 
 ## Instructions
- * Clear instructions for how to use the application from the end-user's perspective
- * How do you access it? For example: Are accounts pre-created or does a user register? Where do you start? etc. 
- * Provide clear steps for using each feature described in the previous section.
- * This section is critical to testing your application and must be done carefully and thoughtfully.
 
- **_TBA_**
+On startup, a file dialog will appear asking for a device configuration file. Some sample device configuration files are included in the download.
+
+Once a configuration file is chosen, the GUI for Astra will open. There are currently two functioning tabs (screens): the telemetry tab and the alarm tab.
+
+The telemetry tab is where you can input and view telemetry data. To start, press the button for adding telemetry data from a file. A file dialog will appear asking for a telemetry file. Some sample telemetry files are also included in the download. Make sure to select telemetry files that correspond to the appropriate device.
+
+NOTE: telemetry data persists between sessions of the program. If you close and reopen the program, all the read-in telemetry data for a given device will still be there. To reset the state of the program, delete the `astra.db` file that is generated upon the first run of the program. (In the future, there will be more granular ways of managing the state of the program.)
+
+The table on the screen will now be filled with data for the first telemetry frame from the file. You can use arrows above the table to change between different telemetry frames, or the time range filter to view only telemetry frames in a certain time range. The format for the filter is `YYYY-MM-DD hh:mm:ss`; leave a time blank to indicate that there is no bound.
+
+On the left is a parameter filter. Check and uncheck parameter tags to show and hide them from the table. There is a search function to narrow down tags -- enter something into the search box to see only tags that contain the search text as a substring. (Leave the search box empty to see all tags. The search function will be expanded in the future to include parameter descriptions.)
+
+The other tab is the alarm tab. It contains a table of alarms, created based on patterns in the telemetry data and alarm specifications in the chosen configuration file. There are some filters above the table that can be toggled.
+
+NOTE: alarms, unlike telemetry data, do not persist between sessions.
+
+Some columns of the tables for both the telemetry and alarm tabs can be sorted. Click a column header of the table to sort, and click again to sort in the opposite order.
+
+Known issues:
+- The telemetry file reading is currently not very robust. Make sure to select the appropriate files for the appropriate device, to add files for a device in order of timestamp (indicated on the filename of all sample telemetry files), and to add each file only once. The program may behave in unpredictable ways otherwise.
  
  ## Development requirements
 
