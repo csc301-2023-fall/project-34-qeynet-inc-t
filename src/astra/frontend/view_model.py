@@ -172,6 +172,7 @@ class AlarmsViewModel:
     Alarms view model
     """
 
+    model: Model
     _sorting: List[int]
     _priorities: set[Tag]
     _criticalities: set[Tag]
@@ -185,8 +186,8 @@ class AlarmsViewModel:
         """
         self.model = Model(AlarmsRequestReceiver())
         self._sorting = [1, 1, 1, 1, 1, 1]
-        self._priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'TYPE'}
-        self._criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'TYPE'}
+        self._priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
+        self._criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
         self._types = {'RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE','L_AND', 'L_OR'}
         self._table_entries = []
         self._time = None
