@@ -5,7 +5,7 @@ This file holds the view class that will be run in main.py
 import pathlib
 import sys
 from datetime import datetime
-from tkinter import Button, Entry, Frame, LabelFrame, Toplevel
+from tkinter import Button, Entry, Frame, LabelFrame, Toplevel, Event
 from tkinter import CENTER, NO, END
 from tkinter import StringVar
 from tkinter import filedialog, messagebox, ttk, Tk, Label
@@ -59,6 +59,7 @@ class View(Tk):
         # adding the tabs to the tab control
         tab_control.add(dashboard_frame, text='Dashboard')
         tab_control.add(alarms_frame, text='Alarms')
+        tab_control.bind('<<NotebookTabChanged>>', func=self.construct_alarms_table)
 
         # packing tab control to make tabs visible
         tab_control.pack(expand=1, fill="both")
@@ -205,7 +206,7 @@ class View(Tk):
         self.alarms_table = alarms_table
         alarms_table.pack()
         alarms_table['columns'] = (
-        "ID", "Priority", "Criticality", "Registered", "Confirmed", "Type", "Parameter(s)", "Description")
+            "ID", "Priority", "Criticality", "Registered", "Confirmed", "Type", "Parameter(s)", "Description")
         alarms_table.column("#0", width=0, stretch=NO)
         alarms_table.column("ID", anchor=CENTER, width=80)
         alarms_table.column("Priority", anchor=CENTER, width=80)
@@ -236,8 +237,8 @@ class View(Tk):
             self.search_bar_change()
             self.select_all_tags()
 
-            self.alarms_view_model.model.receive_new_data(self._dm)
-            self.alarms_view_model.update_table_entries()
+            # self.alarms_view_model.model.receive_new_data(self._dm)
+            # self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
 
     def sort_alarms(self, tag: str):
@@ -345,6 +346,9 @@ class View(Tk):
         self.search_bar_change()
         self.select_all_tags()
 
+        self.construct_alarms_table()
+
+    def construct_alarms_table(self, event: Event=None):
         self.alarms_view_model.model.receive_new_data(self._dm)
         self.alarms_view_model.toggle_all()
         self.refresh_alarms_table()
