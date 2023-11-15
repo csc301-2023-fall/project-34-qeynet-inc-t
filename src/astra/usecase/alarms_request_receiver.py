@@ -8,6 +8,13 @@ from ..data.alarms import AlarmPriority, AlarmCriticality
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+RATE_OF_CHANGE = 'RATE_OF_CHANGE'
+STATIC = 'STATIC'
+THRESHOLD = 'THRESHOLD'
+SETPOINT = 'SETPOINT'
+SOE = 'SOE'
+L_AND = 'L_AND'  # LOGICAL AND
+L_OR = 'L_OR'  # LOGICAL OR
 
 
 class AlarmsRequestReceiver(RequestReceiver):
@@ -50,13 +57,13 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.priorities = priorities
 
         # get all alarm types from dm
-        all_types = []  # TODO figure out how to get all alarm types from dm
+        all_types = [RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR]
 
         # Add all types to the shown types by default.
         cls.filters.types = all_types
 
         # Create the initial table.
-        return cls.handler.get_data(dm.alarms.alarms, cls.filters)
+        return cls.handler.get_data(dm.alarms.get_alarms(), cls.filters)
 
     @classmethod
     def update(cls, previous_data: TableReturn, dm: DataManager = None):
