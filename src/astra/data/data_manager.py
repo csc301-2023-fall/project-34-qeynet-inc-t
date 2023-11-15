@@ -1,4 +1,5 @@
 """This module defines the DataManager, the main data access interface for the use case subteam."""
+from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
 from threading import Lock
@@ -19,18 +20,18 @@ class AlarmsContainer:
     :param alarms: The actual dictionary of alarms held
     :param mutex: A lock used for mutating cls.alarms
     """
-    alarms = None
+    alarms: dict[AlarmPriority, list[Alarm]] = None
     mutex = None
 
     @classmethod
     def __init__(cls):
-        cls.alarms = dict()
+        cls.alarms = defaultdict(lambda: [])
         cls.mutex = Lock()
 
     @classmethod
-    def get_alarms(cls) -> dict[AlarmPriority, set[Alarm]]:
+    def get_alarms(cls) -> dict[AlarmPriority, list[Alarm]]:
         """
-        Returns a snallow copy of <cls.alarms>
+        Returns a shallow copy of <cls.alarms>
 
         :return: A copy of <cls.alarms>
         """
@@ -127,16 +128,13 @@ class DataManager:
         :param dm: Holds information of data criticality and priority
         :param alarms: The set of alarms to add to <cls.alarms>
         """
+        # TODO: set priority correctly based on time elapsed since alarm
         if alarms:
             with self._alarm_container.mutex:
                 for alarm in alarms:
                     criticality = alarm.criticality
                     priority = self.alarm_priority_matrix[timedelta(seconds=0)][criticality]
-
-                    if priority in self._alarm_container.alarms:
-                        self.alarms.alarms[priority].add(alarm)
-                    else:
-                        self.alarms.alarms[priority] = {alarm}
+                    self.alarms.alarms[priority].append(alarm)
 
     @property
     def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:

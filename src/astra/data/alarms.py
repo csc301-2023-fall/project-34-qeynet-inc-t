@@ -1,3 +1,4 @@
+import functools
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -66,6 +67,7 @@ class Event:
     description: str
 
 
+@functools.total_ordering
 class AlarmCriticality(Enum):
     WARNING = 'WARNING'
     LOW = 'LOW'
@@ -73,8 +75,27 @@ class AlarmCriticality(Enum):
     HIGH = 'HIGH'
     CRITICAL = 'CRITICAL'
 
+    def __le__(self, other):
+        if isinstance(other, AlarmCriticality):
+            return CRIT_TO_INT_LOOKUP[self] < CRIT_TO_INT_LOOKUP[other]
+        return NotImplemented
+
+    def __str__(self):
+        return self.value
+
 
 AlarmPriority = AlarmCriticality
+
+
+CRIT_TO_INT_LOOKUP = {
+    # This dictionary maps alarm criticality levels to integer values.
+    # Used for comparing criticalities/priorities.
+    AlarmCriticality.WARNING: 0,
+    AlarmCriticality.LOW: 1,
+    AlarmCriticality.MEDIUM: 2,
+    AlarmCriticality.HIGH: 3,
+    AlarmCriticality.CRITICAL: 4,
+}
 
 
 @dataclass(frozen=True)

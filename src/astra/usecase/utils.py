@@ -6,7 +6,7 @@ from astra.data.telemetry_data import TelemetryData
 # Module defines a number of common operations across classes
 
 def eval_param_value(tag_parameter: Parameter,
-                     tag_data: ParameterValue) -> float | int | bool | None:
+                     tag_data: ParameterValue | None) -> float | int | bool | None:
     """
     Converts the raw <parameter_data> into its true value using the
     parameter multiplier and constant
@@ -15,7 +15,9 @@ def eval_param_value(tag_parameter: Parameter,
     :param tag_data: The raw data in the telemetry frame
     :return: The converted parameter value
     """
-    if type(tag_data) is bool or tag_data is None:
+    if tag_data is None:
+        return None
+    elif tag_parameter.display_units is None:
         return tag_data
     else:
         multiplier = tag_parameter.display_units.multiplier
@@ -23,7 +25,7 @@ def eval_param_value(tag_parameter: Parameter,
         return tag_data * multiplier + constant
 
 
-def get_tag_param_value(index: int, tag: Tag, td: TelemetryData) -> ParameterValue:
+def get_tag_param_value(index: int, tag: Tag, td: TelemetryData) -> ParameterValue | None:
     """
     Extracts ParameterValue of <tag> in the <index>-th TelemetryFrame of TelemetryData
 

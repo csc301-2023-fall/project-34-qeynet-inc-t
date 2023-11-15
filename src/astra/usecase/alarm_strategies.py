@@ -38,7 +38,7 @@ def get_strategy(base: EventBase) -> Callable:
             return any_events_check
 
 
-def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> (datetime, datetime):
+def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> tuple[datetime, float]:
     """Finds the first time to check for persistence and returns it, along with
     the length of time to check for persistence
 
@@ -89,8 +89,8 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime], descript
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
-                comparison: ParameterValue, persistence: float) -> (list[tuple[int, int]],
-                                                                    list[bool]):
+                comparison: ParameterValue, persistence: float) -> tuple[list[tuple[int, int]],
+                                                                    list[bool]]:
     """
     Checks all telemetry frames in <td> where <condition> returns true
     Note: This should only be used for conditions where only 1 tag is relevant
@@ -258,7 +258,7 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
 
 
 def rise_threshold_check(td: TelemetryData, tag: Tag, rise_threshold: float,
-                         time_window: int) -> (list[tuple[bool, datetime]], list[int]):
+                         time_window: float) -> tuple[list[tuple[bool, datetime]], list[int]]:
     """
     Returns a list of tuples, (bool, datetime), where the bool is
     True IFF the rate of change from the datetime until the <time_window> time
@@ -323,7 +323,7 @@ def rise_threshold_check(td: TelemetryData, tag: Tag, rise_threshold: float,
 
 
 def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
-                         time_window: int) -> (list[tuple[bool, datetime]], list[int]):
+                         time_window: float) -> tuple[list[tuple[bool, datetime]], list[int]]:
     """
     Returns a list of tuples, (bool, datetime), where the bool is
     True IFF the rate of change from the datetime until the <time_window> time
@@ -391,7 +391,7 @@ def fall_threshold_check(td: TelemetryData, tag: Tag, fall_threshold: float,
 
 def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
                          criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[bool]):
+        -> tuple[list[Alarm], list[bool]]:
     """
     Checks if in the telemetry frames with times in the range
     (<earliest_time> - <alarm_base.persistence> -> present), there exists
@@ -656,7 +656,7 @@ def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool
 
 def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
                    criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[bool]):
+        -> list[bool]:
     """
     Checks if in the telemetry frames with times in the range
     (<earliest_time> - <alarm_base.persistence> -> present), there exists
@@ -682,10 +682,10 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     # Checking which frames have tag values at setpoint and indicating it in <cond_met> in order
     new_alarms, alarm_frames = check_conds(telemetry_data, tag, setpoint_cond, setpoint, sequence)
 
-    first_indexes = []
+    # first_indexes = []
     alarms = []
     for alarm in new_alarms:
-        first_indexes.append(alarms[0])
+        # first_indexes.append(alarms[0])
         description = "setpoint value recorded"
         new_alarm = create_alarm(alarm, times, description, alarm_base, criticality)
         alarms.append(new_alarm)
@@ -696,7 +696,7 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
 
 def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
                              criticality: AlarmCriticality, earliest_time: datetime) \
-        -> (list[Alarm], list[bool]):
+        -> list[bool]:
     """
     Checks that the alarms described in <alarm_base> were all raised and persisted,
     and occured within the appropriate time window in correct sequential order.
@@ -712,6 +712,7 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
     first_time, sequence = find_first_time(alarm_base, earliest_time)
     possible_events = alarm_base.event_bases
     telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
+    return [False] * telemetry_data.num_telemetry_frames
 
     all_tags = dm.tags
     for tag in all_tags:
