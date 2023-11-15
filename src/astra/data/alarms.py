@@ -73,18 +73,6 @@ class AlarmCriticality(Enum):
     HIGH = 'HIGH'
     CRITICAL = 'CRITICAL'
 
-    def __lt__(self, other):
-        return PRIORITIES[self] < PRIORITIES[other]
-
-    def __gt__(self, other):
-        return PRIORITIES[self] > PRIORITIES[other]
-
-    def __str__(self):
-        return self.name
-
-
-PRIORITIES = {AlarmCriticality.CRITICAL: 4, AlarmCriticality.HIGH: 3, AlarmCriticality.MEDIUM: 2,
-              AlarmCriticality.LOW: 1, AlarmCriticality.WARNING: 0}
 
 AlarmPriority = AlarmCriticality
 
