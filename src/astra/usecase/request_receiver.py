@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Iterable
 from .alarm_checker import check_alarms
-from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import UseCaseHandler
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
@@ -216,15 +215,10 @@ class DataRequestReceiver(RequestReceiver):
     """
 
     file = None
-    alarms = None
 
     @classmethod
     def set_filename(cls, file):
         cls.file = file
-
-    @classmethod
-    def get_alarms(cls) -> AlarmsContainer:
-        return cls.alarms
 
     @classmethod
     def create(cls, dm: DataManager) -> DataManager:
@@ -242,9 +236,7 @@ class DataRequestReceiver(RequestReceiver):
         """
         update is a method that updates the database based on the filename provided.
         """
-        if cls.alarms is None:
-            cls.alarms = AlarmsContainer()
 
         earliest_time = previous_data.add_data_from_file(cls.file)
 
-        check_alarms(previous_data, cls.alarms, earliest_time)
+        check_alarms(previous_data, earliest_time)
