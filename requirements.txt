@@ -1,5 +1,5 @@
-pip install PyYAML
-pip install SQLAlchemy
-pip install h5py
-pip install pandas
-pip install pytest
+PyYAML
+SQLAlchemy
+h5py
+pandas
+pytest
