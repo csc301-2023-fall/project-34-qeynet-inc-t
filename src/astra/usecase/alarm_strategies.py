@@ -89,8 +89,8 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime], descript
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
-                comparison: ParameterValue, persistence: float) -> tuple[list[tuple[int, int]],
-                                                                    list[bool]]:
+                comparison: ParameterValue, persistence: float) -> (
+        tuple)[list[tuple[int, int]], list[bool]]:
     """
     Checks all telemetry frames in <td> where <condition> returns true
     Note: This should only be used for conditions where only 1 tag is relevant
