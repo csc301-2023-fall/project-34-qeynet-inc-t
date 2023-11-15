@@ -185,8 +185,8 @@ class AlarmsViewModel:
         """
         self.model = Model(AlarmsRequestReceiver())
         self._sorting = [1, 1, 1, 1, 1, 1]
-        self._priorities = {'TAG', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE'}
-        self._criticalities = {'TAG', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE'}
+        self._priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'TYPE'}
+        self._criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'TYPE'}
         self._types = {'RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE','L_AND', 'L_OR'}
         self._table_entries = []
         self._time = None
@@ -235,6 +235,12 @@ class AlarmsViewModel:
 
         self._table_entries = table_data.table
 
+    def toggle_all(self) -> None:
+        self.model.request_receiver.set_shown_priorities(self._priorities)
+        self.model.request_receiver.set_shown_criticalities(self._criticalities)
+        self.model.request_receiver.set_shown_types(self._types)
+        self.model.receive_updates()
+        self.update_table_entries()
 
     def toggle_sort(self, heading: Tag) -> None:
         """
@@ -327,7 +333,7 @@ class AlarmsViewModel:
         else:
             self._criticalities.remove(tag)
 
-        self.model.request_receiver.set_shown_priorities(self._criticalities)
+        self.model.request_receiver.set_shown_criticalities(self._criticalities)
         self.model.receive_updates()
         self.update_table_entries()
 
@@ -352,6 +358,6 @@ class AlarmsViewModel:
         else:
             self._types.remove(tag)
 
-        self.model.request_receiver.set_shown_priorities(self._types)
+        self.model.request_receiver.set_shown_types(self._types)
         self.model.receive_updates()
         self.update_table_entries()

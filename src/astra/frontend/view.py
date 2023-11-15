@@ -347,6 +347,7 @@ class View(Tk):
         except Exception as e:
             messagebox.showerror(title='Cannot read telemetry', message=f'{type(e).__name__}: {e}')
             return
+        self.alarms_view_model.toggle_all()
         self.refresh_alarms_table()
 
     def update_time(self):
