@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Iterable
 
-from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import TableReturn
 from .alarm_handler import AlarmHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
@@ -40,7 +39,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         # (sort, index, priority, criticality, alarm_type, start_time, end_time)
 
     @classmethod
-    def create(cls, dm: AlarmsContainer) -> TableReturn:
+    def create(cls, dm: DataManager) -> TableReturn:
         """
         Create is a method that creates the initial data table,
         with all priorities/types/criticalities shown, no sorting applied and at the first index.
