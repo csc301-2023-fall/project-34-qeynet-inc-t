@@ -6,13 +6,13 @@ from typing import NewType
 from astra.data.parameters import ParameterValue, Tag
 
 
-@dataclass
+@dataclass(frozen=True)
 class EventBase:
     persistence: float | None
     description: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class RateOfChangeEventBase(EventBase):
     tag: Tag
     rate_of_fall_threshold: float | None
@@ -20,53 +20,49 @@ class RateOfChangeEventBase(EventBase):
     time_window: float
 
 
-@dataclass
+@dataclass(frozen=True)
 class StaticEventBase(EventBase):
     tag: Tag
 
 
-@dataclass
+@dataclass(frozen=True)
 class ThresholdEventBase(EventBase):
     tag: Tag
     lower_threshold: float | None
     upper_threshold: float | None
 
 
-@dataclass
+@dataclass(frozen=True)
 class SetpointEventBase(EventBase):
     tag: Tag
     setpoint: ParameterValue
 
 
-@dataclass
+@dataclass(frozen=True)
 class SOEEventBase(EventBase):
     event_bases: list[EventBase]
     intervals: list[tuple[float, float | None]]
 
 
-@dataclass
+@dataclass(frozen=True)
 class AllEventBase(EventBase):
     event_bases: list[EventBase]
 
 
-@dataclass
+@dataclass(frozen=True)
 class AnyEventBase(EventBase):
     event_bases: list[EventBase]
-
-
-@dataclass
-class NotEventBase(EventBase):
-    event_base: EventBase
 
 
 EventID = NewType('EventID', int)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Event:
     base: EventBase
     id: EventID
-    time: datetime
+    register_time: datetime
+    confirm_time: datetime
     description: str
 
 
@@ -81,13 +77,14 @@ class AlarmCriticality(Enum):
 AlarmPriority = AlarmCriticality
 
 
-@dataclass
+@dataclass(frozen=True)
 class AlarmBase:
     event_base: EventBase
     criticality: AlarmCriticality
 
 
-@dataclass
+@dataclass(frozen=True)
 class Alarm:
     event: Event
     criticality: AlarmCriticality
+    acknowledgement: str

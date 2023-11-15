@@ -165,12 +165,30 @@ def get_tags_for_device(device_name: str) -> list[tuple[str, dict]]:
         device_name (str): the name of the device
 
     Returns:
-        list[(str, dict)]: a list of tuples of (tag_name, tag_parameter)
+        list[tuple[str, dict]]: a list of tuples of (tag_name, tag_parameter)
     """
     with Session.begin() as session:
         select_stmt = (
             select(Tag.tag_name, Tag.tag_parameter)
             .where(Tag.device_id == Device.device_id)
+            .where(Device.device_name == device_name)
+        )
+        return session.execute(select_stmt).all()
+
+
+def get_alarm_base_info(device_name: str) -> list[tuple[str, dict]]:
+    """
+        return all alarm info for the given device
+    Args:
+        device_name (str): the name of the device
+
+    Returns:
+        list[tuple[str, dict]]: a list of tuples of (alarm_criticality, alarm_data)
+    """
+    with Session.begin() as session:
+        select_stmt = (
+            select(Alarm.alarm_criticality, Alarm.alarm_data)
+            .where(Alarm.device_id == Device.device_id)
             .where(Device.device_name == device_name)
         )
         return session.execute(select_stmt).all()
@@ -214,10 +232,12 @@ def num_telemetry_frames(
     with Session.begin() as session:
         if device:
             device_name = device.device_name
-            tag_id_name = get_tag_id_name(device_name)
-            tag_ids = [tag_id for tag_id, _ in tag_id_name]
+            # tag_id_name = get_tag_id_name(device_name)
+            # tag_ids = [tag_id for tag_id, _ in tag_id_name]
             select_stmt = select(func.count(Data.timestamp.distinct())).where(
-                Data.tag_id.in_(tag_ids)
+                Device.device_name == device_name,
+                Tag.device_id == Device.device_id,
+                Tag.tag_id == Data.tag_id,
             )
             if start_time is not None:
                 select_stmt = select_stmt.where(Data.timestamp >= start_time)
@@ -251,11 +271,19 @@ def get_timestamp_by_index(
     with Session.begin() as session:
         if device:
             device_name = device.device_name
-            tag_id_name = get_tag_id_name(device_name)
-            tag_ids = [tag_id for tag_id, _ in tag_id_name]
+            # tag_id_name = get_tag_id_name(device_name)
+            # tag_ids = [tag_id for tag_id, _ in tag_id_name]
             select_stmt = (
                 select(Data.timestamp)
-                .where(Data.tag_id.in_(tag_ids))
+                .where(
+                    Device.device_name == device_name,
+                )
+                .where(
+                    Tag.device_id == Device.device_id,
+                )
+                .where(
+                    Tag.tag_id == Data.tag_id,
+                )
                 .group_by(Data.timestamp)
                 .order_by(Data.timestamp)
                 .limit(index + 1)

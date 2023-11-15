@@ -1,12 +1,41 @@
 """This module defines the DataManager, the main data access interface for the use case subteam."""
 from collections.abc import Iterable, Mapping
-from datetime import datetime
+from datetime import datetime, timedelta
+from threading import Lock
 from typing import Self
 
-from astra.data import telemetry_manager
+from astra.data import dict_parsing, telemetry_manager
+from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
 from astra.data.database import db_manager
-from astra.data.parameters import DisplayUnit, Parameter, Tag
+from astra.data.dict_parsing import ParsingError
+from astra.data.parameters import Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
+
+
+class AlarmsContainer:
+    """
+    A container for a global alarms dict that utilizes locking for multithreading
+
+    :param alarms: The actual dictionary of alarms held
+    :param mutex: A lock used for mutating cls.alarms
+    """
+    alarms = None
+    mutex = None
+
+    @classmethod
+    def __init__(cls):
+        cls.alarms = dict()
+        cls.mutex = Lock()
+
+    @classmethod
+    def get_alarms(cls) -> dict[AlarmPriority, set[Alarm]]:
+        """
+        Returns a snallow copy of <cls.alarms>
+
+        :return: A copy of <cls.alarms>
+        """
+        with cls.mutex:
+            return cls.alarms.copy()
 
 
 class DataManager:
@@ -20,6 +49,8 @@ class DataManager:
 
     _device_name: str
     _parameters: dict[Tag, Parameter]
+    _alarm_bases: list[AlarmBase]
+    _alarm_container: AlarmsContainer
 
     def __init__(self, device_name: str):
         """
@@ -38,45 +69,32 @@ class DataManager:
             raise ValueError(f'there is no device with name {device_name}')
         self._device_name = device_name
         self._parameters = {
-            Tag(tag_name): DataManager._parameter_from_dbtag(tag_name, parameter_dict)
+            Tag(tag_name): DataManager._parse_parameter_dict(tag_name, parameter_dict)
             for tag_name, parameter_dict in db_manager.get_tags_for_device(device_name)
         }
+        self._alarm_bases = [
+            DataManager._parse_alarm_dict(criticality, event_dict)
+            for criticality, event_dict in db_manager.get_alarm_base_info(device_name)
+        ]
+        self._alarm_container = AlarmsContainer()
 
     @staticmethod
-    def _parameter_from_dbtag(tag_name: str, parameter_dict: dict) -> Parameter:
-        # Return a Parameter from the given database tag object.
-        # Raise DataCorruptionError if the tag_parameter field
-        # does not contain data in the correct format.
-        match parameter_dict:
-            case {
-                'description': str(description),
-                'dtype': 'bool' | 'int' | 'float' as dtype_string,
-                'setpoint': bool() | int() | float() | None as setpoint,
-                'display_units': dict() | None as display_units_dict,
-            }:
-                pass
-            case _:
-                raise InternalDatabaseError(
-                    f'could not retrieve configuration for tag {tag_name}'
-                )
-        dtype = {'bool': bool, 'int': int, 'float': float}[dtype_string]
-        match display_units_dict:
-            case {
-                'description': str(units_description),
-                'symbol': str(units_symbol),
-                'multiplier': int() | float() as units_multiplier,
-                'constant': int() | float() as units_constant,
-            }:
-                display_units = DisplayUnit(
-                    units_description, units_symbol, units_multiplier, units_constant
-                )
-            case None:
-                display_units = None
-            case _:
-                raise InternalDatabaseError(
-                    f'could not retrieve configuration for tag {tag_name}'
-                )
-        return Parameter(Tag(tag_name), description, dtype, setpoint, display_units)
+    def _parse_parameter_dict(tag_name: str, parameter_info: object) -> Parameter:
+        # Return a Parameter based on the given tag name and parameter information.
+        # Raise InternalDatabaseError if the dict cannot be parsed.
+        try:
+            return dict_parsing.parse_parameter(Tag(tag_name), parameter_info)
+        except ParsingError as e:
+            raise InternalDatabaseError(f'failed to parse database tag {tag_name}: {e}')
+
+    @staticmethod
+    def _parse_alarm_dict(criticality: str, event_info: object) -> AlarmBase:
+        # Return an AlarmBase based on the given criticality and event information.
+        # Raise InternalDatabaseError if the dict cannot be parsed.
+        try:
+            return dict_parsing.parse_alarm_base(criticality, event_info)
+        except ParsingError as e:
+            raise InternalDatabaseError(f'failed to parse database alarm base: {e}')
 
     @classmethod
     def from_device_name(cls, device_name: str) -> Self:
@@ -92,6 +110,52 @@ class DataManager:
     def parameters(self) -> Mapping[Tag, Parameter]:
         """Tag -> parameter mapping for the device of this DataManager."""
         return self._parameters
+
+    @property
+    def alarm_bases(self) -> Iterable[AlarmBase]:
+        return self._alarm_bases
+
+    @property
+    def alarms(self) -> AlarmsContainer:
+        return self._alarm_container
+
+
+    def update_alarms(self, alarms: list[Alarm]) -> None:
+        """
+        Updates the alarms global variable after acquiring the lock for it
+
+        :param dm: Holds information of data criticality and priority
+        :param alarms: The set of alarms to add to <cls.alarms>
+        """
+        if alarms:
+            with self._alarm_container.mutex:
+                for alarm in alarms:
+                    criticality = alarm.criticality
+                    priority = self.alarm_priority_matrix[timedelta(seconds=0)][criticality]
+
+                    if priority in self._alarm_container.alarms:
+                        self.alarms.alarms[priority].add(alarm)
+                    else:
+                        self.alarms.alarms[priority] = {alarm}
+
+    @property
+    def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:
+        """
+        Data to facilitate turning alarm criticality and time since alarm into alarm priority.
+
+        The outer mapping has keys sorted in descending order. The final key is a timedelta of zero.
+        The key to select is the first/largest key less than or equal to the time since alarm.
+        """
+        # Hardcode for now -- replace with a file read later.
+        w, l, m, h, c = AlarmCriticality
+        # fmt: off
+        return dict(reversed([
+            (timedelta(minutes= 0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
+            (timedelta(minutes= 5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
+            (timedelta(minutes=15), {w: w, l: l, m: m, h: h, c: c}),
+            (timedelta(minutes=30), {w: w, l: m, m: h, h: c, c: c}),
+        ]))
+        # fmt: on
 
     @staticmethod
     def add_data(filename: str) -> datetime:
