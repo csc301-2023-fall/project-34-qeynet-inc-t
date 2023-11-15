@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Iterable
-
 from .use_case_handlers import TableReturn
 from .alarm_handler import AlarmsHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
@@ -9,13 +8,6 @@ from ..data.alarms import AlarmPriority, AlarmCriticality
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
-RATE_OF_CHANGE = 'RATE_OF_CHANGE'
-STATIC = 'STATIC'
-THRESHOLD = 'THRESHOLD'
-SETPOINT = 'SETPOINT'
-SOE = 'SOE'
-L_AND = 'L_AND'  # LOGICAL AND
-L_OR = 'L_OR'  # LOGICAL OR
 
 
 class AlarmsRequestReceiver(RequestReceiver):
@@ -58,7 +50,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.priorities = priorities
 
         # get all alarm types from dm
-        all_types = [RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR]
+        all_types = []  # TODO figure out how to get all alarm types from dm
 
         # Add all types to the shown types by default.
         cls.filters.types = all_types
