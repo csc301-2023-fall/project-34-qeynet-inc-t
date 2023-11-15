@@ -88,11 +88,16 @@ Describe your Git/GitHub workflow. Essentially, we want to understand how your t
   **_TBA_**
 
  ## Coding Standards and Guidelines
- Keep this section brief, a maximum of 2-3 lines. You would want to read through this [article](https://www.geeksforgeeks.org/coding-standards-and-guidelines/) to get more context about what this section is for before attempting to answer.
-  * These are 2 optional resources that you might want to go through: [article with High level explanation](https://blog.codacy.com/coding-standards-what-are-they-and-why-do-you-need-them/) and [this article with Detailed Explanation](https://google.github.io/styleguide/)
-​
+Python Version: 3.12
 
-  **_TBA_**
+Coding Standards:
+
+* Line Length: Length of line should not exceed 100 characters
+* Strings: Use single quotes for strings by default
+* Docstring Format: reST (same as Panoptes)
+* Autoformatters: none prescribed (use your own if you want, as long as it’s compatible with other code style items)
+  * For Black-Formatter: use with --skip-string-normalization and -l 100
+* Follow the PEP 8 Style Guide if not specified
 
  ## Licenses 
 
