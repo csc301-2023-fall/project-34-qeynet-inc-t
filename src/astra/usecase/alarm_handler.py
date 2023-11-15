@@ -65,19 +65,19 @@ class AlarmsHandler(UseCaseHandler):
         base = alarm.event.base
         match base:
             case RateOfChangeEventBase():
-                return "Rate of Change"
+                return 'RATE_OF_CHANGE'
             case StaticEventBase():
-                return "Static"
+                return 'STATIC'
             case ThresholdEventBase():
-                return "Threshold"
+                return 'THRESHOLD'
             case SetpointEventBase():
-                return "Setpoint"
+                return 'SETPOINT'
             case SOEEventBase():
-                return "Sequence of Events"
+                return 'SOE'
             case AllEventBase():
-                return "All Events"
+                return 'L_AND'
             case _:
-                return "Any Events"
+                return 'L_OR'
 
     @classmethod
     def _get_relevant_tags(cls, event_base: EventBase) -> list[Tag]:
@@ -200,7 +200,7 @@ class AlarmsHandler(UseCaseHandler):
                 if cls._determine_toggled(alarm, filter_args, priority):
                     shown.append(new_row)
                 else:
-                    removed.append(removed)
+                    removed.append(new_row)
 
         return_table = TableReturn(shown, removed)
         return return_table
@@ -215,12 +215,12 @@ class AlarmsHandler(UseCaseHandler):
         :param dm: Contains all data known to the program
         """
         for row in prev_data.table:
-            alarm = row[9]
+            alarm = row[8]
             if not cls._determine_toggled(alarm, filter_args, row[1]):
                 prev_data.removed.append(row)
                 prev_data.table.remove(row)
         for row in prev_data.removed:
-            alarm = row[9]
+            alarm = row[8]
             if cls._determine_toggled(alarm, filter_args, row[1]):
                 prev_data.table.append(row)
                 prev_data.removed.remove(row)
