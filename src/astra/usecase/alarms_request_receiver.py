@@ -64,7 +64,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.types = all_types
 
         # Create the initial table.
-        return cls.handler.get_data(dm.get_alarms(), cls.filters)
+        return cls.handler.get_data(dm.alarms.alarms, cls.filters)
 
     @classmethod
     def update(cls, previous_data: TableReturn, dm: DataManager = None):
