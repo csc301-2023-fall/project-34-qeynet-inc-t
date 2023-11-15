@@ -136,14 +136,14 @@ class View(Tk):
         dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
         dashboard_table.bind('<Double-1>', self.double_click_table_row)
 
-        
+
         # elements of alarms_frame
-        
+
         # alarms notifications
         alarms_notifications = Frame(alarms_frame)
         alarms_notifications.config(background='#fff')
         alarms_notifications.grid(sticky='W', row=0, column=0, rowspan=20)
-        
+
         # alarms filters (for the table)
         alarms_tag_table = Frame(alarms_frame)
         style = ttk.Style()
@@ -152,7 +152,7 @@ class View(Tk):
         alarms_tag_table.grid(sticky="W", row=1, column=1)
         dangers = ['WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
         types = ['RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR']
-        
+
         label = Label(alarms_tag_table, text="filter priority")
         label.grid(sticky="news", row=0, column=0)
         button = Button(alarms_tag_table, text=dangers[0], command= lambda: self.flick_criticality(dangers[0]))
@@ -165,7 +165,7 @@ class View(Tk):
         button.grid(sticky="news", row=0, column=4)
         button = Button(alarms_tag_table, text=dangers[4], command= lambda: self.flick_criticality(dangers[4]))
         button.grid(sticky="news", row=0, column=5)
-          
+
         label = Label(alarms_tag_table, text="filter criticality")
         label.grid(sticky="news", row=1, column=0)
         button = Button(alarms_tag_table, text=dangers[0], command= lambda: self.flick_priority(dangers[0]))
@@ -178,7 +178,7 @@ class View(Tk):
         button.grid(sticky="news", row=1, column=4)
         button = Button(alarms_tag_table, text=dangers[4], command= lambda: self.flick_priority(dangers[4]))
         button.grid(sticky="news", row=1, column=5)
-        
+
         label = Label(alarms_tag_table, text="filter type")
         label.grid(sticky="news", row=2, column=0)
         button = Button(alarms_tag_table, text=types[0], command= lambda: self.flick_type(types[0]))
@@ -214,7 +214,7 @@ class View(Tk):
         alarms_table.column("Type", anchor=CENTER, width=80)
         alarms_table.column("Parameter(s)", anchor=CENTER, width=100)
         alarms_table.column("Description", anchor=CENTER, width=100)
-        
+
         alarms_table.heading("ID", text="ID", anchor=CENTER, command= lambda: self.sort_alarms('ID'))
         alarms_table.heading("Priority", text="Priority", anchor=CENTER, command= lambda: self.sort_alarms('PRIORITY'))
         alarms_table.heading("Criticality", text="Criticality", anchor=CENTER, command= lambda: self.sort_alarms('CRITICALITY'))
@@ -231,28 +231,28 @@ class View(Tk):
             self.refresh_data_table()
             self.search_bar_change()
             self.select_all_tags()
-            
+
             self.alarms_view_model.model.receive_new_data(self._dm)
             self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
-            
-    
+
+
     def sort_alarms(self, tag: str):
         self.alarms_view_model.toggle_sort(heading=tag)
         self.refresh_alarms_table()
-        
+
     def flick_priority(self, tag: Tag):
         self.alarms_view_model.toggle_priority(tag)
         self.refresh_alarms_table()
-        
+
     def flick_criticality(self, tag: Tag):
         self.alarms_view_model.toggle_criticality(tag)
         self.refresh_alarms_table()
-        
+
     def flick_type(self, tag: Tag):
         self.alarms_view_model.toggle_type(tag)
         self.refresh_alarms_table()
-        
+
     def toggle_tag(self) -> None:
         """
         This method is the toggle action for the tag header
@@ -293,7 +293,7 @@ class View(Tk):
             self.dashboard_table.delete(item)
         for item in self.dashboard_view_model.get_table_entries():
             self.dashboard_table.insert("", END, values=tuple(item))
-            
+
     def refresh_alarms_table(self) -> None:
         """
         This method wipes the data from the dashboard table and re-inserts
@@ -341,7 +341,7 @@ class View(Tk):
         self.refresh_data_table()
         self.search_bar_change()
         self.select_all_tags()
-        
+
         """
         try:
             self.alarms_view_model.load_file(self._dm, file)
@@ -462,7 +462,7 @@ class View(Tk):
         self.dashboard_view_model.toggle_tag(tag)
         self.update_data_table_searched_tags()
         self.refresh_data_table()
-    
+
     def select_all_tags(self):
         # Clone the toggled tags, as it will mutate
         toggled_tags = set()
@@ -481,8 +481,8 @@ class View(Tk):
         for tag in self.dashboard_view_model.get_toggled_tags():
             toggled_tags.add(tag)
 
-        for tag in toggled_tags:
-            self.dashboard_view_model.toggle_tag(tag)
+        for tag in self.dashboard_view_model.get_tag_list():
+            if tag in toggled_tags:
+                self.dashboard_view_model.toggle_tag(tag)
         self.update_data_table_searched_tags()
         self.refresh_data_table()
-
