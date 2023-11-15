@@ -5,7 +5,7 @@ This file holds the view class that will be run in main.py
 import pathlib
 import sys
 from datetime import datetime
-from tkinter import Button, Entry, Frame, LabelFrame, Toplevel, Event
+from tkinter import Button, Entry, Frame, Toplevel, Event
 from tkinter import CENTER, NO, END
 from tkinter import StringVar
 from tkinter import filedialog, messagebox, ttk, Tk, Label
@@ -13,7 +13,6 @@ from tkinter.ttk import Treeview
 
 from astra.data import config_manager
 from astra.data.data_manager import DataManager
-from .view_draw_functions import draw_frameview
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.parameters import Tag
 
@@ -70,15 +69,17 @@ class View(Tk):
         dashboard_filter_tags = Frame(dashboard_frame)
         dashboard_filter_tags.config(background='#fff')
         dashboard_filter_tags.grid(sticky='W', row=0, column=0, rowspan=20)
-        Label(dashboard_filter_tags, text="Parameters to display", background='#fff').grid(row=0, column=0,
-                                                                                           columnspan=2)
+        Label(dashboard_filter_tags, text="Parameters to display", background='#fff').grid(
+            row=0, column=0, columnspan=2)
         Label(dashboard_filter_tags, text="Search", background='#fff').grid(row=1, column=0)
         Entry(dashboard_filter_tags, textvariable=self.dashboard_search_bar).grid(row=1, column=1)
         self.dashboard_search_bar.trace_add("write", self.search_bar_change)
+        # TODO
         (Button(dashboard_filter_tags, text="Check all search results",
-                wraplength=80, command=self.select_all_tags).grid(row=2, column=0, rowspan=2))  # TODO
+                wraplength=80, command=self.select_all_tags).grid(row=2, column=0, rowspan=2))
+        # TODO
         (Button(dashboard_filter_tags, text="Uncheck all search results",
-                wraplength=80, command=self.deselect_all_tags).grid(row=2, column=1, rowspan=2))  # TODO
+                wraplength=80, command=self.deselect_all_tags).grid(row=2, column=1, rowspan=2))
         tag_table = ttk.Treeview(dashboard_filter_tags, height=12, show='tree')
         self.data_tag_table = tag_table
         tag_table['columns'] = ("tag")
@@ -156,28 +157,38 @@ class View(Tk):
 
         label = Label(alarms_tag_table, text="filter priority")
         label.grid(sticky="news", row=0, column=0)
-        button = Button(alarms_tag_table, text=dangers[0], command=lambda: self.flick_priority(dangers[0]))
+        button = Button(alarms_tag_table, text=dangers[0],
+                        command=lambda: self.flick_priority(dangers[0]))
         button.grid(sticky="news", row=0, column=1)
-        button = Button(alarms_tag_table, text=dangers[1], command=lambda: self.flick_priority(dangers[1]))
+        button = Button(alarms_tag_table, text=dangers[1],
+                        command=lambda: self.flick_priority(dangers[1]))
         button.grid(sticky="news", row=0, column=2)
-        button = Button(alarms_tag_table, text=dangers[2], command=lambda: self.flick_priority(dangers[2]))
+        button = Button(alarms_tag_table, text=dangers[2],
+                        command=lambda: self.flick_priority(dangers[2]))
         button.grid(sticky="news", row=0, column=3)
-        button = Button(alarms_tag_table, text=dangers[3], command=lambda: self.flick_priority(dangers[3]))
+        button = Button(alarms_tag_table, text=dangers[3],
+                        command=lambda: self.flick_priority(dangers[3]))
         button.grid(sticky="news", row=0, column=4)
-        button = Button(alarms_tag_table, text=dangers[4], command=lambda: self.flick_priority(dangers[4]))
+        button = Button(alarms_tag_table, text=dangers[4],
+                        command=lambda: self.flick_priority(dangers[4]))
         button.grid(sticky="news", row=0, column=5)
 
         label = Label(alarms_tag_table, text="filter criticality")
         label.grid(sticky="news", row=1, column=0)
-        button = Button(alarms_tag_table, text=dangers[0], command=lambda: self.flick_criticality(dangers[0]))
+        button = Button(alarms_tag_table, text=dangers[0],
+                        command=lambda: self.flick_criticality(dangers[0]))
         button.grid(sticky="news", row=1, column=1)
-        button = Button(alarms_tag_table, text=dangers[1], command=lambda: self.flick_criticality(dangers[1]))
+        button = Button(alarms_tag_table, text=dangers[1],
+                        command=lambda: self.flick_criticality(dangers[1]))
         button.grid(sticky="news", row=1, column=2)
-        button = Button(alarms_tag_table, text=dangers[2], command=lambda: self.flick_criticality(dangers[2]))
+        button = Button(alarms_tag_table, text=dangers[2],
+                        command=lambda: self.flick_criticality(dangers[2]))
         button.grid(sticky="news", row=1, column=3)
-        button = Button(alarms_tag_table, text=dangers[3], command=lambda: self.flick_criticality(dangers[3]))
+        button = Button(alarms_tag_table, text=dangers[3],
+                        command=lambda: self.flick_criticality(dangers[3]))
         button.grid(sticky="news", row=1, column=4)
-        button = Button(alarms_tag_table, text=dangers[4], command=lambda: self.flick_criticality(dangers[4]))
+        button = Button(alarms_tag_table, text=dangers[4],
+                        command=lambda: self.flick_criticality(dangers[4]))
         button.grid(sticky="news", row=1, column=5)
 
         label = Label(alarms_tag_table, text="filter type")
@@ -192,9 +203,11 @@ class View(Tk):
         button.grid(sticky="news", row=2, column=4)
         button = Button(alarms_tag_table, text=types[4], command=lambda: self.flick_type(types[4]))
         button.grid(sticky="news", row=2, column=5)
-        button = Button(alarms_tag_table, text="LOGICAL AND", command=lambda: self.flick_type(types[5]))
+        button = Button(alarms_tag_table, text="LOGICAL AND",
+                        command=lambda: self.flick_type(types[5]))
         button.grid(sticky="news", row=2, column=6)
-        button = Button(alarms_tag_table, text="LOGICAL OR", command=lambda: self.flick_type(types[6]))
+        button = Button(alarms_tag_table, text="LOGICAL OR",
+                        command=lambda: self.flick_type(types[6]))
         button.grid(sticky="news", row=2, column=7)
         # alarms table
         alarms_table_frame = Frame(alarms_frame)
@@ -206,7 +219,8 @@ class View(Tk):
         self.alarms_table = alarms_table
         alarms_table.pack()
         alarms_table['columns'] = (
-            "ID", "Priority", "Criticality", "Registered", "Confirmed", "Type", "Parameter(s)", "Description")
+            "ID", "Priority", "Criticality", "Registered", "Confirmed", "Type", "Parameter(s)",
+            "Description")
         alarms_table.column("#0", width=0, stretch=NO)
         alarms_table.column("ID", anchor=CENTER, width=80)
         alarms_table.column("Priority", anchor=CENTER, width=80)
@@ -217,15 +231,18 @@ class View(Tk):
         alarms_table.column("Parameter(s)", anchor=CENTER, width=100)
         alarms_table.column("Description", anchor=CENTER, width=200)
 
-        alarms_table.heading("ID", text="ID", anchor=CENTER, command=lambda: self.sort_alarms('ID'))
-        alarms_table.heading("Priority", text="Priority", anchor=CENTER, command=lambda: self.sort_alarms('PRIORITY'))
+        alarms_table.heading("ID", text="ID", anchor=CENTER,
+                             command=lambda: self.sort_alarms('ID'))
+        alarms_table.heading("Priority", text="Priority", anchor=CENTER,
+                             command=lambda: self.sort_alarms('PRIORITY'))
         alarms_table.heading("Criticality", text="Criticality", anchor=CENTER,
                              command=lambda: self.sort_alarms('CRITICALITY'))
         alarms_table.heading("Registered", text="Registered", anchor=CENTER,
                              command=lambda: self.sort_alarms('REGISTERED'))
         alarms_table.heading("Confirmed", text="Confirmed", anchor=CENTER,
                              command=lambda: self.sort_alarms('CONFIRMED'))
-        alarms_table.heading("Type", text="Type", anchor=CENTER, command=lambda: self.sort_alarms('TYPE'))
+        alarms_table.heading("Type", text="Type", anchor=CENTER,
+                             command=lambda: self.sort_alarms('TYPE'))
         alarms_table.heading("Parameter(s)", text="Parameter(s)", anchor=CENTER)
         alarms_table.heading("Description", text="Description", anchor=CENTER)
 
