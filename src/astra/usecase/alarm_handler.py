@@ -219,13 +219,13 @@ class AlarmsHandler(UseCaseHandler):
 
         for row in prev_data.table:
             alarm = row[8]
-            if not cls._determine_toggled(alarm, filter_args, row[2]):
+            if not cls._determine_toggled(alarm, filter_args, row[1]):
                 new_removed.append(row)
             else:
                 new_table.append(row)
         for row in prev_data.removed:
             alarm = row[8]
-            if cls._determine_toggled(alarm, filter_args, row[2]):
+            if cls._determine_toggled(alarm, filter_args, row[1]):
                 new_table.append(row)
             else:
                 new_removed.append(row)
