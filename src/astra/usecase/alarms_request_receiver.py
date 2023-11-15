@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Iterable
 
-from .alarm_strategies import AlarmsContainer
 from .use_case_handlers import TableReturn
 from .alarm_handler import AlarmHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
@@ -10,6 +9,13 @@ from ..data.alarms import AlarmPriority, AlarmCriticality
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+RATE_OF_CHANGE = 'RATE_OF_CHANGE'
+STATIC = 'STATIC'
+THRESHOLD = 'THRESHOLD'
+SETPOINT = 'SETPOINT'
+SOE = 'SOE'
+L_AND = 'L_AND'  # LOGICAL AND
+L_OR = 'L_OR'  # LOGICAL OR
 
 
 class AlarmsRequestReceiver(RequestReceiver):
@@ -33,7 +39,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         # (sort, index, priority, criticality, alarm_type, start_time, end_time)
 
     @classmethod
-    def create(cls, dm: AlarmsContainer) -> TableReturn:
+    def create(cls, dm: DataManager) -> TableReturn:
         """
         Create is a method that creates the initial data table,
         with all priorities/types/criticalities shown, no sorting applied and at the first index.
@@ -52,14 +58,10 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.priorities = priorities
 
         # get all alarm types from dm
-        all_types = []  # TODO figure out how to get all alarm types from dm
+        all_types = [RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR]
 
         # Add all types to the shown types by default.
         cls.filters.types = all_types
-
-        # Set the index to the first index by default.
-        if cls.filters.index is None:
-            cls.filters.index = 0
 
         # Create the initial table.
         return cls.handler.get_data(dm.get_alarms(), cls.filters)
