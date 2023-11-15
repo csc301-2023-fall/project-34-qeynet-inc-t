@@ -26,6 +26,8 @@ class DashboardViewModel:
     _num_frames: int
     _tag_list: List[Tag]
     _toggled_tags: List[Tag]
+    
+    _data_reciever: DataRequestReceiver
 
     def __init__(self) -> None:
         """
@@ -38,6 +40,8 @@ class DashboardViewModel:
         self._num_frames = 0
         self._tag_list = []
         self._toggled_tags = []
+        
+        self._data_reciever = None
 
     def get_table_entries(self) -> List[list]:
         """
@@ -129,9 +133,9 @@ class DashboardViewModel:
             :param file:
             :param dm:
         """
-        data_receiver = DataRequestReceiver
-        data_receiver.set_filename(file)
-        data_receiver.update(dm)
+        self._data_reciever = DataRequestReceiver
+        self._data_reciever.set_filename(file)
+        self._data_reciever.update(dm)
         self.model.receive_new_data(dm)
 
     def search_tags(self, search: str):
@@ -162,6 +166,9 @@ class DashboardViewModel:
 
         self.model.receive_updates()
         self.update_table_entries()
+        
+    def get_alarms(self):
+        return self._data_reciever.get_alarms()
 
 class AlarmsViewModel:
     """
@@ -187,6 +194,10 @@ class AlarmsViewModel:
         self._table_entries = []
         self._time = None
         
+        self.model.request_receiver.set_shown_priorities(self._priorities)
+        self.model.request_receiver.set_shown_criticalities(self._criticalities)
+        self.model.request_receiver.set_shown_types(self._types)
+        
     def load_file(self, dm: DataManager, file: str):
         """
         Loads a telemetry file for its alarms for the alarm table
@@ -196,12 +207,12 @@ class AlarmsViewModel:
             :param file:
             :param dm:
         """
+        
         data_receiver = DataRequestReceiver
         data_receiver.set_filename(file)
-        self.model.receive_new_data(dm)
         data_receiver.update(dm)
-        self.model.receive_updates()
-        self.update_table_entries()
+        alarms = data_receiver.get_alarms()
+        self.model.receive_new_data(alarms)
         
     def get_table_entries(self) -> List[list]:
         """
@@ -226,7 +237,6 @@ class AlarmsViewModel:
         table_data: TableReturn
         table_data = self.model.get_data()
 
-        self._time = table_data.timestamp
         self._table_entries = table_data.table
         
     

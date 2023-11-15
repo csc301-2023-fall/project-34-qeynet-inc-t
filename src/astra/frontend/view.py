@@ -230,6 +230,10 @@ class View(Tk):
             self.search_bar_change()
             self.select_all_tags()
             
+            self.alarms_view_model.model.receive_new_data(self._dm)
+            self.alarms_view_model.update_table_entries()
+            self.refresh_alarms_table()
+            
     
     def sort_alarms(self, tag: str):
         self.alarms_view_model.toggle_sort(heading=tag)
@@ -246,15 +250,6 @@ class View(Tk):
     def flick_type(self, tag: Tag):
         self.alarms_view_model.toggle_type(tag)
         self.refresh_alarms_table()
-        
-    def update_alarms_table_searched_tags(self):
-        for tag in self.alarms_tag_table.get_children():
-            self.data_tag_table.delete(tag)
-        for tag in self.dashboard_view_model.get_tag_list():
-            check = " "
-            if tag in self.dashboard_view_model.get_toggled_tags():
-                check = "x"
-            self.data_tag_table.insert("", END, value=(f"[{check}] {tag}",))
         
     def toggle_tag(self) -> None:
         """
@@ -302,7 +297,6 @@ class View(Tk):
         This method wipes the data from the dashboard table and re-inserts
         the new values
         """
-        self.change_frame_navigation_text()
         for item in self.alarms_table.get_children():
             self.alarms_table.delete(item)
         for item in self.alarms_view_model.get_table_entries():
@@ -346,12 +340,14 @@ class View(Tk):
         self.search_bar_change()
         self.select_all_tags()
         
+        """
         try:
             self.alarms_view_model.load_file(self._dm, file)
         except Exception as e:
             messagebox.showerror(title='Cannot read telemetry', message=f'{type(e).__name__}: {e}')
-            self.refresh_alarms_table()
             return
+        self.refresh_alarms_table()
+        """
 
     def update_time(self):
         input_start_time = self.start_time.get()
