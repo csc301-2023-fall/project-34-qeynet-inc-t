@@ -26,7 +26,7 @@ class DashboardViewModel:
     _num_frames: int
     _tag_list: List[Tag]
     _toggled_tags: List[Tag]
-    
+
     _data_reciever: DataRequestReceiver
 
     def __init__(self) -> None:
@@ -40,7 +40,7 @@ class DashboardViewModel:
         self._num_frames = 0
         self._tag_list = []
         self._toggled_tags = []
-        
+
         self._data_reciever = None
 
     def get_table_entries(self) -> List[list]:
@@ -145,11 +145,8 @@ class DashboardViewModel:
         to_return = []
         for tag in self._tag_list:
             to_return.append(tag)
-        for tag in self._toggled_tags:
-            if tag not in self._tag_list:
-                to_return.append(tag)
         return to_return
-    
+
     def get_toggled_tags(self):
         return self._toggled_tags
 
@@ -166,7 +163,7 @@ class DashboardViewModel:
 
         self.model.receive_updates()
         self.update_table_entries()
-        
+
     def get_alarms(self):
         return self._data_reciever.get_alarms()
 
@@ -174,14 +171,14 @@ class AlarmsViewModel:
     """
     Alarms view model
     """
-    
+
     _sorting: List[int]
     _priorities: set[Tag]
     _criticalities: set[Tag]
     _types: set[Tag]
     _time: datetime.datetime
     _table_entries: List[list]
-    
+
     def __init__(self) -> None:
         """
         Initializes the view model
@@ -193,11 +190,11 @@ class AlarmsViewModel:
         self._types = {'RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE','L_AND', 'L_OR'}
         self._table_entries = []
         self._time = None
-        
+
         self.model.request_receiver.set_shown_priorities(self._priorities)
         self.model.request_receiver.set_shown_criticalities(self._criticalities)
         self.model.request_receiver.set_shown_types(self._types)
-        
+
     def load_file(self, dm: DataManager, file: str):
         """
         Loads a telemetry file for its alarms for the alarm table
@@ -207,13 +204,13 @@ class AlarmsViewModel:
             :param file:
             :param dm:
         """
-        
+
         data_receiver = DataRequestReceiver
         data_receiver.set_filename(file)
         data_receiver.update(dm)
         alarms = data_receiver.get_alarms()
         self.model.receive_new_data(alarms)
-        
+
     def get_table_entries(self) -> List[list]:
         """
         Getter method to return the entries in the table
@@ -224,10 +221,10 @@ class AlarmsViewModel:
             List[list]: list of table entries
         """
         return self._table_entries
-    
+
     def get_tag_list(self):
         return self._priorities, self._criticalities, self._types
-    
+
     def update_table_entries(self) -> None:
         """
         Updates the table entires to be the same as
@@ -238,8 +235,8 @@ class AlarmsViewModel:
         table_data = self.model.get_data()
 
         self._table_entries = table_data.table
-        
-    
+
+
     def toggle_sort(self, heading: Tag) -> None:
         """
         Method for toggling sorting on a specific heading
@@ -285,7 +282,7 @@ class AlarmsViewModel:
 
         self.model.receive_updates()
         self.update_table_entries()
-    
+
     def toggle_priority(self, tag: Tag):
         """
         Method for toggling filtering of specific priority
@@ -305,12 +302,12 @@ class AlarmsViewModel:
             self._priorities.add(tag)
         else:
             self._priorities.remove(tag)
-        
+
         self.model.request_receiver.set_shown_priorities(self._priorities)
         self.model.receive_updates()
         self.update_table_entries()
-            
-        
+
+
     def toggle_criticality(self, tag: Tag):
         """
         Method for toggling filtering of specific criticality
@@ -330,11 +327,11 @@ class AlarmsViewModel:
             self._criticalities.add(tag)
         else:
             self._criticalities.remove(tag)
-        
+
         self.model.request_receiver.set_shown_priorities(self._criticalities)
         self.model.receive_updates()
         self.update_table_entries()
-        
+
     def toggle_type(self, tag: Tag):
         """
         Method for toggling filtering of specific criticality
@@ -355,8 +352,7 @@ class AlarmsViewModel:
             self._types.add(tag)
         else:
             self._types.remove(tag)
-        
+
         self.model.request_receiver.set_shown_priorities(self._types)
         self.model.receive_updates()
         self.update_table_entries()
-    
