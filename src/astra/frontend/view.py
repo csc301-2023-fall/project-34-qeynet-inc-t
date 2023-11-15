@@ -365,7 +365,7 @@ class View(Tk):
 
         self.construct_alarms_table()
 
-    def construct_alarms_table(self, event: Event=None):
+    def construct_alarms_table(self, event: Event = None):
         self.alarms_view_model.model.receive_new_data(self._dm)
         self.alarms_view_model.toggle_all()
         self.refresh_alarms_table()
