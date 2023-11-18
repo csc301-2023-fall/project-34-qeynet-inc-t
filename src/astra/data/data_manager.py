@@ -2,8 +2,9 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
+from queue import Queue
 from threading import Lock, Thread, Timer
-from typing import Self
+from typing import Self, Callable
 
 from astra.data import dict_parsing, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
@@ -13,20 +14,58 @@ from astra.data.parameters import Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 
 
+class AlarmObserver:
+    """
+    Observes the state of the global alarms container and notifies interested
+    parties whenever an update occurs
+
+    :param watchers: A list of functions to call on any update to the alarm container
+    :param mutex: Synchronization tool as many threads may notify watchers of updates
+    """
+    watchers = []
+    _mutex = Lock()
+
+    @classmethod
+    def __int__(cls):
+        cls.watchers = []
+        cls._mutex = Lock()
+
+    @classmethod
+    def add_watcher(cls, watcher: Callable):
+        """
+        Adds a new function to call on alarm container update
+
+        :param watcher: The new function to call
+        """
+        cls.watchers.append(watcher)
+
+    @classmethod
+    def notify_watchers(cls):
+        """
+        Calls all functions that wish to be called on container update
+        """
+        with cls._mutex:
+            for watcher in cls.watchers:
+                watcher()
+
+
 class AlarmsContainer:
     """
     A container for a global alarms dict that utilizes locking for multithreading
 
     :param alarms: The actual dictionary of alarms held
     :param mutex: A lock used for mutating cls.alarms
+    :param observer: An Observer to monitor the state of the container
     """
+    observer: AlarmObserver
     alarms: dict[AlarmPriority, list[Alarm]] = None
-    mutex = None
+    mutex: Lock
 
     @classmethod
     def __init__(cls):
         cls.alarms = defaultdict(lambda: [])
         cls.mutex = Lock()
+        cls.observer = AlarmObserver()
 
     @classmethod
     def get_alarms(cls) -> dict[AlarmPriority, list[Alarm]]:
@@ -56,9 +95,16 @@ class AlarmsContainer:
             with cls.mutex:
                 for alarm in alarms:
                     criticality = alarm.criticality
+
+                    # TODO:  the closest timeframe from 0, 5, 15, and 30 minutes from when the
+                    # alarm was created to when it was actually confirmed
+
                     priority = apm[timedelta(seconds=0)][criticality]
                     cls.alarms[priority].append(alarm)
                     new_alarms.append([alarm, priority])
+
+            # Now that the state of the alarms container has been update, notify watchers
+            cls.observer.notify_watchers()
 
             # Now, we need to create a timer thread for each alarm
             times = [5, 15, 30]
@@ -86,6 +132,7 @@ class AlarmsContainer:
             cls.alarms[alarm_data[1]].remove(alarm_data[0])
             cls.alarms[new_priority].append(alarm_data[0])
             alarm_data[1] = new_priority
+
 
 class DataManager:
     """
@@ -176,7 +223,6 @@ class DataManager:
         :param alarms: The set of alarms to add to <cls.alarms>
         """
         self._alarm_container.add_alarms(alarms, self.alarm_priority_matrix)
-
 
     @property
     def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:
