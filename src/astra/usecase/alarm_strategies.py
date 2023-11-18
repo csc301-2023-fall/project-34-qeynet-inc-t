@@ -82,7 +82,8 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime], descript
 
     confirm_timestamp = times[alarm_indexes[1]]
 
-    event = Event(event_base, next_id, register_timestamp, confirm_timestamp, description)
+    event = Event(event_base, next_id, register_timestamp, confirm_timestamp, datetime.now(),
+                  description)
     next_id += 1
 
     return Alarm(event, criticality, UNACKNOWLEDGED)
