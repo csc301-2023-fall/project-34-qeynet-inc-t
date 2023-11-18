@@ -257,6 +257,7 @@ class View(Tk):
             # self.alarms_view_model.model.receive_new_data(self._dm)
             # self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
+            self._dm.alarms.observer.add_watcher(self.refresh_alarms_table)
 
     def sort_alarms(self, tag: str):
         self.alarms_view_model.toggle_sort(heading=tag)
@@ -315,6 +316,11 @@ class View(Tk):
         for item in self.dashboard_view_model.get_table_entries():
             self.dashboard_table.insert("", END, values=tuple(item))
 
+    def construct_alarms_table(self, event: Event = None):
+        self.alarms_view_model.model.receive_new_data(self._dm)
+        self.alarms_view_model.toggle_all()
+        self.refresh_alarms_table()
+
     def refresh_alarms_table(self) -> None:
         """
         This method wipes the data from the dashboard table and re-inserts
@@ -364,11 +370,6 @@ class View(Tk):
         self.select_all_tags()
 
         self.construct_alarms_table()
-
-    def construct_alarms_table(self, event: Event = None):
-        self.alarms_view_model.model.receive_new_data(self._dm)
-        self.alarms_view_model.toggle_all()
-        self.refresh_alarms_table()
 
     def update_time(self):
         input_start_time = self.start_time.get()
