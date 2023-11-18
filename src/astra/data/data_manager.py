@@ -89,30 +89,58 @@ class AlarmsContainer:
         """
         # TODO: set priority correctly based on time elapsed since alarm
         new_alarms = []
+        times = [0, 5, 15, 30]
+        timer_vals = []
         if alarms:
             # First, add the new alarms to the alarms structure
             # Because the alarms structure is used in a number of threads, we lock here
             with cls.mutex:
                 for alarm in alarms:
                     criticality = alarm.criticality
+                    alarm_timer_vals = []
 
-                    # TODO:  the closest timeframe from 0, 5, 15, and 30 minutes from when the
+                    # Find the closest timeframe from 0, 5, 15, and 30 minutes from when the
                     # alarm was created to when it was actually confirmed
+                    for i in range(1, len(times)):
+                        time = times[i]
+                        endpoint_time = alarm.event.confirm_time + timedelta(minutes=time)
 
-                    priority = apm[timedelta(seconds=0)][criticality]
-                    cls.alarms[priority].append(alarm)
-                    new_alarms.append([alarm, priority])
+                        # indicates an endpoint has already been found, so we add every following
+                        # timer endpoint
+                        if alarm_timer_vals:
+                            alarm_timer_vals.append(endpoint_time - alarm.event.creation_time)
+
+                        # Case for the first timer interval the alarm has not yet reached
+                        if alarm.event.creation_time < endpoint_time and not alarm_timer_vals:
+                            priority = apm[timedelta(minutes=times[i - 1])][criticality]
+                            cls.alarms[priority].append(alarm)
+                            new_alarms.append([alarm, priority])
+
+                            remaining_time = endpoint_time - alarm.event.creation_time
+                            alarm_timer_vals.append(remaining_time)
+
+                    # Case where the alarm was confirmed at least 30 minutes ago already
+                    if not alarm_timer_vals:
+                        priority = apm[timedelta(minutes=30)][criticality]
+                        cls.alarms[priority].append(alarm)
+                        new_alarms.append([alarm, priority])
+                    timer_vals.append(alarm_timer_vals)
 
             # Now that the state of the alarms container has been update, notify watchers
             cls.observer.notify_watchers()
 
             # Now, we need to create a timer thread for each alarm
-            times = [5, 15, 30]
-            for time in times:
-                duration = time * 60
-                for alarm in new_alarms:
-                    new_timer = Timer(duration, cls._update_priority,
-                                      args=[alarm, timedelta(minutes=time), apm])
+            for i in range(len(new_alarms)):
+                alarm = new_alarms[i]
+                associated_times = timer_vals[i]
+
+                for associated_time in associated_times:
+                    # Because <associated_times> is a subset of <times>, we need to offset
+                    # the index well later use into it
+                    time_interval = len(times) - len(associated_times) + i
+
+                    new_timer = Timer(associated_time.seconds, cls._update_priority,
+                                      args=[alarm, timedelta(minutes=times[time_interval]), apm])
                     new_timer.start()
 
     @classmethod
