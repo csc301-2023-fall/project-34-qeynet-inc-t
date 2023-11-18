@@ -160,7 +160,7 @@ class AlarmsContainer:
             cls.alarms[alarm_data[1]].remove(alarm_data[0])
             cls.alarms[new_priority].append(alarm_data[0])
             alarm_data[1] = new_priority
-
+        cls.observer.notify_watchers()
 
 class DataManager:
     """
