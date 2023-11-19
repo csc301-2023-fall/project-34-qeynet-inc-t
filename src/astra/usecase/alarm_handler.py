@@ -1,6 +1,8 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable
+from queue import Queue
+from typing import Iterable, Any
 
 from astra.data.alarms import (AlarmPriority, AlarmCriticality, RateOfChangeEventBase, Alarm,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
@@ -17,6 +19,71 @@ CONFIRMED_DATE = 'CONFIRMED_DATE'
 UNACKNOWLEDGED = 'UA'
 DESCENDING = '>'
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+
+
+class LimitedSlotData(ABC):
+    """
+    Interface for containers of data that have limited FIFO slots
+
+    :param _slots: A dict of priority queues
+    :param _priorities: an ordered list of keys in _slots, where elements are ordered by descending importance
+    """
+    _slots: dict[str, Queue]
+    _priorities: list[str]
+
+    @abstractmethod
+    def get_all(self) -> list[str]:
+        """
+        Compacts all data amongst <cls._slots> into one list in a readable format
+
+        :return: An ordered list of data compiled from <cls._slots>
+        """
+        pass
+
+
+class LimitedSlotAlarms(LimitedSlotData, ABC):
+    """
+    A child of LimitedSlotData used for the alarm banners at the top of the screen
+    """
+
+    @classmethod
+    def __init__(cls):
+        cls._priorities = ['n', 'o']
+        new_queue = Queue(3)
+        old_queue = Queue(3)
+        cls._slots = {'n': new_queue, 'o': old_queue}
+
+    @classmethod
+    def get_all(cls) -> list[str]:
+        """
+        Compacts all data amongst <cls._slots> into one list in a readable format
+
+        :return: An ordered list of data compiled from <cls._slots>
+        """
+        for slot_type in cls._priorities:
+            priority_queue = cls._slots[slot_type]
+
+
+    @classmethod
+    def insert_into_new(cls, alarm: Alarm) -> None:
+        """
+        Inserts information about <alarm> into the new alarms queue in <cls._slots>. If the queue
+        exceeds its intended size, remove the oldest element in the queue
+
+        :param alarm: The alarm to insert into the banner slots
+        """
+        cls._slots['n'].put(alarm)
+
+    @classmethod
+    def insert_into_old(cls, alarm: Alarm, priority: AlarmPriority) -> None:
+        """
+        Inserts information about <alarm> into the old alarms queue in <cls._slots>. If the queue
+        exceeds its intended size, remove the oldest element in the queue
+
+        :param alarm: The alarm to insert into the banner slots
+        :return:
+        """
+        cls._slots['o'].put((alarm, priority))
 
 
 @dataclass
