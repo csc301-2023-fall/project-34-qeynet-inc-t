@@ -64,6 +64,7 @@ class Event:
     id: EventID
     register_time: datetime
     confirm_time: datetime
+    creation_time: datetime
     description: str
 
 

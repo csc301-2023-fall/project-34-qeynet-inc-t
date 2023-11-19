@@ -62,7 +62,7 @@ def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> tuple[dat
     return first_time, sequence
 
 
-def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime], description: str,
+def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime],
                  event_base: EventBase,
                  criticality: AlarmCriticality) -> Alarm:
     """
@@ -82,15 +82,16 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime], descript
 
     confirm_timestamp = times[alarm_indexes[1]]
 
-    event = Event(event_base, next_id, register_timestamp, confirm_timestamp, description)
+    event = Event(event_base, next_id, register_timestamp, confirm_timestamp, datetime.now(),
+                  event_base.description)
     next_id += 1
 
     return Alarm(event, criticality, UNACKNOWLEDGED)
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
-                comparison: ParameterValue, persistence: float) -> tuple[list[tuple[int, int]],
-                                                                    list[bool]]:
+                comparison: ParameterValue, persistence: float) -> (
+        tuple)[list[tuple[int, int]], list[bool]]:
     """
     Checks all telemetry frames in <td> where <condition> returns true
     Note: This should only be used for conditions where only 1 tag is relevant
@@ -435,9 +436,7 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
         rise_first_indices = []
         for alarm_index in rise_alarm_indices:
             rise_first_indices.append(alarm_index[0])
-            description = "rise rate-of-change threshold crossed"
-            new_alarm = create_alarm(alarm_index, times,
-                                     description, alarm_base, criticality)
+            new_alarm = create_alarm(alarm_index, times, alarm_base, criticality)
             alarms.append(new_alarm)
 
         # Gets the indices of frames where the alarm is active
@@ -456,9 +455,7 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
         fall_first_indices = []
         for alarm_index in fall_alarm_indices:
             fall_first_indices.append(alarm_index[0])
-            description = "fall rate-of-change threshold crossed"
-            new_alarm = create_alarm(alarm_index, times,
-                                     description, alarm_base, criticality)
+            new_alarm = create_alarm(alarm_index, times, alarm_base, criticality)
             alarms.append(new_alarm)
 
         # Gets the indices of frames where the alarm is active
@@ -471,7 +468,7 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
         else:
             all_alarm_frames = fall_alarm_frames
 
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return all_alarm_frames
 
 
@@ -545,12 +542,11 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     first_indexes = []
     for index in alarm_indexes:
         first_indexes.append(index[0])
-        description = "static alarm triggered"
-        new_alarm = create_alarm(index, times, description, alarm_base, criticality)
+        new_alarm = create_alarm(index, times, alarm_base, criticality)
         alarms.append(new_alarm)
 
     alarm_frames = find_alarm_indexes(first_indexes, cond_met)
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return alarm_frames
 
 
@@ -614,8 +610,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
         lower_first_indexes = []
         for alarm in lower_alarms:
             lower_first_indexes.append(alarm[0])
-            description = "lower threshold crossed"
-            new_alarm = create_alarm(alarm, times, description, alarm_base, criticality)
+            new_alarm = create_alarm(alarm, times, alarm_base, criticality)
             alarms.append(new_alarm)
 
         all_alarm_frames = lower_alarm_frames
@@ -626,8 +621,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
         upper_first_indexes = []
         for alarm in upper_alarms:
             upper_first_indexes.append(alarm[0])
-            description = "upper threshold crossed"
-            new_alarm = create_alarm(alarm, times, description, alarm_base, criticality)
+            new_alarm = create_alarm(alarm, times, alarm_base, criticality)
             alarms.append(new_alarm)
 
         # combining all results
@@ -637,7 +631,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
         else:
             all_alarm_frames = upper_alarm_frames
 
-        dm.update_alarms(alarms)
+        dm.add_alarms(alarms)
         return all_alarm_frames
 
 
@@ -686,11 +680,10 @@ def setpoint_check(dm: DataManager, alarm_base: SetpointEventBase,
     alarms = []
     for alarm in new_alarms:
         # first_indexes.append(alarms[0])
-        description = "setpoint value recorded"
-        new_alarm = create_alarm(alarm, times, description, alarm_base, criticality)
+        new_alarm = create_alarm(alarm, times, alarm_base, criticality)
         alarms.append(new_alarm)
 
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return alarm_frames
 
 
@@ -787,10 +780,9 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
             else:
                 active_indexes.append(True)
         new_alarm = create_alarm((last_index, last_index), times,
-                                 "Sequence of events:", alarm_base,
-                                 criticality)
+                                 alarm_base, criticality)
         alarms = [new_alarm]
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return active_indexes
 
 
@@ -846,11 +838,10 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     first_indexes = []
     for alarm_index in alarm_indexes:
         first_indexes.append(alarm_index[0])
-        description = 'All events were triggered.'
-        new_alarm = create_alarm(alarm_index, times, description, alarm_base, criticality)
+        new_alarm = create_alarm(alarm_index, times, alarm_base, criticality)
         alarms.append(new_alarm)
     alarm_frames = find_alarm_indexes(first_indexes, conds_met)
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return alarm_frames
 
 
@@ -904,9 +895,8 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     first_indexes = []
     for alarm_index in alarm_indexes:
         first_indexes.append(alarm_index[0])
-        description = 'Any events was triggered.'
-        new_alarm = create_alarm(alarm_index, times, description, alarm_base, criticality)
+        new_alarm = create_alarm(alarm_index, times, alarm_base, criticality)
         alarms.append(new_alarm)
     alarm_frames = find_alarm_indexes(first_indexes, conds_met)
-    dm.update_alarms(alarms)
+    dm.add_alarms(alarms)
     return alarm_frames

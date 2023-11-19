@@ -2,8 +2,8 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
-from threading import Lock
-from typing import Self
+from threading import Lock, Timer
+from typing import Self, Callable
 
 from astra.data import dict_parsing, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
@@ -13,20 +13,58 @@ from astra.data.parameters import Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 
 
+class AlarmObserver:
+    """
+    Observes the state of the global alarms container and notifies interested
+    parties whenever an update occurs
+
+    :param watchers: A list of functions to call on any update to the alarm container
+    :param mutex: Synchronization tool as many threads may notify watchers of updates
+    """
+    watchers = []
+    _mutex = Lock()
+
+    @classmethod
+    def __int__(cls):
+        cls.watchers = []
+        cls._mutex = Lock()
+
+    @classmethod
+    def add_watcher(cls, watcher: Callable):
+        """
+        Adds a new function to call on alarm container update
+
+        :param watcher: The new function to call
+        """
+        cls.watchers.append(watcher)
+
+    @classmethod
+    def notify_watchers(cls):
+        """
+        Calls all functions that wish to be called on container update
+        """
+        with cls._mutex:
+            for watcher in cls.watchers:
+                watcher()
+
+
 class AlarmsContainer:
     """
     A container for a global alarms dict that utilizes locking for multithreading
 
     :param alarms: The actual dictionary of alarms held
     :param mutex: A lock used for mutating cls.alarms
+    :param observer: An Observer to monitor the state of the container
     """
+    observer: AlarmObserver
     alarms: dict[AlarmPriority, list[Alarm]] = None
-    mutex = None
+    mutex: Lock
 
     @classmethod
     def __init__(cls):
         cls.alarms = defaultdict(lambda: [])
         cls.mutex = Lock()
+        cls.observer = AlarmObserver()
 
     @classmethod
     def get_alarms(cls) -> dict[AlarmPriority, list[Alarm]]:
@@ -37,6 +75,91 @@ class AlarmsContainer:
         """
         with cls.mutex:
             return cls.alarms.copy()
+
+    @classmethod
+    def add_alarms(cls, alarms: list[Alarm],
+                   apm: Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]) -> None:
+        """
+        Updates the alarms global variable after acquiring the lock for it
+
+        :param dm: Holds information of data criticality and priority
+        :param apm: Maps information on alarms to correct priority level
+        :param alarms: The set of alarms to add to <cls.alarms>
+        """
+        # TODO: set priority correctly based on time elapsed since alarm
+        new_alarms = []
+        times = [0, 5, 15, 30]
+        timer_vals = []
+        if alarms:
+            # First, add the new alarms to the alarms structure
+            # Because the alarms structure is used in a number of threads, we lock here
+            with cls.mutex:
+                for alarm in alarms:
+                    criticality = alarm.criticality
+                    alarm_timer_vals = []
+
+                    # Find the closest timeframe from 0, 5, 15, and 30 minutes from when the
+                    # alarm was created to when it was actually confirmed
+                    for i in range(1, len(times)):
+                        time = times[i]
+                        endpoint_time = alarm.event.confirm_time + timedelta(minutes=time)
+
+                        # indicates an endpoint has already been found, so we add every following
+                        # timer endpoint
+                        if alarm_timer_vals:
+                            alarm_timer_vals.append(endpoint_time - alarm.event.creation_time)
+
+                        # Case for the first timer interval the alarm has not yet reached
+                        if alarm.event.creation_time < endpoint_time and not alarm_timer_vals:
+                            priority = apm[timedelta(minutes=times[i - 1])][criticality]
+                            cls.alarms[priority].append(alarm)
+                            new_alarms.append([alarm, priority])
+
+                            remaining_time = endpoint_time - alarm.event.creation_time
+                            alarm_timer_vals.append(remaining_time)
+
+                    # Case where the alarm was confirmed at least 30 minutes ago already
+                    if not alarm_timer_vals:
+                        priority = apm[timedelta(minutes=30)][criticality]
+                        cls.alarms[priority].append(alarm)
+                        new_alarms.append([alarm, priority])
+                    timer_vals.append(alarm_timer_vals)
+
+            # Now that the state of the alarms container has been update, notify watchers
+            cls.observer.notify_watchers()
+
+            # Now, we need to create a timer thread for each alarm
+            for i in range(len(new_alarms)):
+                alarm = new_alarms[i]
+                associated_times = timer_vals[i]
+
+                for associated_time in associated_times:
+                    # Because <associated_times> is a subset of <times>, we need to offset
+                    # the index well later use into it
+                    time_interval = len(times) - len(associated_times) + i
+
+                    new_timer = Timer(associated_time.seconds, cls._update_priority,
+                                      args=[alarm, timedelta(minutes=times[time_interval]), apm])
+                    new_timer.start()
+
+    @classmethod
+    def _update_priority(cls, alarm_data: list[Alarm, AlarmPriority], time: timedelta,
+                         apm: Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]) -> None:
+        """
+        Uses the alarm priority matrix with <time> to place <alarm> in the correct priority bin
+        NOTE: we pass a list, and not a tuple, as we need to mutate said list
+
+        :param alarm_data: contains the current priority of the alarm and the alarm itself
+        :param time: Time elapsed since the alarm came into effect
+        :param apm: Maps information on alarms to correct priority level
+        """
+
+        with cls.mutex:
+            new_priority = apm[time][alarm_data[0].criticality]
+            cls.alarms[alarm_data[1]].remove(alarm_data[0])
+            cls.alarms[new_priority].append(alarm_data[0])
+            alarm_data[1] = new_priority
+        cls.observer.notify_watchers()
 
 
 class DataManager:
@@ -120,21 +243,14 @@ class DataManager:
     def alarms(self) -> AlarmsContainer:
         return self._alarm_container
 
-
-    def update_alarms(self, alarms: list[Alarm]) -> None:
+    def add_alarms(self, alarms: list[Alarm]) -> None:
         """
         Updates the alarms global variable after acquiring the lock for it
 
         :param dm: Holds information of data criticality and priority
         :param alarms: The set of alarms to add to <cls.alarms>
         """
-        # TODO: set priority correctly based on time elapsed since alarm
-        if alarms:
-            with self._alarm_container.mutex:
-                for alarm in alarms:
-                    criticality = alarm.criticality
-                    priority = self.alarm_priority_matrix[timedelta(seconds=0)][criticality]
-                    self.alarms.alarms[priority].append(alarm)
+        self._alarm_container.add_alarms(alarms, self.alarm_priority_matrix)
 
     @property
     def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:
@@ -148,8 +264,8 @@ class DataManager:
         w, l, m, h, c = AlarmCriticality
         # fmt: off
         return dict(reversed([
-            (timedelta(minutes= 0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
-            (timedelta(minutes= 5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
+            (timedelta(minutes=0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
+            (timedelta(minutes=5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
             (timedelta(minutes=15), {w: w, l: l, m: m, h: h, c: c}),
             (timedelta(minutes=30), {w: w, l: m, m: h, h: c, c: c}),
         ]))
@@ -173,7 +289,7 @@ class DataManager:
     add_data_from_file = add_data  # Alias for historical reasons
 
     def get_telemetry_data(
-        self, start_time: datetime | None, end_time: datetime | None, tags: Iterable[Tag]
+            self, start_time: datetime | None, end_time: datetime | None, tags: Iterable[Tag]
     ) -> TelemetryData:
         """
         Give access to a collection of telemetry data for the device of this DataManager.

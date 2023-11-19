@@ -172,6 +172,30 @@ class AlarmsHandler(UseCaseHandler):
                                        reverse=reverse)
 
     @classmethod
+    def _extract_alarm_data(cls, alarm: Alarm, priority: AlarmPriority) -> list:
+        """
+        Takes an Alarm and constructs a list of ordered data to be output in a table
+
+        :param alarm: The alarm to construct data from
+        :param priority: The priority of the associated <alarm>
+        :return: A list in the form of [<alarm> id, <alarm> priority, <alarm> criticality,
+        <alarm> register time, <alarm> confirm time, <alarm> type, <alarm> description, and the
+        alarm itself
+        """
+        alarm_id = alarm.event.id
+        alarm_priority = priority
+        alarm_criticality = alarm.criticality
+        alarm_register_time = alarm.event.register_time
+        alarm_confirm_time = alarm.event.confirm_time
+        alarm_type = cls._get_alarm_type(alarm)
+        alarm_tags = cls._get_relevant_tags(alarm.event.base)
+        alarm_description = alarm.event.description
+
+        new_row = [alarm_id, alarm_priority, alarm_criticality, alarm_register_time,
+                   alarm_confirm_time, alarm_type, alarm_tags, alarm_description, alarm]
+        return new_row
+
+    @classmethod
     def get_data(cls, dm: dict[AlarmPriority, set[Alarm]], filter_args: AlarmsFilters) \
             -> TableReturn:
         """
@@ -186,17 +210,7 @@ class AlarmsHandler(UseCaseHandler):
         removed = []
         for priority in dm:
             for alarm in dm[priority]:
-                alarm_id = alarm.event.id
-                alarm_priority = priority
-                alarm_criticality = alarm.criticality
-                alarm_register_time = alarm.event.register_time
-                alarm_confirm_time = alarm.event.confirm_time
-                alarm_type = cls._get_alarm_type(alarm)
-                alarm_tags = cls._get_relevant_tags(alarm.event.base)
-                alarm_description = alarm.event.description
-
-                new_row = [alarm_id, alarm_priority, alarm_criticality, alarm_register_time,
-                           alarm_confirm_time, alarm_type, alarm_tags, alarm_description, alarm]
+                new_row = cls._extract_alarm_data(alarm, priority)
                 if cls._determine_toggled(alarm, filter_args, priority):
                     shown.append(new_row)
                 else:
@@ -206,7 +220,8 @@ class AlarmsHandler(UseCaseHandler):
         return return_table
 
     @classmethod
-    def update_data(cls, prev_data: TableReturn, filter_args: AlarmsFilters, dm: DataManager = None) -> None:
+    def update_data(cls, prev_data: TableReturn, filter_args: AlarmsFilters,
+                    dm: DataManager = None) -> None:
         """
         Updates the previous data returned by get_data to apply any new filters
 
