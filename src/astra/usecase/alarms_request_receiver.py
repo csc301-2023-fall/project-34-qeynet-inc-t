@@ -258,3 +258,10 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param end_time: the datetime to be set
         """
         cls.filters.end_time = end_time
+
+    @classmethod
+    def toggle_new_only(cls) -> None:
+        """
+        Switches the boolean value of <cls.filters.new>
+        """
+        cls.filters.new = not cls.filters.new
