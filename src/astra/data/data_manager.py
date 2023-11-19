@@ -162,6 +162,7 @@ class AlarmsContainer:
             alarm_data[1] = new_priority
         cls.observer.notify_watchers()
 
+
 class DataManager:
     """
     An object that facilitates file/database I/O for a session of the program.
