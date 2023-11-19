@@ -2,8 +2,7 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
-from queue import Queue
-from threading import Lock, Thread, Timer
+from threading import Lock, Timer
 from typing import Self, Callable
 
 from astra.data import dict_parsing, telemetry_manager
