@@ -2,6 +2,7 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
+from queue import Queue
 from threading import Lock, Timer
 from typing import Self, Callable
 
@@ -12,6 +13,8 @@ from astra.data.dict_parsing import ParsingError
 from astra.data.parameters import Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 
+NEW_QUEUE_KEY = 'n'
+MAX_QUEUE_SIZE = 3
 
 class AlarmObserver:
     """
@@ -57,12 +60,14 @@ class AlarmsContainer:
     :param observer: An Observer to monitor the state of the container
     """
     observer: AlarmObserver
-    alarms: dict[AlarmPriority, list[Alarm]] = None
+    alarms: dict[AlarmPriority | str, list[Alarm] | Queue] = None
     mutex: Lock
 
     @classmethod
     def __init__(cls):
-        cls.alarms = defaultdict(lambda: [])
+        cls.alarms = {AlarmPriority.WARNING.name: [], AlarmPriority.LOW.name: [],
+                      AlarmPriority.MEDIUM.name: [], AlarmPriority.HIGH.name: [],
+                      AlarmPriority.CRITICAL.name: [], NEW_QUEUE_KEY: Queue()}
         cls.mutex = Lock()
         cls.observer = AlarmObserver()
 
@@ -90,6 +95,7 @@ class AlarmsContainer:
         new_alarms = []
         times = [0, 5, 15, 30]
         timer_vals = []
+        alarms.sort(reverse=True)
         if alarms:
             # First, add the new alarms to the alarms structure
             # Because the alarms structure is used in a number of threads, we lock here
@@ -122,7 +128,12 @@ class AlarmsContainer:
                     # Case where the alarm was confirmed at least 30 minutes ago already
                     if not alarm_timer_vals:
                         priority = apm[timedelta(minutes=30)][criticality]
-                        cls.alarms[priority].append(alarm)
+                        cls.alarms[priority.name].append(alarm)
+
+                        cls.alarms[NEW_QUEUE_KEY].put(alarm)
+                        if cls.alarms[NEW_QUEUE_KEY].qsize() > MAX_QUEUE_SIZE:
+                            cls.alarms[NEW_QUEUE_KEY].get()
+
                         new_alarms.append([alarm, priority])
                     timer_vals.append(alarm_timer_vals)
 

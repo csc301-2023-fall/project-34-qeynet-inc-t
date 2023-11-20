@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from heapq import heapify, heappush, heappop
 from queue import Queue
 from typing import Iterable, Any
 
@@ -17,7 +18,13 @@ REGISTERED_DATE = 'REGISTERED_DATE'
 CONFIRMED_DATE = 'CONFIRMED_DATE'
 UNACKNOWLEDGED = 'UA'
 DESCENDING = '>'
+PRIORITIES = [AlarmPriority.WARNING.name, AlarmPriority.LOW.name, AlarmPriority.MEDIUM.name,
+              AlarmPriority.HIGH.name, AlarmPriority.CRITICAL.name]
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+NEW_QUEUE_MAX_SIZE = 3
+OLD_QUEUE_MAX_SIZE = 3
+NEW_QUEUE_KEY = 'n'
+OLD_QUEUE_KEY = 'o'
 
 
 class LimitedSlotAlarms:
@@ -27,15 +34,17 @@ class LimitedSlotAlarms:
     :param _slots: A dict of priority queues
     :param _priorities: an ordered list of keys in _slots, where elements are ordered by descending importance
     """
-    _slots: dict[str, Queue]
+    _slots: dict[str, Queue | list]
     _priorities: list[str]
 
     @classmethod
     def __init__(cls):
-        cls._priorities = ['n', 'o']
-        new_queue = Queue(3)
-        old_queue = Queue(3)
-        cls._slots = {'n': new_queue, 'o': old_queue}
+        cls._priorities = [NEW_QUEUE_KEY, OLD_QUEUE_KEY]
+        new_queue = Queue()
+        old_queue = []
+        heapify(old_queue)
+
+        cls._slots = {NEW_QUEUE_KEY: new_queue, OLD_QUEUE_KEY: old_queue}
 
     @classmethod
     def get_all(cls) -> list[str]:
@@ -45,14 +54,16 @@ class LimitedSlotAlarms:
         :return: An ordered list of data compiled from <cls._slots>
         """
         all_items = []
-        for slot_type in cls._priorities:
-            age_q = cls._slots[slot_type]
-            q_items = age_q.queue
 
-            new_items = list(q_items)
-            new_items.sort()
+        new_queue = cls._slots[NEW_QUEUE_KEY]
+        q_items = new_queue.queue
 
-            all_items += new_items
+        new_items = list(q_items)
+        new_items.sort()
+
+        all_items += new_items
+
+        all_items += cls._slots[OLD_QUEUE_KEY]
         return all_items
 
     @classmethod
@@ -63,7 +74,10 @@ class LimitedSlotAlarms:
 
         :param alarm: The alarm to insert into the banner slots
         """
-        cls._slots['n'].put(alarm)
+        cls._slots[NEW_QUEUE_KEY].put(alarm)
+        if cls._slots[NEW_QUEUE_KEY].qsize() > NEW_QUEUE_MAX_SIZE:
+            oldest = cls._slots[NEW_QUEUE_KEY].get()
+            cls.insert_into_old(oldest)
 
     @classmethod
     def insert_into_old(cls, alarm: Alarm) -> None:
@@ -73,7 +87,10 @@ class LimitedSlotAlarms:
 
         :param alarm: The alarm to insert into the banner slots
         """
-        cls._slots['o'].put(alarm)
+        old_queue = cls._slots[OLD_QUEUE_KEY]
+        heappush(old_queue, alarm)
+        if len(old_queue) > OLD_QUEUE_MAX_SIZE:
+            heappop(old_queue)
 
 
 @dataclass
@@ -111,6 +128,13 @@ class AlarmsFilters:
 
 
 class AlarmsHandler(UseCaseHandler):
+
+    banner_container: LimitedSlotAlarms
+
+    @classmethod
+    def __init__(cls):
+        cls.banner_container = LimitedSlotAlarms()
+
     @staticmethod
     def _get_alarm_type(alarm: Alarm) -> str:
         """
@@ -251,7 +275,7 @@ class AlarmsHandler(UseCaseHandler):
         return new_row
 
     @classmethod
-    def get_data(cls, dm: dict[AlarmPriority, set[Alarm]], filter_args: AlarmsFilters) \
+    def get_data(cls, dm: dict[AlarmPriority | str, set[Alarm] | Queue], filter_args: AlarmsFilters) \
             -> TableReturn:
         """
         Using the current data structure of alarms, packs all data stored by the alarms into
@@ -263,13 +287,17 @@ class AlarmsHandler(UseCaseHandler):
         """
         shown = []
         removed = []
-        for priority in dm:
+        for priority in PRIORITIES:
             for alarm in dm[priority]:
                 new_row = cls._extract_alarm_data(alarm, priority)
                 if cls._determine_toggled(alarm, filter_args):
                     shown.append(new_row)
                 else:
                     removed.append(new_row)
+
+        while dm[NEW_QUEUE_KEY].qsize() > 0:
+            next_item = dm[NEW_QUEUE_KEY].get()
+            cls.banner_container.insert_into_new(next_item)
 
         return_table = TableReturn(shown, removed)
         return return_table
