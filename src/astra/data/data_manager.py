@@ -113,6 +113,7 @@ class AlarmsContainer:
                         if alarm.event.creation_time < endpoint_time and not alarm_timer_vals:
                             priority = apm[timedelta(minutes=times[i - 1])][criticality]
                             cls.alarms[priority].append(alarm)
+                            alarm.priority = priority
                             new_alarms.append([alarm, priority])
 
                             remaining_time = endpoint_time - alarm.event.creation_time
@@ -158,6 +159,7 @@ class AlarmsContainer:
             new_priority = apm[time][alarm_data[0].criticality]
             cls.alarms[alarm_data[1]].remove(alarm_data[0])
             cls.alarms[new_priority].append(alarm_data[0])
+            alarm_data[0].priority = new_priority
             alarm_data[1] = new_priority
         cls.observer.notify_watchers()
 

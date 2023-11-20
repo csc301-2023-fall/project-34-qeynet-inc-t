@@ -86,7 +86,9 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime],
                   event_base.description)
     next_id += 1
 
-    return Alarm(event, criticality, UNACKNOWLEDGED)
+    # Note: priority needs to be determined externally, so we temporarily set it to provided
+    # criticality
+    return Alarm(event, criticality, criticality, UNACKNOWLEDGED)
 
 
 def check_conds(td: TelemetryData, tag: Tag, condition: Callable,

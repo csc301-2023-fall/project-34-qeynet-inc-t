@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from queue import Queue
@@ -21,30 +20,15 @@ DESCENDING = '>'
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
 
 
-class LimitedSlotData(ABC):
+class LimitedSlotAlarms:
     """
-    Interface for containers of data that have limited FIFO slots
+    Contains all alarms to be shown in the banner at the top of the screen
 
     :param _slots: A dict of priority queues
     :param _priorities: an ordered list of keys in _slots, where elements are ordered by descending importance
     """
     _slots: dict[str, Queue]
     _priorities: list[str]
-
-    @abstractmethod
-    def get_all(self) -> list[str]:
-        """
-        Compacts all data amongst <cls._slots> into one list in a readable format
-
-        :return: An ordered list of data compiled from <cls._slots>
-        """
-        pass
-
-
-class LimitedSlotAlarms(LimitedSlotData, ABC):
-    """
-    A child of LimitedSlotData used for the alarm banners at the top of the screen
-    """
 
     @classmethod
     def __init__(cls):
@@ -60,9 +44,16 @@ class LimitedSlotAlarms(LimitedSlotData, ABC):
 
         :return: An ordered list of data compiled from <cls._slots>
         """
+        all_items = []
         for slot_type in cls._priorities:
-            priority_queue = cls._slots[slot_type]
+            age_q = cls._slots[slot_type]
+            q_items = age_q.queue
 
+            new_items = list(q_items)
+            new_items.sort()
+
+            all_items += new_items
+        return all_items
 
     @classmethod
     def insert_into_new(cls, alarm: Alarm) -> None:
@@ -75,15 +66,14 @@ class LimitedSlotAlarms(LimitedSlotData, ABC):
         cls._slots['n'].put(alarm)
 
     @classmethod
-    def insert_into_old(cls, alarm: Alarm, priority: AlarmPriority) -> None:
+    def insert_into_old(cls, alarm: Alarm) -> None:
         """
         Inserts information about <alarm> into the old alarms queue in <cls._slots>. If the queue
         exceeds its intended size, remove the oldest element in the queue
 
         :param alarm: The alarm to insert into the banner slots
-        :return:
         """
-        cls._slots['o'].put((alarm, priority))
+        cls._slots['o'].put(alarm)
 
 
 @dataclass
@@ -165,19 +155,17 @@ class AlarmsHandler(UseCaseHandler):
             return all_tags
 
     @classmethod
-    def _determine_toggled(cls, alarm: Alarm, filter_args: AlarmsFilters,
-                           priority: AlarmPriority) -> bool:
+    def _determine_toggled(cls, alarm: Alarm, filter_args: AlarmsFilters) -> bool:
         """
         Uses <filter_args> to determine if <alarm> should be shown or not
 
         :param alarm: The alarm that should be enabled or disabled
         :param filter_args: Contains arguments that will determine if <alarm> is shown
-        :param priority: The priortiy level of the associated <alarm>
         :return: true iff <alarm> should be shown
         """
         show = True
         # First, checking if it satisfies priority requirements
-        show = priority.name in filter_args.priorities
+        show = alarm.priority.name in filter_args.priorities
 
         # Next, checking if it satisfies criticality arguments
         show = show and alarm.criticality.name in filter_args.criticalities
@@ -278,7 +266,7 @@ class AlarmsHandler(UseCaseHandler):
         for priority in dm:
             for alarm in dm[priority]:
                 new_row = cls._extract_alarm_data(alarm, priority)
-                if cls._determine_toggled(alarm, filter_args, priority):
+                if cls._determine_toggled(alarm, filter_args):
                     shown.append(new_row)
                 else:
                     removed.append(new_row)
@@ -301,13 +289,13 @@ class AlarmsHandler(UseCaseHandler):
 
         for row in prev_data.table:
             alarm = row[8]
-            if not cls._determine_toggled(alarm, filter_args, row[1]):
+            if not cls._determine_toggled(alarm, filter_args):
                 new_removed.append(row)
             else:
                 new_table.append(row)
         for row in prev_data.removed:
             alarm = row[8]
-            if cls._determine_toggled(alarm, filter_args, row[1]):
+            if cls._determine_toggled(alarm, filter_args):
                 new_table.append(row)
             else:
                 new_removed.append(row)

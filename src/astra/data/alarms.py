@@ -105,8 +105,15 @@ class AlarmBase:
     criticality: AlarmCriticality
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class Alarm:
     event: Event
     criticality: AlarmCriticality
+    priority: AlarmPriority
     acknowledgement: str
+
+    def __gt__(self, other) -> bool:
+        return self.priority > other.priority
+
+    def __lt__(self, other) -> bool:
+        return self.priority < other.priority
