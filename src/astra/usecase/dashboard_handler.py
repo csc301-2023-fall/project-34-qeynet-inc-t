@@ -148,6 +148,7 @@ class DashboardHandler(UseCaseHandler):
 
         return list_of_tags
 
+    @classmethod
     def _tag_to_alarms(cls, tags: list[Tag],
                        alarms: dict[AlarmPriority, list[Alarm]]) -> dict[Tag, Alarm]:
         """
@@ -163,11 +164,11 @@ class DashboardHandler(UseCaseHandler):
         # List of priorities in order from highest to lowest priority
         priorities = [AlarmCriticality.CRITICAL, AlarmCriticality.HIGH,
                       AlarmCriticality.MEDIUM, AlarmCriticality.LOW, AlarmCriticality.WARNING]
-        available_tags = copy(tags)
+        available_tags = tags.copy()
 
         # loop over each priority starting from the highest.
         for priority in priorities:
-            alarms_at_this_prio = alarms[priority]
+            alarms_at_this_prio = alarms[priority.name]
 
             # loop over each alarm at this priority and get their related tags
             for alarm in alarms_at_this_prio:
@@ -199,7 +200,7 @@ class DashboardHandler(UseCaseHandler):
         data_parameters = dm.parameters
         data_tags = dm.tags
         data_alarms = dm.alarms.get_alarms()
-        tag_to_alarms = cls._tag_to_alarms(data_tags, data_alarms)
+        tag_to_alarms = cls._tag_to_alarms(list(data_tags), data_alarms)
 
         include = []
         removed = []
