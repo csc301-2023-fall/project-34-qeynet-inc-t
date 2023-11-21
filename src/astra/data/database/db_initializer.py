@@ -14,6 +14,17 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
+
+
+# Enable foreign key support for sqlite
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
 
 # A declarative base class that helps mapping to the relational schema
 Base = declarative_base()
@@ -51,18 +62,18 @@ class Device(Base):
     device_description: Mapped[str | None] = mapped_column()
 
     # one-to-many relationship
-    _tags: Mapped[set["Tag"]] = relationship(
+    tags = relationship(
         "Tag",
-        back_populates="_device",
+        back_populates="device",
         cascade="all, delete",
         passive_deletes=True,
         # lazy="selectin",
         # TODO: uncomment this when we need to access the
         #       tags outside the session
     )
-    _alarms: Mapped[set["Alarm"]] = relationship(
+    alarms = relationship(
         "Alarm",
-        back_populates="_device",
+        back_populates="device",
         cascade="all, delete",
         passive_deletes=True,
     )
@@ -91,22 +102,25 @@ class Tag(Base):
     device_id: Mapped[int] = mapped_column(
         ForeignKey("Device.device_id", ondelete="CASCADE")
     )
-    _device: Mapped["Device"] = relationship(back_populates="_tags")
+    device = relationship("Device", back_populates="tags")
 
     tag_name: Mapped[str]
     tag_parameter: Mapped[dict] = mapped_column(JSON)
 
     # one-to-many relationship
-    _data: Mapped[list["Data"]] = relationship(
+    data = relationship(
         "Data",
-        back_populates="_tag",
+        back_populates="tag",
         cascade="all, delete",
         passive_deletes=True,
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "tag_name", "device_id", name="tag_device_unique_constraint"
+            "tag_name",
+            "device_id",
+            name="tag_device_unique_constraint",
+            sqlite_on_conflict="REPLACE",
         ),
     )
 
@@ -117,6 +131,7 @@ class Alarm(Base):
         alarm_id (int): unique id for alarm (primary key)
         alarm_criticality (str): criticality of the alarm
                                  (Warning, Low, Medium, High, Critical)
+        alarm_data (dict): data of the alarm
         device_id (int): unique id for device (foreign key)
         device (Device): device of the alarm (many-to-one relationship)
 
@@ -132,7 +147,7 @@ class Alarm(Base):
     device_id: Mapped[int] = mapped_column(
         ForeignKey("Device.device_id", ondelete="CASCADE")
     )
-    _device: Mapped["Device"] = relationship(back_populates="_alarms")
+    device = relationship("Device", back_populates="alarms")
 
     alarm_criticality: Mapped[str]
     alarm_data: Mapped[dict] = mapped_column(JSON)
@@ -161,7 +176,7 @@ class Data(Base):
     tag_id: Mapped[int] = mapped_column(
         ForeignKey("Tag.tag_id", ondelete="CASCADE")
     )
-    _tag: Mapped["Tag"] = relationship(back_populates="_data")
+    tag = relationship("Tag", back_populates="data")
 
     timestamp: Mapped[datetime]
     value: Mapped[float | None]
@@ -171,7 +186,12 @@ class Data(Base):
     # )
 
     __table_args__ = (
-        UniqueConstraint("tag_id", "timestamp", name="data_unique_constraint"),
+        UniqueConstraint(
+            "tag_id",
+            "timestamp",
+            name="data_unique_constraint",
+            sqlite_on_conflict="REPLACE",
+        ),
     )
 
 

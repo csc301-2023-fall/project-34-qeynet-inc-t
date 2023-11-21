@@ -12,6 +12,7 @@ from astra.data.database.db_initializer import (
     Data,
 )
 
+
 # auto initialize the database
 # an Engine, which the Session will use for connection
 engine = initialize_sqlite_db()
@@ -335,9 +336,10 @@ def get_telemetry_data_by_tag(
     start_time: datetime | None,
     end_time: datetime | None,
     tag: str,
+    step: int = 1,
 ) -> list[tuple[float, datetime]]:
     """
-        All the data for the given tag for a device between start_time and end_time
+        Every <step>th data for the given tag for a device between start_time and end_time
         Should be sorted by time -- 0 earliest, <num frames> - 1 latest
         May assume: tag exists for the given device
     Args:
@@ -345,6 +347,7 @@ def get_telemetry_data_by_tag(
         start_time (datetime | None): the start time of the data
         end_time (datetime | None): the end time of the data
         tag (str): the tag of the data
+        step (int): the step of choosing the data within the given time range
 
     Returns:
         list[tuple[float, datetime]]: a list of tuple (value, timestamp) for the given
@@ -365,6 +368,35 @@ def get_telemetry_data_by_tag(
             if end_time is not None:
                 select_stmt = select_stmt.where(Data.timestamp <= end_time)
             return session.execute(select_stmt).all()
+        else:
+            raise ValueError("Device does not exist in database")
+
+
+def get_device_names() -> list[str]:
+    """
+        Return all the device names in the database
+    Returns:
+        list[str]: a list of device names
+    """
+    with Session.begin() as session:
+        select_stmt = select(Device.device_name)
+        return [device_name for device_name, in session.execute(select_stmt)]
+
+
+def delete_device(device_name: str) -> None:
+    """
+        Delete the device with the given name from the database
+        Note that all the corresponding tags and data will be deleted as well
+    Args:
+        device_name (str): the name of the device
+    """
+    device = get_device(device_name)
+    with Session.begin() as session:
+        if device:
+            delete_stmt = delete(Device).where(
+                Device.device_name == device_name
+            )
+            session.execute(delete_stmt)
         else:
             raise ValueError("Device does not exist in database")
 

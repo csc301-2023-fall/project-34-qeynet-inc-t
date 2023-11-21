@@ -142,7 +142,7 @@ def _dataframe_to_database(
     telemetry_data.to_sql(
         name="Data",
         con=engine,
-        if_exists="replace",
+        if_exists="append",
         index=False,
         method="multi",
     )
