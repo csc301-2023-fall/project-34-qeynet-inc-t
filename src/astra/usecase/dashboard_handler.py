@@ -1,8 +1,18 @@
+from copy import copy
 import queue
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable
 
+from astra.data.alarms import (
+    Alarm,
+    AlarmCriticality,
+    AlarmPriority,
+    AllEventBase,
+    AnyEventBase,
+    EventBase,
+    SOEEventBase
+)
 from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryFrame
@@ -101,6 +111,60 @@ class DashboardHandler(UseCaseHandler):
         return f'{tag_data} {units.symbol}'
 
     @classmethod
+    def _get_related_tags(cls, eventbase: EventBase) -> list[Tag]:
+        """
+        Searches through <eventbase> to find its related Tag or Tags, then returns them
+        in a list.
+
+        :param eventbase: The eventbase to search through
+        :return: A list of the related tags
+        """
+        if not (isinstance(eventbase, SOEEventBase) or isinstance(eventbase, AllEventBase)
+                or isinstance(eventbase, AnyEventBase)):
+            # base case: we have a single tag alarm. (then eventbase.tag will exist)
+            return [eventbase.tag]
+        else:
+            # recursive case: we have a compound alarm.
+            # then we must grab the tag for each of the eventbases in the compound alarm.
+            list_of_tags = []
+            for eventbase in eventbase.event_bases:
+                list_of_tags.extend(cls._get_related_tags(eventbase))
+
+        return list_of_tags
+
+
+def _tag_to_alarms(cls, tags: list[Tag],
+                   alarms: dict[AlarmPriority, list[Alarm]]) -> dict[Tag, Alarm]:
+    """
+    Finds a returns the highest priority alarm for each Tag in <tags, for use in
+    displaying some alarm data in the telemetry dashboard.
+    """
+
+    tag_to_alarms = {}
+    # List of priorities in order from highest to lowest priority
+    priorities = [AlarmCriticality.CRITICAL, AlarmCriticality.HIGH,
+                  AlarmCriticality.MEDIUM, AlarmCriticality.LOW, AlarmCriticality.WARNING]
+    available_tags = copy(tags)
+
+    # loop over each priority starting from the highest.
+    for priority in priorities:
+        alarms_at_this_prio = alarms[priority]
+
+        # loop over each alarm at this priority and get their related tags
+        for alarm in alarms_at_this_prio:
+            tags_for_this_alarm = cls._get_related_tags(alarm.event.base)
+
+            # If we haven't already seen this tag at a higher priority, add it to the dict along
+            # with the related alarm.
+            for tag in tags_for_this_alarm:
+
+                if tag in available_tags:
+                    tag_to_alarms[tag] = alarm
+                    available_tags.remove(tag)
+
+    return tag_to_alarms
+
+    @classmethod
     def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, tf: TelemetryFrame,
                             timestamp: datetime) -> tuple[list[list[str]], list[list[str]]]:
         """
@@ -115,6 +179,8 @@ class DashboardHandler(UseCaseHandler):
 
         data_parameters = dm.parameters
         data_tags = dm.tags
+        # data_alarms = dm.alarms.get_alarms()
+        # tag_to_alarms = cls._tag_to_alarms(data_tags, data_alarms)
 
         include = []
         removed = []
