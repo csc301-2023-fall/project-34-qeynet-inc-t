@@ -168,8 +168,8 @@ class View(Tk):
         dashboard_table.column("description", anchor=CENTER, width=100)
         dashboard_table.column("value", anchor=CENTER, width=80)
         dashboard_table.column("setpoint", anchor=CENTER, width=80)
-        dashboard_table.heading("tag", text="Tag", anchor=CENTER, command=self.toggle_tag)
-        dashboard_table.heading("description", text="Description", anchor=CENTER,
+        dashboard_table.heading("tag", text="Tag ●", anchor=CENTER, command=self.toggle_tag)
+        dashboard_table.heading("description", text="Description ●", anchor=CENTER,
                                 command=self.toggle_description)
         dashboard_table.heading("value", text="Value", anchor=CENTER)
         dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
@@ -270,15 +270,15 @@ class View(Tk):
         alarms_table.column("Parameter(s)", anchor=CENTER, width=100)
         alarms_table.column("Description", anchor=CENTER, width=200)
 
-        alarms_table.heading("ID", text="ID", anchor=CENTER,
+        alarms_table.heading("ID", text="ID ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('ID'))
-        alarms_table.heading("Priority", text="Priority", anchor=CENTER,
+        alarms_table.heading("Priority", text="Priority ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('PRIORITY'))
-        alarms_table.heading("Criticality", text="Criticality", anchor=CENTER,
+        alarms_table.heading("Criticality", text="Criticality ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('CRITICALITY'))
-        alarms_table.heading("Registered", text="Registered", anchor=CENTER,
+        alarms_table.heading("Registered", text="Registered ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('REGISTERED'))
-        alarms_table.heading("Confirmed", text="Confirmed", anchor=CENTER,
+        alarms_table.heading("Confirmed", text="Confirmed ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('CONFIRMED'))
         alarms_table.heading("Type", text="Type", anchor=CENTER,
                              command=lambda: self.sort_alarms('TYPE'))
@@ -309,13 +309,13 @@ class View(Tk):
 
         if header_name in headers:
             if ascending:
-                self.alarms_table.heading(header_name, text=header_name + " ↑")
+                self.alarms_table.heading(header_name, text=header_name + " ▲")
             else:
-                self.alarms_table.heading(header_name, text=header_name + " ↓")
+                self.alarms_table.heading(header_name, text=header_name + " ▼")
 
             for header in headers:
                 if header != header_name:
-                    self.alarms_table.heading(header, text=header)
+                    self.alarms_table.heading(header, text=header + " ●")
 
 
         self.refresh_alarms_table()
@@ -340,11 +340,11 @@ class View(Tk):
         if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
             ascending = self.dashboard_view_model.toggle_sort("TAG")
             if ascending:
-                self.dashboard_table.heading('tag', text='Tag ↑')
-                self.dashboard_table.heading('description', text='Description')
+                self.dashboard_table.heading('tag', text='Tag ▲')
+                self.dashboard_table.heading('description', text='Description ●')
             else:
-                self.dashboard_table.heading('tag', text='Tag ↓')
-                self.dashboard_table.heading('description', text='Description')
+                self.dashboard_table.heading('tag', text='Tag ▼')
+                self.dashboard_table.heading('description', text='Description ●')
             self.refresh_data_table()
 
     def toggle_description(self) -> None:
@@ -355,11 +355,11 @@ class View(Tk):
         if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
             ascending = self.dashboard_view_model.toggle_sort("DESCRIPTION")
             if ascending:
-                self.dashboard_table.heading('description', text='Description ↑')
-                self.dashboard_table.heading('tag', text='Tag')
+                self.dashboard_table.heading('description', text='Description ▲')
+                self.dashboard_table.heading('tag', text='Tag ●')
             else:
-                self.dashboard_table.heading('description', text='Description ↓')
-                self.dashboard_table.heading('tag', text='Tag')
+                self.dashboard_table.heading('description', text='Description ▼')
+                self.dashboard_table.heading('tag', text='Tag ●')
             self.refresh_data_table()
 
     def double_click_table_row(self, event) -> None:
