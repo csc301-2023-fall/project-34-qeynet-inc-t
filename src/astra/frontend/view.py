@@ -130,18 +130,20 @@ class View(Tk):
         self.dashboard_current_frame_number = 0
         self.dashboard_frame_navigation_text = StringVar(value='Frame --- at ---')
 
-        dashboard_frame_navigation_row = Frame(dashboard_frame)
-        dashboard_frame_navigation_row.grid(sticky='ew', row=2, column=1)
+        dashboard_frame_navigation_row_outside = Frame(dashboard_frame)
+        dashboard_frame_navigation_row_outside.grid(sticky='ew', row=2, column=1)
+        dashboard_frame_navigation_row = Frame(dashboard_frame_navigation_row_outside)
+        dashboard_frame_navigation_row.pack(expand=False)
         Button(dashboard_frame_navigation_row, text='|<',
-               command=self.first_frame).pack(side="left")
+               command=self.first_frame).grid(sticky='w', row=0, column=0)
         Button(dashboard_frame_navigation_row, text='<',
-               command=self.decrement_frame).pack(side="left")
+               command=self.decrement_frame).grid(sticky='w', row=0, column=1)
         (Label(dashboard_frame_navigation_row, textvariable=self.dashboard_frame_navigation_text)
-         .pack(expand=True, side="left"))
+         .grid(sticky='ew', row=0, column=2))
         Button(dashboard_frame_navigation_row, text='>',
-               command=self.increment_frame).pack(side="right")
+               command=self.increment_frame).grid(sticky='e', row=0, column=3)
         Button(dashboard_frame_navigation_row, text='>|',
-               command=self.last_frame).pack(side="right")
+               command=self.last_frame).grid(sticky='e', row=0, column=4)
 
         # dashboard table
         style = ttk.Style()
