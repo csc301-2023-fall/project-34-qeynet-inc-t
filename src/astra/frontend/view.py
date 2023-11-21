@@ -68,8 +68,12 @@ class View(Tk):
         num_rows = height // 4
         for i in range(num_rows):
             dashboard_frame.grid_rowconfigure(i, weight=1)
+            alarms_frame.grid_rowconfigure(i, weight=1)
         dashboard_frame.grid_columnconfigure(0, weight=1)
         dashboard_frame.grid_columnconfigure(1, weight=2)
+
+        alarms_frame.grid_columnconfigure(0, weight=0)
+        alarms_frame.grid_columnconfigure(1, weight=1)
 
         # adding the tabs to the tab control
         tab_control.add(dashboard_frame, text='Dashboard')
@@ -243,13 +247,16 @@ class View(Tk):
         button.grid(sticky="news", row=2, column=7)
         # alarms table
         alarms_table_frame = Frame(alarms_frame)
-        alarms_table_frame.grid(sticky='NSEW', row=2, column=1)
+        alarms_table_frame.grid(sticky='NSEW', row=2, column=1, rowspan=num_rows-3)
         style = ttk.Style()
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
-        alarms_table = ttk.Treeview(alarms_table_frame, height=10, padding=3)
+        alarms_table = ttk.Treeview(alarms_table_frame, padding=3)
+        alarms_table_scroll = ttk.Scrollbar(alarms_table_frame, orient="vertical", command=alarms_table.yview)
+        alarms_table.configure(yscrollcommand=alarms_table_scroll.set)
+        alarms_table_scroll.pack(side="right", fill="y")
         self.alarms_table = alarms_table
-        alarms_table.pack()
+        alarms_table.pack(fill="both", expand=True, side="left")
         alarms_table['columns'] = (
             "ID", "Priority", "Criticality", "Registered", "Confirmed", "Type", "Parameter(s)",
             "Description")
