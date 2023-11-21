@@ -26,6 +26,7 @@ DESCRIPTION = 'DESCRIPTION'
 DESCENDING = '<'
 DATA = 'DATA'
 CONFIG = 'CONFIG'
+ROUNDING_DECMIALS = 2
 # For now, this choice is somewhat arbitrary
 CACHE_SIZE = 20
 
@@ -108,7 +109,7 @@ class DashboardHandler(UseCaseHandler):
             return 'None'
         if units is None:
             return str(tag_data)
-        return f'{tag_data} {units.symbol}'
+        return f'{round(tag_data, ROUNDING_DECMIALS)} {units.symbol}'
 
     @classmethod
     def _get_related_tags(cls, eventbase: EventBase) -> list[Tag]:
