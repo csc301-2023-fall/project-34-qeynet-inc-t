@@ -111,6 +111,21 @@ class DashboardHandler(UseCaseHandler):
         return f'{tag_data} {units.symbol}'
 
     @classmethod
+    def _format_alarm_data(cls, alarm: Alarm | None) -> str:
+        """
+        Gets the relevant data from <alarm> and formats it for display in the telemetry dashboard.
+
+        :param alarm: the alarm to get data from
+        :return: a string that contains alarm data formatted for display in the telemetry dashboard.
+        """
+
+        if alarm is None:
+            return 'None'
+        else:
+            eventbase_description = alarm.event.base.description
+            return f'{alarm.priority}: \n {eventbase_description}'
+
+    @classmethod
     def _get_related_tags(cls, eventbase: EventBase) -> list[Tag]:
         """
         Searches through <eventbase> to find its related Tag or Tags, then returns them
@@ -135,8 +150,12 @@ class DashboardHandler(UseCaseHandler):
     def _tag_to_alarms(cls, tags: list[Tag],
                        alarms: dict[AlarmPriority, list[Alarm]]) -> dict[Tag, Alarm]:
         """
-        Finds a returns the highest priority alarm for each Tag in <tags, for use in
+        Finds and returns the highest priority alarm for each Tag in <tags, for use in
         displaying some alarm data in the telemetry dashboard.
+
+        :param tags: The list of tags to find alarms for
+        :param alarms: The alarms to search through
+        :return: A dictionary mapping each tag to its highest priority alarm
         """
 
         tag_to_alarms = {}
@@ -178,8 +197,8 @@ class DashboardHandler(UseCaseHandler):
 
         data_parameters = dm.parameters
         data_tags = dm.tags
-        # data_alarms = dm.alarms.get_alarms()
-        # tag_to_alarms = cls._tag_to_alarms(data_tags, data_alarms)
+        data_alarms = dm.alarms.get_alarms()
+        tag_to_alarms = cls._tag_to_alarms(data_tags, data_alarms)
 
         include = []
         removed = []
@@ -188,7 +207,9 @@ class DashboardHandler(UseCaseHandler):
 
             tag_parameters = data_parameters[tag]
             tag_description = tag_parameters.description
-            
+            # None if no alarm for this tag
+            tag_alarm = tag_to_alarms.get(tag, None)
+
             # creating the string for the tag value
             raw_timestamp_data = tf.data[tag]
             tag_data = eval_param_value(tag_parameters, raw_timestamp_data)
@@ -200,12 +221,13 @@ class DashboardHandler(UseCaseHandler):
 
             tag_value = cls._format_param_value(tag_data, tag_parameters.display_units)
             tag_setpoint = cls._format_param_value(tag_setpoint_value, tag_parameters.display_units)
+            tag_alarm_data = cls._format_alarm_data(tag_alarm)
 
             include_tag = tag in input_tags
             if include_tag:
-                include.append([tag, tag_description, tag_value, tag_setpoint])
+                include.append([tag, tag_description, tag_value, tag_setpoint, tag_alarm_data])
             else:
-                removed.append([tag, tag_description, tag_value, tag_setpoint])
+                removed.append([tag, tag_description, tag_value, tag_setpoint, tag_alarm_data])
         return include, removed
 
     @classmethod
