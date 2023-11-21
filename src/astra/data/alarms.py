@@ -1,58 +1,82 @@
 import functools
+from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import NewType
+from functools import cached_property
+from typing import NewType, override
 
 from astra.data.parameters import ParameterValue, Tag
 
 
 @dataclass(frozen=True)
-class EventBase:
+class EventBase(ABC):
     persistence: float | None
     description: str
 
+    @property
+    @abstractmethod
+    def tags(self) -> Iterable[Tag]:
+        raise NotImplementedError
+
 
 @dataclass(frozen=True)
-class RateOfChangeEventBase(EventBase):
+class SimpleEventBase(EventBase):
     tag: Tag
+
+    @override
+    @cached_property
+    def tags(self) -> Iterable[Tag]:
+        return {self.tag}
+
+
+@dataclass(frozen=True)
+class CompoundEventBase(EventBase):
+    event_bases: list[EventBase]
+
+    @override
+    @cached_property
+    def tags(self) -> Iterable[Tag]:
+        return {tag for event_base in self.event_bases for tag in event_base.tags}
+
+
+@dataclass(frozen=True)
+class RateOfChangeEventBase(SimpleEventBase):
     rate_of_fall_threshold: float | None
     rate_of_rise_threshold: float | None
     time_window: float
 
 
 @dataclass(frozen=True)
-class StaticEventBase(EventBase):
-    tag: Tag
+class StaticEventBase(SimpleEventBase):
+    pass
 
 
 @dataclass(frozen=True)
-class ThresholdEventBase(EventBase):
-    tag: Tag
+class ThresholdEventBase(SimpleEventBase):
     lower_threshold: float | None
     upper_threshold: float | None
 
 
 @dataclass(frozen=True)
-class SetpointEventBase(EventBase):
-    tag: Tag
+class SetpointEventBase(SimpleEventBase):
     setpoint: ParameterValue
 
 
 @dataclass(frozen=True)
-class SOEEventBase(EventBase):
-    event_bases: list[EventBase]
+class SOEEventBase(CompoundEventBase):
     intervals: list[tuple[float, float | None]]
 
 
 @dataclass(frozen=True)
-class AllEventBase(EventBase):
-    event_bases: list[EventBase]
+class AllEventBase(CompoundEventBase):
+    pass
 
 
 @dataclass(frozen=True)
-class AnyEventBase(EventBase):
-    event_bases: list[EventBase]
+class AnyEventBase(CompoundEventBase):
+    pass
 
 
 EventID = NewType('EventID', int)
