@@ -351,8 +351,9 @@ def get_telemetry_data_by_tag(
         step (int): the step of choosing the data within the given time range
 
     Returns:
-        list[tuple[float, datetime]]: a list of tuple (value, timestamp) for the given
-                                      device/tag between start_time and end_time
+        list[tuple[float, datetime]]:
+            a list of tuple (value, timestamp) for the given device/tag between
+            start_time and end_time
     """
     device = get_device(device_name)
     with Session.begin() as session:
@@ -371,9 +372,9 @@ def get_telemetry_data_by_tag(
             )
 
             if start_time is not None:
-                query = sub_query.filter(Data.timestamp >= start_time)
+                sub_query = sub_query.filter(Data.timestamp >= start_time)
             if end_time is not None:
-                query = sub_query.filter(Data.timestamp <= end_time)
+                sub_query = sub_query.filter(Data.timestamp <= end_time)
 
             sub_query_alias = sub_query.subquery()
 
