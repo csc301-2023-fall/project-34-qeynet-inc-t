@@ -48,12 +48,28 @@ class View(Tk):
         self.dashboard_view_model = DashboardViewModel()
         self.alarms_view_model = AlarmsViewModel()
 
+        # Get the screen size information, and fullscreen the app
+        width = self.winfo_screenwidth()
+        height = self.winfo_screenheight()
+        self.geometry("%dx%d" % (width, height))
+        self.state('zoomed')
+        
         # tab widget
         tab_control = ttk.Notebook(self)
 
         # frames corresponding to each tab
         dashboard_frame = ttk.Frame(tab_control)
         alarms_frame = ttk.Frame(tab_control)
+
+        # Needs testing
+        # I do not know of a clever way of doing this. To ensure even
+        # spacing, I want each row to be always the same number of pixels
+        # so the number of rows should change according to the window height
+        num_rows = height // 4
+        for i in range(num_rows):
+            dashboard_frame.grid_rowconfigure(i, weight=1)
+        dashboard_frame.grid_columnconfigure(0, weight=1)
+        dashboard_frame.grid_columnconfigure(1, weight=2)
 
         # adding the tabs to the tab control
         tab_control.add(dashboard_frame, text='Dashboard')
@@ -67,11 +83,20 @@ class View(Tk):
 
         dashboard_filter_tags = Frame(dashboard_frame)
         dashboard_filter_tags.config(background='#fff')
-        dashboard_filter_tags.grid(sticky='W', row=0, column=0, rowspan=20)
+        dashboard_filter_tags.grid_columnconfigure(0, weight=1)
+        dashboard_filter_tags.grid_columnconfigure(1, weight=1)
+        for i in range(num_rows):
+            dashboard_filter_tags.grid_rowconfigure(i, weight=1)
+        dashboard_filter_tags.grid(sticky='NSEW', row=0, column=0, rowspan=num_rows-1, padx=(0, 3))
         Label(dashboard_filter_tags, text="Parameters to display", background='#fff').grid(
-            row=0, column=0, columnspan=2)
-        Label(dashboard_filter_tags, text="Search", background='#fff').grid(row=1, column=0)
-        Entry(dashboard_filter_tags, textvariable=self.dashboard_search_bar).grid(row=1, column=1)
+            sticky='NSEW', row=0, column=0, columnspan=2)
+        dashboard_tag_search_area = Frame(dashboard_filter_tags)
+        dashboard_tag_search_area.config(background='#fff')
+        dashboard_tag_search_area.grid_columnconfigure(0, weight=1)
+        dashboard_tag_search_area.grid_columnconfigure(1, weight=3)
+        dashboard_tag_search_area.grid(sticky='NSEW', row=1, column=0, columnspan=2)
+        Label(dashboard_tag_search_area, text="Search", background='#fff').grid(sticky='NSEW', row=0, column=0)
+        Entry(dashboard_tag_search_area, textvariable=self.dashboard_search_bar).grid(sticky='NSEW', row=0, column=1)
         self.dashboard_search_bar.trace_add("write", self.search_bar_change)
         # TODO
         (Button(dashboard_filter_tags, text="Check all search results",
@@ -79,22 +104,22 @@ class View(Tk):
         # TODO
         (Button(dashboard_filter_tags, text="Uncheck all search results",
                 wraplength=80, command=self.deselect_all_tags).grid(row=2, column=1, rowspan=2))
-        tag_table = ttk.Treeview(dashboard_filter_tags, height=12, show='tree')
+        tag_table = ttk.Treeview(dashboard_filter_tags, show='tree')
         self.data_tag_table = tag_table
         tag_table['columns'] = ("tag")
         tag_table.column("#0", width=0, stretch=NO)
         tag_table.column("tag")
-        tag_table.grid(row=4, column=0, columnspan=2)
+        tag_table.grid(sticky='NEWS', row=4, column=0, columnspan=2, rowspan=num_rows-4)
         tag_table.bind('<ButtonRelease-1>', self.toggle_tag_table_row)
 
         add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
-        add_data_button.grid(sticky="W", row=0, column=1)
+        add_data_button.grid(sticky='W', row=0, column=1)
 
         self.start_time = StringVar()
         self.end_time = StringVar()
 
         dashboard_time_range_row = Frame(dashboard_frame)
-        dashboard_time_range_row.grid(sticky='W', row=1, column=1)
+        dashboard_time_range_row.grid(sticky='ew', row=1, column=1)
         Label(dashboard_time_range_row, text='From').grid(row=0, column=0)
         Entry(dashboard_time_range_row, textvariable=self.start_time).grid(row=0, column=1)
         Label(dashboard_time_range_row, text='to').grid(row=0, column=2)
@@ -106,7 +131,7 @@ class View(Tk):
         self.dashboard_frame_navigation_text = StringVar(value='Frame --- at ---')
 
         dashboard_frame_navigation_row = Frame(dashboard_frame)
-        dashboard_frame_navigation_row.grid(sticky='W', row=2, column=1)
+        dashboard_frame_navigation_row.grid(sticky='ew', row=2, column=1)
         Button(dashboard_frame_navigation_row, text='|<',
                command=self.first_frame).grid(row=0, column=0)
         Button(dashboard_frame_navigation_row, text='<',
@@ -125,7 +150,7 @@ class View(Tk):
         dashboard_table = ttk.Treeview(dashboard_frame, height=10, padding=3)
         self.dashboard_table = dashboard_table
         dashboard_table['columns'] = ("tag", "description", "value", "setpoint")
-        dashboard_table.grid(sticky="W", row=10, column=1)
+        dashboard_table.grid(sticky='NSEW', row=4, column=1, rowspan=num_rows-5)
         dashboard_table.column("#0", width=0, stretch=NO)
         dashboard_table.column("tag", anchor=CENTER, width=80)
         dashboard_table.column("description", anchor=CENTER, width=100)
@@ -143,14 +168,14 @@ class View(Tk):
         # alarms notifications
         alarms_notifications = Frame(alarms_frame)
         alarms_notifications.config(background='#fff')
-        alarms_notifications.grid(sticky='W', row=0, column=0, rowspan=20)
+        alarms_notifications.grid(sticky='NSEW', row=0, column=0, rowspan=20)
 
         # alarms filters (for the table)
         alarms_tag_table = Frame(alarms_frame)
         style = ttk.Style()
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
-        alarms_tag_table.grid(sticky="W", row=1, column=1)
+        alarms_tag_table.grid(sticky='NSEW', row=1, column=1)
         dangers = ['WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
         types = ['RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR']
 
@@ -210,7 +235,7 @@ class View(Tk):
         button.grid(sticky="news", row=2, column=7)
         # alarms table
         alarms_table_frame = Frame(alarms_frame)
-        alarms_table_frame.grid(sticky="W", row=2, column=1)
+        alarms_table_frame.grid(sticky='NSEW', row=2, column=1)
         style = ttk.Style()
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
