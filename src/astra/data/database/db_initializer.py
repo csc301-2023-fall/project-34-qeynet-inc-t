@@ -170,6 +170,10 @@ class Data(Base):
     #     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     # )
 
+    __table_args__ = (
+        UniqueConstraint("tag_id", "timestamp", name="data_unique_constraint"),
+    )
+
 
 if __name__ == "__main__":
     initialize_sqlite_db()
