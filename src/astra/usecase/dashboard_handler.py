@@ -16,6 +16,7 @@ DESCRIPTION = 'DESCRIPTION'
 DESCENDING = '<'
 DATA = 'DATA'
 CONFIG = 'CONFIG'
+ROUNDING_DECMIALS = 2
 # For now, this choice is somewhat arbitrary
 CACHE_SIZE = 20
 
@@ -98,7 +99,7 @@ class DashboardHandler(UseCaseHandler):
             return 'None'
         if units is None:
             return str(tag_data)
-        return f'{tag_data} {units.symbol}'
+        return f'{round(tag_data, ROUNDING_DECMIALS)} {units.symbol}'
 
     @classmethod
     def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, tf: TelemetryFrame,
