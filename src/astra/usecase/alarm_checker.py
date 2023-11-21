@@ -26,6 +26,6 @@ def check_alarms(dm: DataManager,
         criticality = alarm_base.criticality
 
         strategy = get_strategy(base)
-        new_thread = Thread(target=strategy, args=[dm, base, criticality, earliest_time])
+        new_thread = Thread(target=strategy, args=[dm, base, criticality, earliest_time, False])
         threads.append(new_thread)
         new_thread.start()
