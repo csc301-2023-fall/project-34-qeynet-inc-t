@@ -133,37 +133,36 @@ class DashboardHandler(UseCaseHandler):
 
         return list_of_tags
 
+    def _tag_to_alarms(cls, tags: list[Tag],
+                       alarms: dict[AlarmPriority, list[Alarm]]) -> dict[Tag, Alarm]:
+        """
+        Finds a returns the highest priority alarm for each Tag in <tags, for use in
+        displaying some alarm data in the telemetry dashboard.
+        """
 
-def _tag_to_alarms(cls, tags: list[Tag],
-                   alarms: dict[AlarmPriority, list[Alarm]]) -> dict[Tag, Alarm]:
-    """
-    Finds a returns the highest priority alarm for each Tag in <tags, for use in
-    displaying some alarm data in the telemetry dashboard.
-    """
+        tag_to_alarms = {}
+        # List of priorities in order from highest to lowest priority
+        priorities = [AlarmCriticality.CRITICAL, AlarmCriticality.HIGH,
+                      AlarmCriticality.MEDIUM, AlarmCriticality.LOW, AlarmCriticality.WARNING]
+        available_tags = copy(tags)
 
-    tag_to_alarms = {}
-    # List of priorities in order from highest to lowest priority
-    priorities = [AlarmCriticality.CRITICAL, AlarmCriticality.HIGH,
-                  AlarmCriticality.MEDIUM, AlarmCriticality.LOW, AlarmCriticality.WARNING]
-    available_tags = copy(tags)
+        # loop over each priority starting from the highest.
+        for priority in priorities:
+            alarms_at_this_prio = alarms[priority]
 
-    # loop over each priority starting from the highest.
-    for priority in priorities:
-        alarms_at_this_prio = alarms[priority]
+            # loop over each alarm at this priority and get their related tags
+            for alarm in alarms_at_this_prio:
+                tags_for_this_alarm = cls._get_related_tags(alarm.event.base)
 
-        # loop over each alarm at this priority and get their related tags
-        for alarm in alarms_at_this_prio:
-            tags_for_this_alarm = cls._get_related_tags(alarm.event.base)
+                # If we haven't already seen this tag at a higher priority, add it to the dict along
+                # with the related alarm.
+                for tag in tags_for_this_alarm:
 
-            # If we haven't already seen this tag at a higher priority, add it to the dict along
-            # with the related alarm.
-            for tag in tags_for_this_alarm:
+                    if tag in available_tags:
+                        tag_to_alarms[tag] = alarm
+                        available_tags.remove(tag)
 
-                if tag in available_tags:
-                    tag_to_alarms[tag] = alarm
-                    available_tags.remove(tag)
-
-    return tag_to_alarms
+        return tag_to_alarms
 
     @classmethod
     def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, tf: TelemetryFrame,

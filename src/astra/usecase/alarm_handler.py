@@ -119,7 +119,7 @@ class AlarmsFilters:
     sort: tuple[str, str] | None
     priorities: set[AlarmPriority] | None
     criticalities: set[AlarmCriticality] | None
-    types: Iterable[str] | None
+    types: set[str] | None
     registered_start_time: datetime | None
     registered_end_time: datetime | None
     confirmed_start_time: datetime | None

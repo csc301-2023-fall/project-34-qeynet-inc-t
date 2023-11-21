@@ -7,7 +7,7 @@ from astra.data.data_manager import DataManager
 from ..data.alarms import AlarmCriticality, AlarmPriority
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
-VALID_SORTING_COLUMNS = ['PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
 RATE_OF_CHANGE = 'RATE_OF_CHANGE'
 STATIC = 'STATIC'
 THRESHOLD = 'THRESHOLD'
@@ -166,7 +166,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.criticalities = criticalities
 
     @classmethod
-    def set_shown_types(cls, types: Iterable[str]):
+    def set_shown_types(cls, types: set[str]):
         """
         Sets <cls.filters.types> to the set of types to be shown
 
