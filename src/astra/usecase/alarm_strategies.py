@@ -264,10 +264,12 @@ def roc_from_time_check(data: Mapping[datetime, ParameterValue | None], times: l
     Gets the rate of change of the tag within the <td> from <start_date> to <end_date>.
 
     :param data: The data to check
-    :param times: The times associated with the data
+    :param times: The times associated with <data> (its keys)
     :param start_date: The start date to check from
     :param end_date: The end date to check to
     :return: The rate of change of the tag within the <td> from <start_date> to <end_date>.
+
+    PRECONDITION: <start_date> is in <times> and <times> are the keys of <data>.
     """
     end_date = start_date + timedelta(seconds=time_window)
     prev_value = data[start_date]
