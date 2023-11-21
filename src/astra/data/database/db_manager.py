@@ -339,7 +339,8 @@ def get_telemetry_data_by_tag(
     step: int = 1,
 ) -> list[tuple[float, datetime]]:
     """
-        Every <step>th data for the given tag for a device between start_time and end_time
+        Every <step>th data for the given tag for a device between
+        start_time and end_time
         Should be sorted by time -- 0 earliest, <num frames> - 1 latest
         May assume: tag exists for the given device
     Args:
@@ -357,17 +358,30 @@ def get_telemetry_data_by_tag(
     with Session.begin() as session:
         if device:
             device_id = device.device_id
-            select_stmt = (
-                select(Data.value, Data.timestamp)
-                .where(Data.tag_id == Tag.tag_id)
-                .where(Tag.device_id == device_id)
-                .where(Tag.tag_name == tag)
+            sub_query = session.query(
+                Data.value.label("value"),
+                Data.timestamp.label("timestamp"),
+                func.row_number()
+                .over(partition_by=Data.tag_id, order_by=Data.timestamp)
+                .label("row_number"),
+            ).filter(
+                Data.tag_id == Tag.tag_id,
+                Tag.device_id == device_id,
+                Tag.tag_name == tag,
             )
+
             if start_time is not None:
-                select_stmt = select_stmt.where(Data.timestamp >= start_time)
+                query = sub_query.filter(Data.timestamp >= start_time)
             if end_time is not None:
-                select_stmt = select_stmt.where(Data.timestamp <= end_time)
-            return session.execute(select_stmt).all()
+                query = sub_query.filter(Data.timestamp <= end_time)
+
+            sub_query_alias = sub_query.subquery()
+
+            query = session.query(
+                sub_query_alias.c.value, sub_query_alias.c.timestamp
+            ).filter((sub_query_alias.c.row_number - 1) % step == 0)
+
+            return query
         else:
             raise ValueError("Device does not exist in database")
 
