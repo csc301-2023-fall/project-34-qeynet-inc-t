@@ -133,15 +133,15 @@ class View(Tk):
         dashboard_frame_navigation_row = Frame(dashboard_frame)
         dashboard_frame_navigation_row.grid(sticky='ew', row=2, column=1)
         Button(dashboard_frame_navigation_row, text='|<',
-               command=self.first_frame).grid(row=0, column=0)
+               command=self.first_frame).pack(side="left")
         Button(dashboard_frame_navigation_row, text='<',
-               command=self.decrement_frame).grid(row=0, column=1)
+               command=self.decrement_frame).pack(side="left")
         (Label(dashboard_frame_navigation_row, textvariable=self.dashboard_frame_navigation_text)
-         .grid(row=0, column=2))
+         .pack(expand=True, side="left"))
         Button(dashboard_frame_navigation_row, text='>',
-               command=self.increment_frame).grid(row=0, column=3)
+               command=self.increment_frame).pack(side="right")
         Button(dashboard_frame_navigation_row, text='>|',
-               command=self.last_frame).grid(row=0, column=4)
+               command=self.last_frame).pack(side="right")
 
         # dashboard table
         style = ttk.Style()
