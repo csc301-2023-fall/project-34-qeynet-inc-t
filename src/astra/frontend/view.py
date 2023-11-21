@@ -105,6 +105,9 @@ class View(Tk):
         (Button(dashboard_filter_tags, text="Uncheck all search results",
                 wraplength=80, command=self.deselect_all_tags).grid(row=2, column=1, rowspan=2))
         tag_table = ttk.Treeview(dashboard_filter_tags, show='tree')
+        tag_table_scroll = ttk.Scrollbar(dashboard_filter_tags, orient="vertical", command=tag_table.yview)
+        tag_table.configure(yscrollcommand=tag_table_scroll.set)
+        tag_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows-4)
         self.data_tag_table = tag_table
         tag_table['columns'] = ("tag")
         tag_table.column("#0", width=0, stretch=NO)
@@ -150,6 +153,9 @@ class View(Tk):
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
         dashboard_table = ttk.Treeview(dashboard_frame, height=10, padding=3)
+        dashboard_table_scroll = ttk.Scrollbar(dashboard_frame, orient="vertical", command=dashboard_table.yview)
+        dashboard_table.configure(yscrollcommand=dashboard_table_scroll.set)
+        dashboard_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows-5)
         self.dashboard_table = dashboard_table
         dashboard_table['columns'] = ("tag", "description", "value", "setpoint")
         dashboard_table.grid(sticky='NSEW', row=4, column=1, rowspan=num_rows-5)
