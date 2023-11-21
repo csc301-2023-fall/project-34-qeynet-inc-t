@@ -299,7 +299,25 @@ class View(Tk):
             self._dm.alarms.observer.add_watcher(self.construct_alarms_table)
 
     def sort_alarms(self, tag: str):
-        self.alarms_view_model.toggle_sort(heading=tag)
+        headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed']
+        ascending = self.alarms_view_model.toggle_sort(heading=tag)
+
+        if tag != 'ID':
+            header_name = tag[0] + tag[1:].lower()
+        else:
+            header_name = tag
+
+        if header_name in headers:
+            if ascending:
+                self.alarms_table.heading(header_name, text=header_name + " ↑")
+            else:
+                self.alarms_table.heading(header_name, text=header_name + " ↓")
+
+            for header in headers:
+                if header != header_name:
+                    self.alarms_table.heading(header, text=header)
+
+
         self.refresh_alarms_table()
 
     def flick_priority(self, tag: Tag):
@@ -320,7 +338,13 @@ class View(Tk):
         in the dashboard table
         """
         if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            self.dashboard_view_model.toggle_sort("TAG")
+            ascending = self.dashboard_view_model.toggle_sort("TAG")
+            if ascending:
+                self.dashboard_table.heading('tag', text='Tag ↑')
+                self.dashboard_table.heading('description', text='Description')
+            else:
+                self.dashboard_table.heading('tag', text='Tag ↓')
+                self.dashboard_table.heading('description', text='Description')
             self.refresh_data_table()
 
     def toggle_description(self) -> None:
@@ -329,7 +353,13 @@ class View(Tk):
         in the dashboard table
         """
         if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            self.dashboard_view_model.toggle_sort("DESCRIPTION")
+            ascending = self.dashboard_view_model.toggle_sort("DESCRIPTION")
+            if ascending:
+                self.dashboard_table.heading('description', text='Description ↑')
+                self.dashboard_table.heading('tag', text='Tag')
+            else:
+                self.dashboard_table.heading('description', text='Description ↓')
+                self.dashboard_table.heading('tag', text='Tag')
             self.refresh_data_table()
 
     def double_click_table_row(self, event) -> None:

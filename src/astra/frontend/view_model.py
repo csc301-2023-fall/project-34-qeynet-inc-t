@@ -67,7 +67,7 @@ class DashboardViewModel:
     def get_num_frames(self) -> int:
         return self._num_frames
 
-    def toggle_sort(self, heading: str) -> None:
+    def toggle_sort(self, heading: str) -> bool:
         """
         Method for toggling sorting on a specific heading
         The headings include (for now):
@@ -96,6 +96,7 @@ class DashboardViewModel:
 
         self.model.receive_updates()
         self.update_table_entries()
+        return sort_value == 1
 
     # def toggle_tag(self, tags: Iterable[Tag]) -> None:
     #     self.model.request_receiver.set_shown_tags(tags)
@@ -244,7 +245,7 @@ class AlarmsViewModel:
         self.model.receive_updates()
         self.update_table_entries()
 
-    def toggle_sort(self, heading: Tag) -> None:
+    def toggle_sort(self, heading: Tag) -> bool:
         """
         Method for toggling sorting on a specific heading
         The headings include (for now):
@@ -282,13 +283,14 @@ class AlarmsViewModel:
 
         if sort_value == 1:
             # ascending
-            self.model.request_receiver.update_sort(('>', heading))
+            self.model.request_receiver.update_sort(('<', heading))
         elif sort_value == -1:
             # descending
-            self.model.request_receiver.update_sort(('<', heading))
+            self.model.request_receiver.update_sort(('>', heading))
 
         self.model.receive_updates()
         self.update_table_entries()
+        return sort_value == 1
 
     def toggle_priority(self, tag: Tag):
         """
