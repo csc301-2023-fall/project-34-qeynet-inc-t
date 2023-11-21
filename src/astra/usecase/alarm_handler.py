@@ -289,7 +289,7 @@ class AlarmsHandler(UseCaseHandler):
         removed = []
         for priority in PRIORITIES:
             for alarm in dm[priority]:
-                new_row = cls._extract_alarm_data(alarm, priority)
+                new_row = cls._extract_alarm_data(alarm, AlarmPriority(priority))
                 if cls._determine_toggled(alarm, filter_args):
                     shown.append(new_row)
                 else:

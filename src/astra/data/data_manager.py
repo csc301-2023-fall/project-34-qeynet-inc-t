@@ -117,7 +117,8 @@ class AlarmsContainer:
 
                         # Case for the first timer interval the alarm has not yet reached
                         if alarm.event.creation_time < endpoint_time and not alarm_timer_vals:
-                            priority = apm[timedelta(minutes=times[i - 1])][criticality]
+                            priority_name = apm[timedelta(minutes=times[i - 1])][criticality]
+                            priority = AlarmPriority(priority_name)
                             cls.alarms[priority].append(alarm)
                             alarm.priority = priority
                             new_alarms.append([alarm, priority])
