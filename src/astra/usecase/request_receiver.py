@@ -1,6 +1,7 @@
 import queue
 from abc import ABC, abstractmethod
 from datetime import datetime
+from threading import Thread
 from typing import Any, Iterable
 from .alarm_checker import check_alarms
 from .use_case_handlers import UseCaseHandler
@@ -250,4 +251,5 @@ class DataRequestReceiver(RequestReceiver):
 
         earliest_time = previous_data.add_data_from_file(cls.file)
 
-        check_alarms(previous_data, earliest_time)
+        checking_thread = Thread(target=check_alarms, args=[previous_data, earliest_time])
+        checking_thread.start()

@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from threading import Thread
 from .alarm_strategies import get_strategy
@@ -22,6 +23,9 @@ def check_alarms(dm: DataManager,
     threads = []
     alarm_bases = dm.alarm_bases
     for alarm_base in alarm_bases:
+        # because of overhead of making new threads + GIL, we take breaks between thread creation
+        # to minimize bottleneck
+        time.sleep(0.1)
         base = alarm_base.event_base
         criticality = alarm_base.criticality
 
