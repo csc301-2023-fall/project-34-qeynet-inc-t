@@ -1,0 +1,45 @@
+alarms:
+- criticality: WARNING
+  event:
+    tag: a6
+    type: rate_of_change
+    description: rate of change alarm
+    persistence: 3
+    rate_of_fall_threshold: 1
+    rate_of_rise_threshold: 1
+    time_window: 1
+- criticality: LOW
+  event:
+    tag: Bb5
+    type: static
+    description: static alarm
+    persistence: 10
+metadata:
+  comments: ''
+  commission: '2022-12-23 04:16:34'
+  description: Device V1.
+  device: test_config1
+  license: All Rights Reserved
+  manufacturer: QEYnet Inc.
+  model: qrx-rev4
+  modified: '2023-11-06 09:30:02'
+  n_alarms: '20'
+  n_tags: '20'
+  owner: QEYnet Inc.
+  software: 0.12.0
+  version: '1.1'
+tags:
+- e4:
+    description: Pawn e2-e4
+    display_units: null
+    dtype: bool
+    setpoint: true
+- Nf3:
+    description: Knight g1-f3
+    display_units:
+      constant: 0
+      description: millimetres
+      multiplier: 1000
+      symbol: mm
+    dtype: float
+    setpoint: 1

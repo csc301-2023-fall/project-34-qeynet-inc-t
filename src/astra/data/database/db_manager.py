@@ -210,7 +210,7 @@ def get_tag_id_name(device_name: str) -> list[tuple[int, str]]:
             .filter(Tag.device_id == Device.device_id)
             .filter(Device.device_name == device_name)
         )
-        return tag_id_name
+        return tag_id_name.all()
 
 
 def num_telemetry_frames(
@@ -443,7 +443,7 @@ def get_telemetry_data_by_tag(
                 sub_query_alias.c.value, sub_query_alias.c.timestamp
             ).filter((sub_query_alias.c.row_number - 1) % step == 0)
 
-            return query
+            return query.all()
         else:
             raise ValueError("Device does not exist in database")
 
