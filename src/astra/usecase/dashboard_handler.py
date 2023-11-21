@@ -189,7 +189,7 @@ class DashboardHandler(UseCaseHandler):
 
             tag_parameters = data_parameters[tag]
             tag_description = tag_parameters.description
-
+            
             # creating the string for the tag value
             raw_timestamp_data = tf.data[tag]
             tag_data = eval_param_value(tag_parameters, raw_timestamp_data)
