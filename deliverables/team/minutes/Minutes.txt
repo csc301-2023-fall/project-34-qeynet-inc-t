@@ -112,3 +112,14 @@ Thursday, Nov 9, 15:00-16:30
     - Persistence for compound alarms "stacks" (specifics further clarified after the meeting)
     - OR alarm description: include the active events involved
     - Do not perform "merging" of successive alarms of the same kind for now
+
+Wednesday, Nov 15, 14:00-14:55
+- Team presented Astra D3.2 to partner, consisting of the telemetry and alarm tabs
+- Team TODOs:
+  - Use time elapsed since alarm when determining priority
+  - Add ability to acknowledge and remove alarms
+- Discussed more specific details of alarm checking
+  - Rate of change alarms
+  - For now: still many things not fully decided; team should prioritize other areas if needed
+- Tentatively: meet again in about two weeks (Monday, Nov 27)
+- Team TODO: discuss logistics of D4 presentations; let partner know by Thursday/Friday
