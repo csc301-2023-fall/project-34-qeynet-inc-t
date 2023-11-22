@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from heapq import heapify, heappush, heappop
 from queue import Queue
 
 from astra.data.alarms import (AlarmPriority, AlarmCriticality, RateOfChangeEventBase, Alarm,
@@ -20,11 +19,10 @@ DESCENDING = '>'
 PRIORITIES = [AlarmPriority.WARNING.name, AlarmPriority.LOW.name, AlarmPriority.MEDIUM.name,
               AlarmPriority.HIGH.name, AlarmPriority.CRITICAL.name]
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
-NEW_QUEUE_MAX_SIZE = 3
-OLD_QUEUE_MAX_SIZE = 3
 NEW_QUEUE_KEY = 'n'
 OLD_QUEUE_KEY = 'o'
 NEW_PREFIX = "[NEW] "
+MAX_BANNER_SIZE = 6
 
 
 class LimitedSlotAlarms:
@@ -40,12 +38,10 @@ class LimitedSlotAlarms:
     @classmethod
     def __init__(cls):
         cls._priorities = [NEW_QUEUE_KEY, OLD_QUEUE_KEY]
-        new_queue = Queue()
+        new_queue = []
         old_queue = []
-        heapify(old_queue)
 
         cls._slots = {NEW_QUEUE_KEY: new_queue, OLD_QUEUE_KEY: old_queue}
-
 
     @staticmethod
     def create_banner_string(alarm: Alarm) -> str:
@@ -54,7 +50,8 @@ class LimitedSlotAlarms:
         :param alarm: The alarm to use in creating a string
         :return A representation of the alarm for the banner
         """
-        priority_str = f"{alarm.priority.name}-priority alarm "
+        priority_str = f"{alarm.priority.name[0] + 
+                          alarm.priority.name[1:].lower()}-priority alarm "
         num_str = f'(#{alarm.event.id}): '
         desc_str = alarm.event.description
         return priority_str + num_str + desc_str
@@ -68,16 +65,35 @@ class LimitedSlotAlarms:
         """
         all_items = []
 
-        new_queue = cls._slots[NEW_QUEUE_KEY]
-        q_items = new_queue.queue
-        sorted_q_items = list(q_items)
-        sorted_q_items.sort()
+        # Note: while this implementation may seem slow, due to the nature of alarms
+        # being rare and banner slots being limited, it's effectively fast
+        new_q = cls._slots[NEW_QUEUE_KEY]
+        new_q_items = new_q.copy()
+        new_q_items.sort(reverse=True)
+        old_q = cls._slots[OLD_QUEUE_KEY]
 
-        for item in sorted_q_items:
+        # We want to reserve 3 slots for old alarms, but if there's less than 3 old alarms,
+        # populate the banner with more new ones
+        old_q_size = len(old_q)
+        if old_q_size > 3:
+            max_new = 3
+        else:
+            max_new = 6 - old_q_size
+
+        # Getting and formatting strings for the top priority new alarms
+        i = 0
+        while i < len(new_q_items) and len(all_items) < max_new:
+            item = new_q_items[i]
             new_str = NEW_PREFIX + cls.create_banner_string(item)
             all_items.append(new_str)
+            i += 1
 
-        for item in cls._slots[OLD_QUEUE_KEY]:
+        # Getting and formatting strings for the top priority old alarms
+        i = 0
+        old_q_items = old_q.copy()
+        old_q_items.sort(reverse=True)
+        while i < len(old_q_items) and len(all_items) < MAX_BANNER_SIZE:
+            item = old_q_items[i]
             old_str = cls.create_banner_string(item)
             all_items.append(old_str)
 
@@ -86,28 +102,27 @@ class LimitedSlotAlarms:
     @classmethod
     def insert_into_new(cls, alarm: Alarm) -> None:
         """
-        Inserts information about <alarm> into the new alarms queue in <cls._slots>. If the queue
-        exceeds its intended size, remove the oldest element in the queue
+        Inserts <alarm> into the new alarms queue in <cls._slots>
 
         :param alarm: The alarm to insert into the banner slots
         """
-        cls._slots[NEW_QUEUE_KEY].put(alarm)
-        if cls._slots[NEW_QUEUE_KEY].qsize() > NEW_QUEUE_MAX_SIZE:
-            oldest = cls._slots[NEW_QUEUE_KEY].get()
-            cls.insert_into_old(oldest)
+        new_q = cls._slots[NEW_QUEUE_KEY]
+        new_q.append(alarm)
 
     @classmethod
     def insert_into_old(cls, alarm: Alarm) -> None:
         """
-        Inserts information about <alarm> into the old alarms queue in <cls._slots>. If the queue
-        exceeds its intended size, remove the oldest element in the queue
+        Moves <alarm> from the new alarms queue and into the old alarms queue
 
         :param alarm: The alarm to insert into the banner slots
+
+        PRECONDITION: <alarm> is in <cls._slots[NEW_QUEUE_KEY]
         """
-        old_queue = cls._slots[OLD_QUEUE_KEY]
-        heappush(old_queue, alarm)
-        if len(old_queue) > OLD_QUEUE_MAX_SIZE:
-            heappop(old_queue)
+        old_q = cls._slots[OLD_QUEUE_KEY]
+        new_q = cls._slots[NEW_QUEUE_KEY]
+
+        new_q.remove(alarm)
+        old_q.append(alarm)
 
 
 @dataclass
@@ -145,7 +160,6 @@ class AlarmsFilters:
 
 
 class AlarmsHandler(UseCaseHandler):
-
     banner_container: LimitedSlotAlarms
 
     @classmethod
@@ -317,6 +331,7 @@ class AlarmsHandler(UseCaseHandler):
             cls.banner_container.insert_into_new(next_item)
 
         return_table = TableReturn(shown, removed)
+        cls.banner_container.get_all()
         return return_table
 
     @classmethod
@@ -348,3 +363,22 @@ class AlarmsHandler(UseCaseHandler):
         prev_data.table = new_table
         prev_data.removed = new_removed
         cls._sort_output(prev_data, filter_args.sort)
+
+    @classmethod
+    def acknowledge_alarm(cls, alarm: Alarm, dm: DataManager) -> None:
+        """
+        Sets the provided <alarm> have its acknowledgment attribute set to ACKNOWLEDGED
+
+        :param alarm: The alarm whose acknowledgment needs to be modified
+        :param dm: Stores all data known to the program
+        """
+        # Note: While it should be possible to mutate the alarm straight from here,
+        # the alarm container needs to do it to enforce that modifying elements of the container
+        # is critical code among threads
+
+        alarm_container = dm.alarms
+        cls.banner_container.insert_into_old(alarm)
+        alarm_container.acknowledge_alarm(alarm)
+
+        # No need to update the table directly from here, as the alarm observer in the container
+        # will do it for us

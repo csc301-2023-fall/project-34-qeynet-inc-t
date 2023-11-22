@@ -4,7 +4,7 @@ from .use_case_handlers import TableReturn
 from .alarm_handler import AlarmsHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
-from ..data.alarms import AlarmCriticality, AlarmPriority
+from ..data.alarms import AlarmCriticality, AlarmPriority, Alarm
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
@@ -137,7 +137,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Determine if we can add the type to the set of types that we are viewing.
         if add not in cls.filters.types:
-            cls.filters.types.add(add) # TODO: Iterable type has no append method (switch to set)
+            cls.filters.types.add(add)  # TODO: Iterable type has no append method (switch to set)
             return True
         else:
             # Type was already in the set of types that we are viewing.
@@ -320,3 +320,13 @@ class AlarmsRequestReceiver(RequestReceiver):
         Switches the boolean value of <cls.filters.new>
         """
         cls.filters.new = not cls.filters.new
+
+    @classmethod
+    def acknowledge_alarm(cls, alarm: Alarm, dm: DataManager) -> None:
+        """
+        Sets the provided <alarm> have its acknowledgment attribute set to ACKNOWLEDGED
+
+        :param alarm: The alarm whose acknowledgment needs to be modified
+        :param dm: Stores all data known to the program
+        """
+        cls.handler.acknowledge_alarm(alarm, dm)
