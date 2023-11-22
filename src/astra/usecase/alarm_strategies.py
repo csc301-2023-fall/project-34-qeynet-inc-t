@@ -226,7 +226,7 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
     """
 
     times = []
-    if len(false_indexes) == 0:
+    if len(false_indexes) == 0 and len(tuples) > 0:
         # Indicates that we have all trues, hence we only need to check if the period of time
         # is long enough
         first_time = tuples[0][1]
@@ -234,7 +234,7 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
         if last_time - first_time >= timedelta(seconds=persistence):
             register_time = find_confirm_time(tuples, persistence)
             times.append((0, register_time))
-    else:
+    elif len(false_indexes) > 0:
         times = []
         for i in range(len(false_indexes) + 1):
             if i == 0:
@@ -274,20 +274,28 @@ def roc_from_time_check(data: Mapping[datetime, ParameterValue | None], times: l
     PRECONDITION: <start_date> is in <times> and <times> are the keys of <data>.
     """
     end_date = start_date + timedelta(seconds=time_window)
-    prev_value = data[start_date]
-    curr_index = times.index(start_date) + 1
-    if curr_index < len(times):
-        curr_date = times[curr_index]
-    roc = 0.0
+    curr_index = times.index(start_date)
+    initial_index = curr_index
+    curr_time = start_date
+    total = 0.0
 
-    while curr_index < len(times) - 1 and curr_date < end_date:
-        curr_value = data[curr_date]
+    # Loop until we find the last time in the time window, while summing up the values.
+    while (curr_index < len(times)) and (end_date >= times[curr_index]):
+        curr_time = times[curr_index]
+        curr_value = data[curr_time]
+        if curr_value is None:
+            total += 0.0
+        else:
+            total += curr_value
 
-        # TODO: implement the algorithm for calculating the rate of change.
-
-        prev_value = curr_value
         curr_index += 1
-        curr_date = times[curr_index]
+
+    # If loop ended with <curr_time> as the same as <start_date>, then we have roc = 0.0
+    if curr_time == start_date:
+        return 0.0
+
+    # otherwise we have the n-point running average.
+    roc = total / (curr_index - initial_index)
 
     return roc
 
@@ -338,7 +346,7 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
 
         if (rate_of_rise_threshold is not None) and (curr_roc > rate_of_rise_threshold):
             rising_or_falling_list.append(1)
-        elif (rate_of_fall_threshold is not None) and (curr_roc < rate_of_fall_threshold):
+        elif (rate_of_fall_threshold is not None) and (-1 * curr_roc > rate_of_fall_threshold):
             rising_or_falling_list.append(-1)
         else:
             rising_or_falling_list.append(0)
@@ -404,6 +412,8 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, dateti
     sequences_of_static = []
     false_indices = []
 
+    if td.num_telemetry_frames == 0:
+        return [], []
     # First frame is vacuously a sequence of static values
     sequences_of_static.append((True, td.get_telemetry_frame(0).time))
 
