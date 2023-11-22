@@ -188,63 +188,88 @@ class View(Tk):
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
         alarms_tag_table.grid(sticky='NSEW', row=1, column=1)
-        dangers = ['WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
-        types = ['RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR']
+        self.dangers = ['WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+        self.types = ['RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR']
 
         label = Label(alarms_tag_table, text="filter priority")
         label.grid(sticky="news", row=0, column=0)
-        button = Button(alarms_tag_table, text=dangers[0],
-                        command=lambda: self.flick_priority(dangers[0]))
+        self.alarms_buttons_priority = []
+        button = Button(alarms_tag_table, text=self.dangers[0], relief="sunken",
+                        command=lambda: self.flick_priority(0))
         button.grid(sticky="news", row=0, column=1)
-        button = Button(alarms_tag_table, text=dangers[1],
-                        command=lambda: self.flick_priority(dangers[1]))
+        self.alarms_buttons_priority.append(button)
+        button = Button(alarms_tag_table, text=self.dangers[1], relief="sunken",
+                        command=lambda: self.flick_priority(1))
         button.grid(sticky="news", row=0, column=2)
-        button = Button(alarms_tag_table, text=dangers[2],
-                        command=lambda: self.flick_priority(dangers[2]))
+        self.alarms_buttons_priority.append(button)
+        button = Button(alarms_tag_table, text=self.dangers[2], relief="sunken",
+                        command=lambda: self.flick_priority(2))
         button.grid(sticky="news", row=0, column=3)
-        button = Button(alarms_tag_table, text=dangers[3],
-                        command=lambda: self.flick_priority(dangers[3]))
+        self.alarms_buttons_priority.append(button)
+        button = Button(alarms_tag_table, text=self.dangers[3], relief="sunken",
+                        command=lambda: self.flick_priority(3))
         button.grid(sticky="news", row=0, column=4)
-        button = Button(alarms_tag_table, text=dangers[4],
-                        command=lambda: self.flick_priority(dangers[4]))
+        self.alarms_buttons_priority.append(button)
+        button = Button(alarms_tag_table, text=self.dangers[4], relief="sunken",
+                        command=lambda: self.flick_priority(4))
         button.grid(sticky="news", row=0, column=5)
+        self.alarms_buttons_priority.append(button)
 
         label = Label(alarms_tag_table, text="filter criticality")
         label.grid(sticky="news", row=1, column=0)
-        button = Button(alarms_tag_table, text=dangers[0],
-                        command=lambda: self.flick_criticality(dangers[0]))
+        self.alarms_buttons_criticality = []
+        button = Button(alarms_tag_table, text=self.dangers[0], relief="sunken",
+                        command=lambda: self.flick_criticality(0))
         button.grid(sticky="news", row=1, column=1)
-        button = Button(alarms_tag_table, text=dangers[1],
-                        command=lambda: self.flick_criticality(dangers[1]))
+        self.alarms_buttons_criticality.append(button)
+        button = Button(alarms_tag_table, text=self.dangers[1], relief="sunken",
+                        command=lambda: self.flick_criticality(1))
         button.grid(sticky="news", row=1, column=2)
-        button = Button(alarms_tag_table, text=dangers[2],
-                        command=lambda: self.flick_criticality(dangers[2]))
+        self.alarms_buttons_criticality.append(button)
+        button = Button(alarms_tag_table, text=self.dangers[2], relief="sunken",
+                        command=lambda: self.flick_criticality(2))
         button.grid(sticky="news", row=1, column=3)
-        button = Button(alarms_tag_table, text=dangers[3],
-                        command=lambda: self.flick_criticality(dangers[3]))
+        self.alarms_buttons_criticality.append(button)
+        button = Button(alarms_tag_table, text=self.dangers[3], relief="sunken",
+                        command=lambda: self.flick_criticality(3))
         button.grid(sticky="news", row=1, column=4)
-        button = Button(alarms_tag_table, text=dangers[4],
-                        command=lambda: self.flick_criticality(dangers[4]))
+        self.alarms_buttons_criticality.append(button)
+        button = Button(alarms_tag_table, text=self.dangers[4], relief="sunken",
+                        command=lambda: self.flick_criticality(4))
         button.grid(sticky="news", row=1, column=5)
+        self.alarms_buttons_criticality.append(button)
 
         label = Label(alarms_tag_table, text="filter type")
         label.grid(sticky="news", row=2, column=0)
-        button = Button(alarms_tag_table, text=types[0], command=lambda: self.flick_type(types[0]))
+        self.alarms_buttons_type = []
+        button = Button(alarms_tag_table, text=self.types[0], relief="sunken",
+                        command=lambda: self.flick_type(0))
         button.grid(sticky="news", row=2, column=1)
-        button = Button(alarms_tag_table, text=types[1], command=lambda: self.flick_type(types[1]))
+        self.alarms_buttons_type.append(button)
+        button = Button(alarms_tag_table, text=self.types[1], relief="sunken",
+                        command=lambda: self.flick_type(1))
         button.grid(sticky="news", row=2, column=2)
-        button = Button(alarms_tag_table, text=types[2], command=lambda: self.flick_type(types[2]))
+        self.alarms_buttons_type.append(button)
+        button = Button(alarms_tag_table, text=self.types[2], relief="sunken",
+                        command=lambda: self.flick_type(2))
         button.grid(sticky="news", row=2, column=3)
-        button = Button(alarms_tag_table, text=types[3], command=lambda: self.flick_type(types[3]))
+        self.alarms_buttons_type.append(button)
+        button = Button(alarms_tag_table, text=self.types[3], relief="sunken",
+                        command=lambda: self.flick_type(3))
         button.grid(sticky="news", row=2, column=4)
-        button = Button(alarms_tag_table, text=types[4], command=lambda: self.flick_type(types[4]))
+        self.alarms_buttons_type.append(button)
+        button = Button(alarms_tag_table, text=self.types[4], relief="sunken",
+                        command=lambda: self.flick_type(4))
         button.grid(sticky="news", row=2, column=5)
-        button = Button(alarms_tag_table, text="LOGICAL AND",
-                        command=lambda: self.flick_type(types[5]))
+        self.alarms_buttons_type.append(button)
+        button = Button(alarms_tag_table, text="LOGICAL AND", relief="sunken",
+                        command=lambda: self.flick_type(5))
         button.grid(sticky="news", row=2, column=6)
-        button = Button(alarms_tag_table, text="LOGICAL OR",
-                        command=lambda: self.flick_type(types[6]))
+        self.alarms_buttons_type.append(button)
+        button = Button(alarms_tag_table, text="LOGICAL OR", relief="sunken",
+                        command=lambda: self.flick_type(6))
         button.grid(sticky="news", row=2, column=7)
+        self.alarms_buttons_type.append(button)
         # alarms table
         alarms_table_frame = Frame(alarms_frame)
         alarms_table_frame.grid(sticky='NSEW', row=2, column=1, rowspan=num_rows-3)
@@ -320,15 +345,31 @@ class View(Tk):
 
         self.refresh_alarms_table()
 
-    def flick_priority(self, tag: Tag):
+    def flick_priority(self, index: int):
+        tag = self.dangers[index]
+        if tag in self.alarms_view_model.get_priorities():
+            self.alarms_buttons_priority[index].config(relief="raised")
+        else:
+            self.alarms_buttons_priority[index].config(relief="sunken")
         self.alarms_view_model.toggle_priority(tag)
         self.refresh_alarms_table()
+        
 
-    def flick_criticality(self, tag: Tag):
+    def flick_criticality(self, index: int):
+        tag = self.dangers[index]
+        if tag in self.alarms_view_model.get_criticalities():
+            self.alarms_buttons_criticality[index].config(relief="raised")
+        else:
+            self.alarms_buttons_criticality[index].config(relief="sunken")
         self.alarms_view_model.toggle_criticality(tag)
         self.refresh_alarms_table()
 
-    def flick_type(self, tag: Tag):
+    def flick_type(self, index: int):
+        tag = self.types[index]
+        if tag in self.alarms_view_model.get_types():
+            self.alarms_buttons_type[index].config(relief="raised")
+        else:
+            self.alarms_buttons_type[index].config(relief="sunken")
         self.alarms_view_model.toggle_type(tag)
         self.refresh_alarms_table()
 
