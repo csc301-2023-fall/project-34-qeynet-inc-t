@@ -122,17 +122,62 @@ class View(Tk):
         add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
         add_data_button.grid(sticky='W', row=0, column=1)
 
-        self.start_time = StringVar()
-        self.end_time = StringVar()
+        self.start_year = StringVar()
+        self.start_month = StringVar()
+        self.start_day = StringVar()
+        self.start_hour = StringVar()
+        self.start_min = StringVar()
+        self.start_sec = StringVar()
 
-        dashboard_time_range_row = Frame(dashboard_frame)
-        dashboard_time_range_row.grid(sticky='ew', row=1, column=1)
-        Label(dashboard_time_range_row, text='From').grid(row=0, column=0)
-        Entry(dashboard_time_range_row, textvariable=self.start_time).grid(row=0, column=1)
-        Label(dashboard_time_range_row, text='to').grid(row=0, column=2)
-        Entry(dashboard_time_range_row, textvariable=self.end_time).grid(row=0, column=3)
+        self.end_year = StringVar()
+        self.end_month = StringVar()
+        self.end_day = StringVar()
+        self.end_hour = StringVar()
+        self.end_min = StringVar()
+        self.end_sec = StringVar()
+
+        dashboard_time_range_row_outside = Frame(dashboard_frame)
+        dashboard_time_range_row_outside.grid(sticky='ew', row=1, column=1)
+        dashboard_time_range_row = Frame(dashboard_time_range_row_outside)
+        dashboard_time_range_row.pack(expand=False)
+        Label(dashboard_time_range_row, text='From (YYYY-MM-DD HH:MM:SS)   ').pack(side="left")
+        Entry(dashboard_time_range_row, width=5,
+              textvariable=self.start_year).pack(side="left")
+        Label(dashboard_time_range_row, text='-').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.start_month).pack(side="left")
+        Label(dashboard_time_range_row, text='-').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.start_day).pack(side="left", padx=(0, 3))
+        Label(dashboard_time_range_row, text=' ').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.start_hour).pack(side="left")
+        Label(dashboard_time_range_row, text=':').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.start_min).pack(side="left")
+        Label(dashboard_time_range_row, text=':').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.start_sec).pack(side="left")
+        Label(dashboard_time_range_row, text='   to   ').pack(side="left")
+        Entry(dashboard_time_range_row, width=5,
+              textvariable=self.end_year).pack(side="left")
+        Label(dashboard_time_range_row, text='-').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.end_month).pack(side="left")
+        Label(dashboard_time_range_row, text='-').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.end_day).pack(side="left", padx=(0, 3))
+        Label(dashboard_time_range_row, text=' ').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.end_hour).pack(side="left")
+        Label(dashboard_time_range_row, text=':').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.end_min).pack(side="left")
+        Label(dashboard_time_range_row, text=':').pack(side="left")
+        Entry(dashboard_time_range_row, width=3,
+              textvariable=self.end_sec).pack(side="left", padx=(0, 3))
         Button(dashboard_time_range_row, text='Update time',
-               command=self.update_time).grid(row=0, column=4)
+               command=self.update_time).pack(side="left")
 
         self.dashboard_current_frame_number = 0
         self.dashboard_frame_navigation_text = StringVar(value='Frame --- at ---')
@@ -482,8 +527,32 @@ class View(Tk):
         self.construct_alarms_table()
 
     def update_time(self):
-        input_start_time = self.start_time.get()
-        input_end_time = self.end_time.get()
+        input_start_time = f"{
+                self.start_year.get()
+            }-{
+                self.start_month.get()
+            }-{
+                self.start_day.get()
+            } {
+                self.start_hour.get()
+            }:{
+                self.start_min.get()
+            }:{
+                self.start_sec.get()
+            }"
+        input_end_time = f"{
+                self.end_year.get()
+            }-{
+                self.end_month.get()
+            }-{
+                self.end_day.get()
+            } {
+                self.end_hour.get()
+            }:{
+                self.end_min.get()
+            }:{
+                self.end_sec.get()
+            }"
         if input_start_time:
             try:
                 start_time = datetime.strptime(input_start_time, '%Y-%m-%d %H:%M:%S')
