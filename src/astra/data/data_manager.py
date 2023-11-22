@@ -15,6 +15,8 @@ from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 
 NEW_QUEUE_KEY = 'n'
 MAX_QUEUE_SIZE = 3
+ACKNOWLEDGED = False
+
 
 class AlarmObserver:
     """
@@ -60,7 +62,7 @@ class AlarmsContainer:
     :param observer: An Observer to monitor the state of the container
     """
     observer: AlarmObserver
-    alarms: dict[AlarmPriority | str, list[Alarm] | Queue] = None
+    alarms: dict[str, list[Alarm] | Queue] = None
     mutex: Lock
 
     @classmethod
@@ -174,6 +176,37 @@ class AlarmsContainer:
             alarm_data[0].priority = new_priority
             alarm_data[1] = new_priority
         cls.observer.notify_watchers()
+
+    @classmethod
+    def acknowledge_alarm(cls, alarm: Alarm) -> None:
+        """
+        Removes the requested alarm in <cls.alarms>
+
+        :param alarm: The alarm to remove from the container
+
+        PRECONDITION: <alarm> is in <cls.alarms>
+        """
+        with cls.mutex:
+            # Note: because the alarm container should store every known alarm, this mutation
+            # should work
+            alarm.acknowledgement = ACKNOWLEDGED
+
+    @classmethod
+    def remove_alarm(cls, alarm: Alarm) -> None:
+        """
+        Removes the requested alarm in
+
+        :param alarm:
+        :return:
+        """
+        with cls.mutex:
+            for priority in cls.alarms:
+                if priority != NEW_QUEUE_KEY and alarm in cls.alarms[priority]:
+                    # Note: We don't consider the queue of new alarms, since by the time
+                    # the alarm can be removed, it's already be taken out of the queue
+                    cls.alarms[priority].remove(alarm)
+                    cls.observer.notify_watchers()
+                    return None
 
 
 class DataManager:
