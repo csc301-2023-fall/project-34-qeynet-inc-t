@@ -194,7 +194,9 @@ class AlarmsContainer:
             cls.alarms[new_priority].append(alarm_data[0])
             alarm_data[0].priority = new_priority
             alarm_data[1] = new_priority
-        # TODO temp
+        # Because of the nature of priorities, we need to notify both modification observers
+        # and addition observers
+        cls.observer.notify_watchers_added_modified(alarm_data[0])
         cls.observer.notify_watchers_added()
 
     @classmethod

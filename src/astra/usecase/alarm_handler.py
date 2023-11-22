@@ -50,7 +50,7 @@ class LimitedSlotAlarms:
         :param alarm: The alarm to use in creating a string
         :return A representation of the alarm for the banner
         """
-        priority_str = f"{alarm.priority.name[0] + 
+        priority_str = f"{alarm.priority.name[0] +
                           alarm.priority.name[1:].lower()}-priority alarm "
         num_str = f'(#{alarm.event.id}): '
         desc_str = alarm.event.description
