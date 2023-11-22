@@ -82,6 +82,7 @@ class DashboardRequestReceiver(RequestReceiver):
             for tag in all_tags:
                 param = all_params[tag]
                 tag_strs.append(tag + ": " + param.description)
+            tag_strs.sort()
             cls.search_cache[''] = tag_strs
 
         # Set the index to the first index by default.
