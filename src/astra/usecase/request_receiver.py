@@ -77,7 +77,12 @@ class DashboardRequestReceiver(RequestReceiver):
         cls.filters.tags = set(all_tags)
 
         if len(cls.search_cache) == 0:
-            cls.search_cache[''] = all_tags
+            all_params = dm.parameters
+            tag_strs = []
+            for tag in all_tags:
+                param = all_params[tag]
+                tag_strs.append(tag + ": " + param.description)
+            cls.search_cache[''] = tag_strs
 
         # Set the index to the first index by default.
         if cls.filters.index is None:

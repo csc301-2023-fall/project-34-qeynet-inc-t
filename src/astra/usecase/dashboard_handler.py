@@ -85,7 +85,9 @@ class DashboardHandler(UseCaseHandler):
             return cache[search]
         matching = []
         for tag in cache[closest]:
-            if search in tag:
+            lower_tag = tag.lower()
+            lower_search = search.lower()
+            if lower_search in lower_tag:
                 matching.append(tag)
         if search != "":
             cache[search] = matching
