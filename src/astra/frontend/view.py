@@ -53,7 +53,7 @@ class View(Tk):
         height = self.winfo_screenheight()
         self.geometry("%dx%d" % (width, height))
         self.state('zoomed')
-        
+
         # tab widget
         tab_control = ttk.Notebook(self)
 
@@ -91,7 +91,7 @@ class View(Tk):
         dashboard_filter_tags.grid_columnconfigure(1, weight=1)
         for i in range(num_rows):
             dashboard_filter_tags.grid_rowconfigure(i, weight=1)
-        dashboard_filter_tags.grid(sticky='NSEW', row=0, column=0, rowspan=num_rows-1, padx=(0, 3))
+        dashboard_filter_tags.grid(sticky='NSEW', row=0, column=0, rowspan=num_rows - 1, padx=(0, 3))
         Label(dashboard_filter_tags, text="Parameters to display", background='#fff').grid(
             sticky='NSEW', row=0, column=0, columnspan=2)
         dashboard_tag_search_area = Frame(dashboard_filter_tags)
@@ -111,12 +111,12 @@ class View(Tk):
         tag_table = ttk.Treeview(dashboard_filter_tags, show='tree')
         tag_table_scroll = ttk.Scrollbar(dashboard_filter_tags, orient="vertical", command=tag_table.yview)
         tag_table.configure(yscrollcommand=tag_table_scroll.set)
-        tag_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows-4)
+        tag_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 4)
         self.data_tag_table = tag_table
         tag_table['columns'] = ("tag")
         tag_table.column("#0", width=0, stretch=NO)
         tag_table.column("tag")
-        tag_table.grid(sticky='NEWS', row=4, column=0, columnspan=2, rowspan=num_rows-4)
+        tag_table.grid(sticky='NEWS', row=4, column=0, columnspan=2, rowspan=num_rows - 4)
         tag_table.bind('<ButtonRelease-1>', self.toggle_tag_table_row)
 
         add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
@@ -204,10 +204,10 @@ class View(Tk):
         dashboard_table = ttk.Treeview(dashboard_frame, height=10, padding=3)
         dashboard_table_scroll = ttk.Scrollbar(dashboard_frame, orient="vertical", command=dashboard_table.yview)
         dashboard_table.configure(yscrollcommand=dashboard_table_scroll.set)
-        dashboard_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows-5)
+        dashboard_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 5)
         self.dashboard_table = dashboard_table
         dashboard_table['columns'] = ("tag", "description", "value", "setpoint")
-        dashboard_table.grid(sticky='NSEW', row=4, column=1, rowspan=num_rows-5)
+        dashboard_table.grid(sticky='NSEW', row=4, column=1, rowspan=num_rows - 5)
         dashboard_table.column("#0", width=0, stretch=NO)
         dashboard_table.column("tag", anchor=CENTER, width=80)
         dashboard_table.column("description", anchor=CENTER, width=100)
@@ -317,7 +317,7 @@ class View(Tk):
         self.alarms_buttons_type.append(button)
         # alarms table
         alarms_table_frame = Frame(alarms_frame)
-        alarms_table_frame.grid(sticky='NSEW', row=2, column=1, rowspan=num_rows-3)
+        alarms_table_frame.grid(sticky='NSEW', row=2, column=1, rowspan=num_rows - 3)
         style = ttk.Style()
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
@@ -366,7 +366,7 @@ class View(Tk):
             # self.alarms_view_model.model.receive_new_data(self._dm)
             # self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
-            self._dm.alarms.observer.add_watcher(self.construct_alarms_table)
+            self._dm.alarms.observer.add_watcher_adding(self.construct_alarms_table)
 
     def sort_alarms(self, tag: str):
         headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed']
@@ -387,7 +387,6 @@ class View(Tk):
                 if header != header_name:
                     self.alarms_table.heading(header, text=header + " ●")
 
-
         self.refresh_alarms_table()
 
     def flick_priority(self, index: int):
@@ -398,7 +397,6 @@ class View(Tk):
             self.alarms_buttons_priority[index].config(relief="sunken")
         self.alarms_view_model.toggle_priority(tag)
         self.refresh_alarms_table()
-        
 
     def flick_criticality(self, index: int):
         tag = self.dangers[index]
@@ -528,31 +526,31 @@ class View(Tk):
 
     def update_time(self):
         input_start_time = f"{
-                self.start_year.get()
-            }-{
-                self.start_month.get()
-            }-{
-                self.start_day.get()
-            } {
-                self.start_hour.get()
-            }:{
-                self.start_min.get()
-            }:{
-                self.start_sec.get()
-            }"
+        self.start_year.get()
+        }-{
+        self.start_month.get()
+        }-{
+        self.start_day.get()
+        } {
+        self.start_hour.get()
+        }:{
+        self.start_min.get()
+        }:{
+        self.start_sec.get()
+        }"
         input_end_time = f"{
-                self.end_year.get()
-            }-{
-                self.end_month.get()
-            }-{
-                self.end_day.get()
-            } {
-                self.end_hour.get()
-            }:{
-                self.end_min.get()
-            }:{
-                self.end_sec.get()
-            }"
+        self.end_year.get()
+        }-{
+        self.end_month.get()
+        }-{
+        self.end_day.get()
+        } {
+        self.end_hour.get()
+        }:{
+        self.end_min.get()
+        }:{
+        self.end_sec.get()
+        }"
         if input_start_time:
             try:
                 start_time = datetime.strptime(input_start_time, '%Y-%m-%d %H:%M:%S')
