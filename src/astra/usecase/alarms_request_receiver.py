@@ -331,3 +331,8 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param dm: Stores all data known to the program
         """
         cls.handler.acknowledge_alarm(alarm, dm)
+
+    @classmethod
+    def get_alarm_banner(cls) -> list[str]:
+        """Returns a list of strings in order to show in the alarm banners"""
+        return cls.handler.get_banner_elems()

@@ -332,7 +332,6 @@ class AlarmsHandler(UseCaseHandler):
             cls.banner_container.insert_into_new(next_item)
 
         return_table = TableReturn(shown, removed)
-        cls.banner_container.get_all()
         return return_table
 
     @classmethod
@@ -383,3 +382,8 @@ class AlarmsHandler(UseCaseHandler):
 
         # No need to update the table directly from here, as the alarm observer in the container
         # will do it for us
+
+    @classmethod
+    def get_banner_elems(cls) -> list[str]:
+        """Interfacing method for <cls.banner_container.get_all()>"""
+        return cls.banner_container.get_all()
