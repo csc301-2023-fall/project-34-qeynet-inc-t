@@ -364,3 +364,12 @@ class AlarmsViewModel:
         self.model.request_receiver.set_shown_types(self._types)
         self.model.receive_updates()
         self.update_table_entries()
+
+    def get_priorities(self):
+        return self._priorities
+
+    def get_criticalities(self):
+        return self._criticalities
+    
+    def get_types(self):
+        return self._types
