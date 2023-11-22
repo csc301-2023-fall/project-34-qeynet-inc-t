@@ -46,7 +46,7 @@ class View(Tk):
         super().__init__()
         self.title("View Prototype")
         self.dashboard_view_model = DashboardViewModel()
-        self.alarms_view_model = AlarmsViewModel()
+        self.alarms_view_model = AlarmsViewModel(self._dm)
 
         # Get the screen size information, and fullscreen the app
         width = self.winfo_screenwidth()

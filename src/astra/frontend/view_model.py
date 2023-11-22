@@ -182,11 +182,11 @@ class AlarmsViewModel:
     _time: datetime.datetime
     _table_entries: List[list]
 
-    def __init__(self) -> None:
+    def __init__(self, dm: DataManager) -> None:
         """
         Initializes the view model
         """
-        self.model = Model(AlarmsRequestReceiver())
+        self.model = Model(AlarmsRequestReceiver(dm))
         self._sorting = [1, 1, 1, 1, 1, 1]
         self._priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
         self._criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}

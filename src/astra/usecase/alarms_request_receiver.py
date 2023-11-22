@@ -29,8 +29,8 @@ class AlarmsRequestReceiver(RequestReceiver):
     handler: AlarmsHandler
 
     @classmethod
-    def __init__(cls):
-        cls.handler = AlarmsHandler()
+    def __init__(cls, dm: DataManager):
+        cls.handler = AlarmsHandler(dm)
         cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
         # maybe make this inherit from dashboard filters
         # Im assuming the alarms filter will have:

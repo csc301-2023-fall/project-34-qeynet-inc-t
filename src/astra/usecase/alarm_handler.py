@@ -163,8 +163,9 @@ class AlarmsHandler(UseCaseHandler):
     banner_container: LimitedSlotAlarms
 
     @classmethod
-    def __init__(cls):
+    def __init__(cls, dm: DataManager):
         cls.banner_container = LimitedSlotAlarms()
+        dm.alarms.observer.add_watcher_modifying(cls.banner_container.insert_into_old)
 
     @staticmethod
     def _get_alarm_type(alarm: Alarm) -> str:
