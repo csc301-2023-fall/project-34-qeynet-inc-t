@@ -4,7 +4,7 @@ from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
 from queue import Queue
 from threading import Lock, Timer
-from typing import Self, Callable
+from typing import Self, Callable, Dict, List
 
 from astra.data import dict_parsing, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
@@ -26,31 +26,51 @@ class AlarmObserver:
     :param watchers: A list of functions to call on any update to the alarm container
     :param mutex: Synchronization tool as many threads may notify watchers of updates
     """
-    watchers = []
+    watchers_added = []
+    watchers_modified = []
     _mutex = Lock()
 
     @classmethod
     def __int__(cls):
-        cls.watchers = []
+        cls.watchers_added = []
+        cls.watchers_modified = []
         cls._mutex = Lock()
 
     @classmethod
-    def add_watcher(cls, watcher: Callable):
+    def add_watcher_adding(cls, watcher: Callable):
         """
-        Adds a new function to call on alarm container update
+        Adds a new function to call on alarm container receiving new data
 
         :param watcher: The new function to call
         """
-        cls.watchers.append(watcher)
+        cls.watchers_added.append(watcher)
 
     @classmethod
-    def notify_watchers(cls):
+    def add_watcher_modifying(cls, watcher: Callable):
         """
-        Calls all functions that wish to be called on container update
+        Adds a new function to call on alarm container elements being modified
+
+        :param watcher: The new function to call
+        """
+        cls.watchers_modified.append(watcher)
+
+    @classmethod
+    def notify_watchers_added(cls) -> None:
+        """
+        Calls all functions that wish to be called on container receiving new data
         """
         with cls._mutex:
-            for watcher in cls.watchers:
+            for watcher in cls.watchers_added:
                 watcher()
+
+    @classmethod
+    def notify_watchers_added_modified(cls, alarm) -> None:
+        """
+        Calls all functions that should be notified on a container item being modified
+        """
+        with cls._mutex:
+            for watcher in cls.watchers_modified:
+                watcher(alarm)
 
 
 class AlarmsContainer:
@@ -62,7 +82,7 @@ class AlarmsContainer:
     :param observer: An Observer to monitor the state of the container
     """
     observer: AlarmObserver
-    alarms: dict[str, list[Alarm] | Queue] = None
+    alarms: dict[str, list[Alarm] | Queue]
     mutex: Lock
 
     @classmethod
@@ -74,7 +94,7 @@ class AlarmsContainer:
         cls.observer = AlarmObserver()
 
     @classmethod
-    def get_alarms(cls) -> dict[AlarmPriority, list[Alarm]]:
+    def get_alarms(cls) -> dict[str, list[Alarm] | Queue]:
         """
         Returns a shallow copy of <cls.alarms>
 
@@ -93,7 +113,6 @@ class AlarmsContainer:
         :param apm: Maps information on alarms to correct priority level
         :param alarms: The set of alarms to add to <cls.alarms>
         """
-        # TODO: set priority correctly based on time elapsed since alarm
         new_alarms = []
         times = [0, 5, 15, 30]
         timer_vals = []
@@ -141,7 +160,7 @@ class AlarmsContainer:
                     timer_vals.append(alarm_timer_vals)
 
             # Now that the state of the alarms container has been update, notify watchers
-            cls.observer.notify_watchers()
+            cls.observer.notify_watchers_added()
 
             # Now, we need to create a timer thread for each alarm
             for i in range(len(new_alarms)):
@@ -175,7 +194,8 @@ class AlarmsContainer:
             cls.alarms[new_priority].append(alarm_data[0])
             alarm_data[0].priority = new_priority
             alarm_data[1] = new_priority
-        cls.observer.notify_watchers()
+        # TODO temp
+        cls.observer.notify_watchers_added()
 
     @classmethod
     def acknowledge_alarm(cls, alarm: Alarm) -> None:
@@ -190,6 +210,7 @@ class AlarmsContainer:
             # Note: because the alarm container should store every known alarm, this mutation
             # should work
             alarm.acknowledgement = ACKNOWLEDGED
+        cls.observer.notify_watchers_added_modified(alarm)
 
     @classmethod
     def remove_alarm(cls, alarm: Alarm) -> None:
@@ -205,8 +226,7 @@ class AlarmsContainer:
                     # Note: We don't consider the queue of new alarms, since by the time
                     # the alarm can be removed, it's already be taken out of the queue
                     cls.alarms[priority].remove(alarm)
-                    cls.observer.notify_watchers()
-                    return None
+        cls.observer.notify_watchers_added_modified(alarm)
 
 
 class DataManager:
