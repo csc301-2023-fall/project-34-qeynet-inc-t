@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Iterable
 from .use_case_handlers import TableReturn
 from .alarm_handler import AlarmsHandler, AlarmsFilters  # , ReturnType
 from .request_receiver import RequestReceiver
@@ -47,10 +46,12 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param dm: Contains all data stored by the program to date.
         """
 
-        criticalities = {AlarmCriticality.WARNING, AlarmCriticality.LOW,
-                         AlarmCriticality.MEDIUM, AlarmCriticality.HIGH, AlarmCriticality.CRITICAL}
-        priorities = {AlarmPriority.WARNING, AlarmPriority.LOW,
-                      AlarmPriority.MEDIUM, AlarmPriority.HIGH, AlarmPriority.CRITICAL}
+        criticalities = {AlarmCriticality.WARNING.name, AlarmCriticality.LOW.name,
+                         AlarmCriticality.MEDIUM.name, AlarmCriticality.HIGH.name,
+                         AlarmCriticality.CRITICAL.name}
+        priorities = {AlarmPriority.WARNING.name, AlarmPriority.LOW.name,
+                      AlarmPriority.MEDIUM.name, AlarmPriority.HIGH.name,
+                      AlarmPriority.CRITICAL.name}
         # TODO: Switch these back to use AlarmPriority (also sorting methods)
 
         # add all priorities and criticalities to the shown priorities and criticalities by default

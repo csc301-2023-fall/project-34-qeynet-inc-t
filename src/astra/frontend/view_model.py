@@ -190,7 +190,7 @@ class AlarmsViewModel:
         self._sorting = [1, 1, 1, 1, 1, 1]
         self._priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
         self._criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
-        self._types = {'RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR'}
+        self._types = {'RATE_OF_CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR'}
         self._table_entries = []
         self._time = None
 
