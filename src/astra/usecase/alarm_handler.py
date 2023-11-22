@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from heapq import heapify, heappush, heappop
 from queue import Queue
-from typing import Iterable, Any
 
 from astra.data.alarms import (AlarmPriority, AlarmCriticality, RateOfChangeEventBase, Alarm,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
@@ -16,7 +15,7 @@ CRITICALITY = 'CRITICALITY'
 TYPE = 'TYPE'
 REGISTERED_DATE = 'REGISTERED_DATE'
 CONFIRMED_DATE = 'CONFIRMED_DATE'
-UNACKNOWLEDGED = 'UA'
+UNACKNOWLEDGED = True
 DESCENDING = '>'
 PRIORITIES = [AlarmPriority.WARNING.name, AlarmPriority.LOW.name, AlarmPriority.MEDIUM.name,
               AlarmPriority.HIGH.name, AlarmPriority.CRITICAL.name]
@@ -25,6 +24,7 @@ NEW_QUEUE_MAX_SIZE = 3
 OLD_QUEUE_MAX_SIZE = 3
 NEW_QUEUE_KEY = 'n'
 OLD_QUEUE_KEY = 'o'
+NEW_PREFIX = "[NEW] "
 
 
 class LimitedSlotAlarms:
@@ -46,6 +46,19 @@ class LimitedSlotAlarms:
 
         cls._slots = {NEW_QUEUE_KEY: new_queue, OLD_QUEUE_KEY: old_queue}
 
+
+    @staticmethod
+    def create_banner_string(alarm: Alarm) -> str:
+        """Creates an appropriate string for the banner provided an alarm
+
+        :param alarm: The alarm to use in creating a string
+        :return A representation of the alarm for the banner
+        """
+        priority_str = f"{alarm.priority.name}-priority alarm "
+        num_str = f'(#{alarm.event.id}): '
+        desc_str = alarm.event.description
+        return priority_str + num_str + desc_str
+
     @classmethod
     def get_all(cls) -> list[str]:
         """
@@ -57,13 +70,17 @@ class LimitedSlotAlarms:
 
         new_queue = cls._slots[NEW_QUEUE_KEY]
         q_items = new_queue.queue
+        sorted_q_items = list(q_items)
+        sorted_q_items.sort()
 
-        new_items = list(q_items)
-        new_items.sort()
+        for item in sorted_q_items:
+            new_str = NEW_PREFIX + cls.create_banner_string(item)
+            all_items.append(new_str)
 
-        all_items += new_items
+        for item in cls._slots[OLD_QUEUE_KEY]:
+            old_str = cls.create_banner_string(item)
+            all_items.append(old_str)
 
-        all_items += cls._slots[OLD_QUEUE_KEY]
         return all_items
 
     @classmethod

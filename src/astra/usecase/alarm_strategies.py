@@ -8,7 +8,7 @@ from astra.data.parameters import Tag, ParameterValue
 from astra.data.telemetry_data import TelemetryData
 from datetime import timedelta, datetime
 
-UNACKNOWLEDGED = 'UA'
+UNACKNOWLEDGED = True
 next_id = EventID(0)
 
 
