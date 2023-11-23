@@ -141,7 +141,7 @@ class DataManager:
 
     @property
     def tags(self) -> Iterable[Tag]:
-        """Iterable of tags for the device of this DataManager."""
+        """All the tags for the device of this DataManager."""
         return self._parameters.keys()
 
     @property
@@ -151,6 +151,7 @@ class DataManager:
 
     @property
     def alarm_bases(self) -> Iterable[AlarmBase]:
+        """The alarm bases for the device of this DataManager."""
         return self._alarm_bases
 
     @property
@@ -230,11 +231,8 @@ class DataManager:
         :return:
             A TelemetryData object for this DataManager's device and the given time range and tags.
         """
-        tags = set(tags)
-        device_tags = set(self.tags)
-        if not (tags <= device_tags):
-            raise ValueError(f'got unexpected tags {tags - device_tags}')
-        subset_parameters = {
-            tag: parameter for tag, parameter in self.parameters.items() if tag in tags
-        }
-        return TelemetryData(self._device_name, start_time, end_time, subset_parameters)
+        selected_tag_set = set(tags)
+        device_tag_set = set(self.tags)
+        if not (selected_tag_set <= device_tag_set):
+            raise ValueError(f'got unexpected tags {selected_tag_set - device_tag_set}')
+        return TelemetryData(self, start_time, end_time, tags)

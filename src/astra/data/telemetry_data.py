@@ -4,10 +4,14 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from astra.data import export_manager
 from astra.data.database import db_manager
-from astra.data.parameters import Parameter, ParameterValue, Tag
+from astra.data.parameters import ParameterValue, Tag
+
+if TYPE_CHECKING:
+    from astra.data.data_manager import DataManager
 
 
 class InternalDatabaseError(IOError):
@@ -35,39 +39,66 @@ class TelemetryData:
     The columns will match the set of tags.
     """
 
-    _device_name: str
+    _data_manager: 'DataManager'
     _start_time: datetime | None  # Unbounded if None
     _end_time: datetime | None  # Unbounded if None
-    _parameters: dict[Tag, Parameter]
+    _tags: Iterable[Tag]
 
     def __init__(
         self,
-        device_name: str,
+        data_manager: 'DataManager',
         start_time: datetime | None,
         end_time: datetime | None,
-        parameters: dict[Tag, Parameter],
+        tags: Iterable[Tag],
     ):
         # Not meant to be instantiated directly. Instead, create via DataManager.get_telemetry_data.
-        self._device_name = device_name
+        self._data_manager = data_manager
         self._start_time = start_time
         self._end_time = end_time
-        self._parameters = parameters
+        self._tags = tags
 
     @property
     def tags(self) -> Iterable[Tag]:
-        return self._parameters.keys()
+        """The tags for this TelemetryData."""
+        return self._tags
 
     def _convert_dtype(self, tag: Tag, value: float | None) -> ParameterValue:
         # Convert the float telemetry value from the database
         # to the correct type for the given parameter.
         if value is None:
             return None
-        return self._parameters[tag].dtype(value)
+        return self._data_manager.parameters[tag].dtype(value)
 
     @cached_property
     def num_telemetry_frames(self) -> int:
-        """Return the number of telemetry frames (rows) for this TelemetryData."""
-        return db_manager.num_telemetry_frames(self._device_name, self._start_time, self._end_time)
+        """The number of telemetry frames (rows) for this TelemetryData."""
+        return db_manager.num_telemetry_frames(
+            self._data_manager.device_name, self._start_time, self._end_time
+        )
+
+    def timestamps(self, step: int = 1) -> Iterable[datetime]:
+        """
+        Get all the timestamps for this TelemetryData.
+
+        :param step:
+            When step=n, only get every nth timestamp. Only positive steps are supported.
+
+        :raise ValueError:
+            If step is zero or negative.
+
+        :return:
+            An iterable of timestamps.
+        """
+        if step <= 0:
+            raise ValueError(f'timestamps step must be positive; got {step}')
+        # With the current design, a tag is required to access lists of timestamps.
+        # Just pick one from the list of tags for the device.
+        # Requires there to be at least one tag in the device configuration file,
+        # but does not require there to be at least one tag in the TelemetryData itself.
+        tag = next(iter(self._data_manager.tags))
+        return [timestamp for _, timestamp in db_manager.get_telemetry_data_by_tag(
+            self._data_manager.device_name, self._start_time, self._end_time, tag, step
+        )]
 
     def get_telemetry_frame(self, index: int) -> TelemetryFrame:
         """
@@ -90,10 +121,10 @@ class TelemetryData:
         if index < 0:
             index += self.num_telemetry_frames
         timestamp = db_manager.get_timestamp_by_index(
-            self._device_name, self._start_time, self._end_time, index
+            self._data_manager.device_name, self._start_time, self._end_time, index
         )
         data = db_manager.get_telemetry_data_by_timestamp(
-            self._device_name, set(self.tags), timestamp
+            self._data_manager.device_name, set(self.tags), timestamp
         )
         return TelemetryFrame(
             timestamp,
@@ -123,7 +154,7 @@ class TelemetryData:
         if step <= 0:
             raise ValueError(f'get_parameter_values step must be positive; got {step}')
         data = db_manager.get_telemetry_data_by_tag(
-            self._device_name, self._start_time, self._end_time, tag, step
+            self._data_manager.device_name, self._start_time, self._end_time, tag, step
         )
         return {timestamp: self._convert_dtype(tag, value) for value, timestamp in data}
 
@@ -139,7 +170,6 @@ class TelemetryData:
         :raise ValueError:
             If step is zero or negative.
         """
-        # TODO: look into supporting this operation when there are no tags selected.
         if step <= 0:
             raise ValueError(f'save_to_file step must be positive; got {step}')
         export_manager.export_data(filename, self, step)

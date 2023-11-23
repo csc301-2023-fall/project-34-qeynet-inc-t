@@ -54,11 +54,7 @@ def export_data(
             f'supported file extensions are: {', '.join(_file_extension_to_exporter.keys())}'
         )
 
-    # With the current design, a tag is required to access lists of timestamps.
-    tag = next(iter(telemetry_data.tags))
-    timestamps = list(telemetry_data.get_parameter_values(tag).keys())
-
-    df = pd.DataFrame(index=timestamps)
+    df = pd.DataFrame(index=list(telemetry_data.timestamps(step)))
     for tag in telemetry_data.tags:
         df[tag] = telemetry_data.get_parameter_values(tag, step).values()
 
