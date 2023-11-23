@@ -122,7 +122,7 @@ class DashboardHandler(UseCaseHandler):
             return 'None'
         else:
             eventbase_description = alarm.event.base.description
-            return f'{alarm.priority}: \n {eventbase_description}'
+            return f'{alarm.priority}: {eventbase_description}'
 
     @classmethod
     def _tag_to_alarms(cls, tags: list[Tag],
