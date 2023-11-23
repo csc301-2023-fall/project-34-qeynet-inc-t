@@ -36,12 +36,12 @@ _file_extension_to_exporter: Mapping[str, Callable[[str, pd.DataFrame], None]] =
 
 
 def export_data(
-        filename: str,
-        device_name: str,
-        start_time: datetime | None,
-        end_time: datetime | None,
-        parameters: Mapping[Tag, Parameter],
-        step: int
+    filename: str,
+    device_name: str,
+    start_time: datetime | None,
+    end_time: datetime | None,
+    parameters: Mapping[Tag, Parameter],
+    step: int,
 ) -> None:
     """
     Export data to a file, determining the format from the file extension.
@@ -80,14 +80,18 @@ def export_data(
 
     # With the current design, a tag is required to access lists of timestamps.
     tag = next(iter(parameters.keys()))
-    timestamps = [timestamp for _, timestamp in db_manager.get_telemetry_data_by_tag(
-        device_name, start_time, end_time, tag, step
-    )]
+    timestamps = [
+        timestamp
+        for _, timestamp in db_manager.get_telemetry_data_by_tag(
+            device_name, start_time, end_time, tag, step
+        )
+    ]
 
     df = pd.DataFrame(index=timestamps)
     for tag, parameter in parameters.items():
         df[tag] = [
-            _convert_dtype(parameter, value) for value, _ in db_manager.get_telemetry_data_by_tag(
+            _convert_dtype(parameter, value)
+            for value, _ in db_manager.get_telemetry_data_by_tag(
                 device_name, start_time, end_time, tag, step
             )
         ]

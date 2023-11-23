@@ -92,12 +92,13 @@ class TelemetryData:
             self._device_name, self._start_time, self._end_time, index
         )
         data = db_manager.get_telemetry_data_by_timestamp(self._device_name, self._tags, timestamp)
-        return TelemetryFrame(timestamp, {
-            Tag(tag_name): self._convert_dtype(Tag(tag_name), value) for tag_name, value in data
-        })
+        return TelemetryFrame(
+            timestamp,
+            {Tag(tag_name): self._convert_dtype(Tag(tag_name), value) for tag_name, value in data},
+        )
 
     def get_parameter_values(
-            self, tag: Tag, step: int = 1
+        self, tag: Tag, step: int = 1
     ) -> Mapping[datetime, ParameterValue | None]:
         """
         Return a column of this TelemetryData in the form of a timestamp->value mapping.

@@ -20,6 +20,7 @@ class AlarmsContainer:
     :param alarms: The actual dictionary of alarms held
     :param mutex: A lock used for mutating cls.alarms
     """
+
     alarms: dict[AlarmPriority, list[Alarm]] = None
     mutex = None
 
@@ -244,7 +245,7 @@ class DataManager:
         start_time: datetime | None,
         end_time: datetime | None,
         tags: Iterable[Tag],
-        step: int
+        step: int,
     ) -> None:
         """
         Export telemetry data for the device of this DataManager to a file.
