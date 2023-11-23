@@ -96,22 +96,29 @@ class TelemetryData:
             Tag(tag_name): self._convert_dtype(Tag(tag_name), value) for tag_name, value in data
         })
 
-    def get_parameter_values(self, tag: Tag) -> Mapping[datetime, ParameterValue | None]:
+    def get_parameter_values(
+            self, tag: Tag, step: int = 1
+    ) -> Mapping[datetime, ParameterValue | None]:
         """
         Return a column of this TelemetryData in the form of a timestamp->value mapping.
 
         :param tag:
             The tag for the parameter to get values for.
+        :param step:
+            When step=n, only get every nth value. Only positive steps are supported.
 
         :raise ValueError:
             If the tag isn't among the set of tags in this TelemetryData.
+            If step is zero or negative.
 
         :return:
             A mapping from timestamps to the values of the given parameter at those timestamps.
         """
         if tag not in self._tags:
             raise ValueError(f'got unexpected tag {tag}')
+        if step <= 0:
+            raise ValueError(f'get_parameter_values step must be positive; got {step}')
         data = db_manager.get_telemetry_data_by_tag(
-            self._device_name, self._start_time, self._end_time, tag
+            self._device_name, self._start_time, self._end_time, tag, step
         )
         return {timestamp: self._convert_dtype(tag, value) for value, timestamp in data}
