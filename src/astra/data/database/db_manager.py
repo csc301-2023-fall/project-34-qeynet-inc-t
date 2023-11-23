@@ -249,147 +249,147 @@ def num_telemetry_frames(
             raise ValueError("Device does not exist in database")
 
 
-# def get_timestamp_by_index(
-#     device_name: str,
-#     start_time: datetime | None,
-#     end_time: datetime | None,
-#     index: int,
-# ) -> datetime:
-#     """
-#         The <index>th timestamp for a device between start_time and end_time
-#         May assume: 0 <= <index> < <number of timestamps>
-#     Args:
-#         device_name (str): name of the device
-#         start_time (datetime | None): the start time of the data
-#         end_time (datetime | None): the end time of the data
-#         index (int): the index of the timestamp
-
-#     Returns:
-#         datetime: the ith timestamp for the given device between start_time
-#                   and end_time
-#     """
-#     device = get_device(device_name)
-#     with Session.begin() as session:
-#         if device:
-#             device_name = device.device_name
-#             # tag_id_name = get_tag_id_name(device_name)
-#             # tag_ids = [tag_id for tag_id, _ in tag_id_name]
-#             select_stmt = (
-#                 select(Data.timestamp)
-#                 .where(
-#                     Device.device_name == device_name,
-#                 )
-#                 .where(
-#                     Tag.device_id == Device.device_id,
-#                 )
-#                 .where(
-#                     Tag.tag_id == Data.tag_id,
-#                 )
-#                 .group_by(Data.timestamp)
-#                 .order_by(Data.timestamp)
-#                 .limit(index + 1)
-#             )
-#             if start_time is not None:
-#                 select_stmt = select_stmt.where(Data.timestamp >= start_time)
-#             if end_time is not None:
-#                 select_stmt = select_stmt.where(Data.timestamp <= end_time)
-#             return session.execute(select_stmt).all()[-1][0]
-#         else:
-#             raise ValueError("Device does not exist in database")
-
-
-# def get_telemetry_data_by_timestamp(
-#     device_name: str, tags: set[str] | None, timestamp: datetime
-# ) -> list[tuple[str, float]]:
-#     """
-#         All the data for the telemetry frame with the given timestamp for a device.
-#         May assume: timestamp is valid for the device
-#     Args:
-#         device_name (str): name of the device
-#         tags (set[str]): set of tags for the data to be returned
-#         timestamp (datetime): the timestamp of the data
-
-#     Returns:
-#         list[tuple[str, float]]: a list of tuple (tag_name, value) for the given
-#                                  device/tags with the given timestamp
-#     """
-#     device = get_device(device_name)
-#     with Session.begin() as session:
-#         if device:
-#             device_id = device.device_id
-#             select_stmt = (
-#                 select(Tag.tag_name, Data.value)
-#                 .where(Data.tag_id == Tag.tag_id)
-#                 .where(Tag.device_id == device_id)
-#                 .where(Data.timestamp == timestamp)
-#             )
-#             if tags is not None:
-#                 select_stmt = select_stmt.where(Tag.tag_name.in_(tags))
-
-#             return session.execute(select_stmt).all()
-#         else:
-#             raise ValueError("Device does not exist in database")
-
-
-def get_telemetry_data_by_index(
+def get_timestamp_by_index(
     device_name: str,
-    tags: set[str] | None,
     start_time: datetime | None,
     end_time: datetime | None,
     index: int,
-) -> list[tuple[str, float]]:
+) -> datetime:
     """
-        All the data for the telemetry frame with the <index>th timestamp
-        for a device between start_time and end_time.
+        The <index>th timestamp for a device between start_time and end_time
         May assume: 0 <= <index> < <number of timestamps>
     Args:
         device_name (str): name of the device
-        tags (set[str]): set of tags for the data to be returned
         start_time (datetime | None): the start time of the data
         end_time (datetime | None): the end time of the data
         index (int): the index of the timestamp
+
+    Returns:
+        datetime: the ith timestamp for the given device between start_time
+                  and end_time
+    """
+    device = get_device(device_name)
+    with Session.begin() as session:
+        if device:
+            device_name = device.device_name
+            # tag_id_name = get_tag_id_name(device_name)
+            # tag_ids = [tag_id for tag_id, _ in tag_id_name]
+            select_stmt = (
+                select(Data.timestamp)
+                .where(
+                    Device.device_name == device_name,
+                )
+                .where(
+                    Tag.device_id == Device.device_id,
+                )
+                .where(
+                    Tag.tag_id == Data.tag_id,
+                )
+                .group_by(Data.timestamp)
+                .order_by(Data.timestamp)
+                .limit(index + 1)
+            )
+            if start_time is not None:
+                select_stmt = select_stmt.where(Data.timestamp >= start_time)
+            if end_time is not None:
+                select_stmt = select_stmt.where(Data.timestamp <= end_time)
+            return session.execute(select_stmt).all()[-1][0]
+        else:
+            raise ValueError("Device does not exist in database")
+
+
+def get_telemetry_data_by_timestamp(
+    device_name: str, tags: set[str] | None, timestamp: datetime
+) -> list[tuple[str, float]]:
+    """
+        All the data for the telemetry frame with the given timestamp for a device.
+        May assume: timestamp is valid for the device
+    Args:
+        device_name (str): name of the device
+        tags (set[str]): set of tags for the data to be returned
+        timestamp (datetime): the timestamp of the data
 
     Returns:
         list[tuple[str, float]]: a list of tuple (tag_name, value) for the given
                                  device/tags with the given timestamp
     """
     device = get_device(device_name)
-    if device:
-        with Session.begin() as session:
-            device_name = device.device_name
-            sub_query = (
-                session.query(Data.timestamp.label("timestamp"))
-                .join(Data.tag)
-                .join(Tag.device)
-                .filter(
-                    Device.device_name == device_name,
-                )
-                .group_by(Data.timestamp)
-                .order_by(Data.timestamp)
+    with Session.begin() as session:
+        if device:
+            device_id = device.device_id
+            select_stmt = (
+                select(Tag.tag_name, Data.value)
+                .where(Data.tag_id == Tag.tag_id)
+                .where(Tag.device_id == device_id)
+                .where(Data.timestamp == timestamp)
             )
-            # Check the range of the timestamp
-            if start_time is not None:
-                sub_query = sub_query.filter(Data.timestamp >= start_time)
-            if end_time is not None:
-                sub_query = sub_query.filter(Data.timestamp <= end_time)
-            timestamp = sub_query.limit(1).offset(index).all()
-
-            query = (
-                session.query(Tag.tag_name, Data.value)
-                .join(Data.tag)
-                .join(Tag.device)
-                .filter(
-                    Device.device_name == device_name,
-                    Data.timestamp == timestamp[0][0],
-                )
-            )
-
             if tags is not None:
-                query = query.filter(Tag.tag_name.in_(tags))
+                select_stmt = select_stmt.where(Tag.tag_name.in_(tags))
 
-            return query.all()
-    else:
-        raise ValueError("Device does not exist in database")
+            return session.execute(select_stmt).all()
+        else:
+            raise ValueError("Device does not exist in database")
+
+
+# def get_telemetry_data_by_index(
+#     device_name: str,
+#     tags: set[str] | None,
+#     start_time: datetime | None,
+#     end_time: datetime | None,
+#     index: int,
+# ) -> list[tuple[str, float]]:
+#     """
+#         All the data for the telemetry frame with the <index>th timestamp
+#         for a device between start_time and end_time.
+#         May assume: 0 <= <index> < <number of timestamps>
+#     Args:
+#         device_name (str): name of the device
+#         tags (set[str]): set of tags for the data to be returned
+#         start_time (datetime | None): the start time of the data
+#         end_time (datetime | None): the end time of the data
+#         index (int): the index of the timestamp
+#
+#     Returns:
+#         list[tuple[str, float]]: a list of tuple (tag_name, value) for the given
+#                                  device/tags with the given timestamp
+#     """
+#     device = get_device(device_name)
+#     if device:
+#         with Session.begin() as session:
+#             device_name = device.device_name
+#             sub_query = (
+#                 session.query(Data.timestamp.label("timestamp"))
+#                 .join(Data.tag)
+#                 .join(Tag.device)
+#                 .filter(
+#                     Device.device_name == device_name,
+#                 )
+#                 .group_by(Data.timestamp)
+#                 .order_by(Data.timestamp)
+#             )
+#             # Check the range of the timestamp
+#             if start_time is not None:
+#                 sub_query = sub_query.filter(Data.timestamp >= start_time)
+#             if end_time is not None:
+#                 sub_query = sub_query.filter(Data.timestamp <= end_time)
+#             timestamp = sub_query.limit(1).offset(index).all()
+#
+#             query = (
+#                 session.query(Tag.tag_name, Data.value)
+#                 .join(Data.tag)
+#                 .join(Tag.device)
+#                 .filter(
+#                     Device.device_name == device_name,
+#                     Data.timestamp == timestamp[0][0],
+#                 )
+#             )
+#
+#             if tags is not None:
+#                 query = query.filter(Tag.tag_name.in_(tags))
+#
+#             return query.all()
+#     else:
+#         raise ValueError("Device does not exist in database")
 
 
 def get_telemetry_data_by_tag(

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from threading import Lock
 from typing import Self
 
-from astra.data import dict_parsing, telemetry_manager
+from astra.data import config_manager, dict_parsing, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
 from astra.data.database import db_manager
 from astra.data.dict_parsing import ParsingError
@@ -53,12 +53,43 @@ class DataManager:
     _alarm_bases: list[AlarmBase]
     _alarm_container: AlarmsContainer
 
+    @staticmethod
+    def add_device(config_filename: str) -> None:
+        """
+        Add a device, specified by a configuration file, to the database.
+
+        :param config_filename:
+            The path to the configuration file.
+        """
+        config_manager.read_config(config_filename)
+
+    @staticmethod
+    def remove_device(device_name: str) -> None:
+        """
+        Remove a device and all of its associated data from the database.
+
+        :param device_name:
+            The name of the device to remove (metadata.device in the device configuration file).
+        """
+        db_manager.delete_device(device_name)
+
+    @staticmethod
+    def get_device_names() -> Iterable[str]:
+        """
+        Get the names of all devices in the database.
+
+        :return:
+            An iterable of device names (metadata.device in the device configuration file).
+            The name of every device in the database is included exactly once.
+        """
+        return db_manager.get_device_names()
+
     def __init__(self, device_name: str):
         """
         Construct a DataManager for the device with the given name.
 
         :param device_name:
-            The name of the device (metadata.device in the device configuration file)
+            The name of the device (metadata.device in the device configuration file).
 
         :raise ValueError:
             If there is no device with the given name.
@@ -119,7 +150,6 @@ class DataManager:
     @property
     def alarms(self) -> AlarmsContainer:
         return self._alarm_container
-
 
     def update_alarms(self, alarms: list[Alarm]) -> None:
         """
