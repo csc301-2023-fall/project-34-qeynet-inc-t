@@ -129,8 +129,10 @@ class DashboardRequestReceiver(RequestReceiver):
         """
 
         # Determine if we can add the tag to the set of tags that we are viewing.
-        if add not in cls.filters.tags:
-            cls.filters.tags.add(add)
+        tag_index = add.index(':')
+        add_tag = add[:tag_index]
+        if add_tag not in cls.filters.tags:
+            cls.filters.tags.add(add_tag)
             return True
         else:
             # Tag was already in the set of tags that we are viewing.
@@ -158,8 +160,10 @@ class DashboardRequestReceiver(RequestReceiver):
         :return: True if the tag was successfully removed and False otherwise.
         """
         # Determine if we can remove the tag from the set of tags that we are viewing.
-        if remove in cls.filters.tags:
-            cls.filters.tags.remove(remove)
+        tag_index = remove.index(':')
+        remove_tag = remove[:tag_index]
+        if remove_tag in cls.filters.tags:
+            cls.filters.tags.remove(remove_tag)
             return True
         else:
             return False  # Tag was not in the set of tags that we are viewing.
