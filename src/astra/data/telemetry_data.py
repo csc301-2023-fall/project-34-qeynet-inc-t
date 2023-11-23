@@ -96,9 +96,12 @@ class TelemetryData:
         # Requires there to be at least one tag in the device configuration file,
         # but does not require there to be at least one tag in the TelemetryData itself.
         tag = next(iter(self._data_manager.tags))
-        return [timestamp for _, timestamp in db_manager.get_telemetry_data_by_tag(
-            self._data_manager.device_name, self._start_time, self._end_time, tag, step
-        )]
+        return [
+            timestamp
+            for _, timestamp in db_manager.get_telemetry_data_by_tag(
+                self._data_manager.device_name, self._start_time, self._end_time, tag, step
+            )
+        ]
 
     def get_telemetry_frame(self, index: int) -> TelemetryFrame:
         """
