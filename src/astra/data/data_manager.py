@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from threading import Lock
 from typing import Self
 
-from astra.data import config_manager, dict_parsing, telemetry_manager
+from astra.data import config_manager, dict_parsing, export_manager, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
 from astra.data.database import db_manager
 from astra.data.dict_parsing import ParsingError
@@ -134,6 +134,11 @@ class DataManager:
         return cls(device_name)
 
     @property
+    def device_name(self) -> str:
+        """The name of the device of this DataManager."""
+        return self._device_name
+
+    @property
     def tags(self) -> Iterable[Tag]:
         """Iterable of tags for the device of this DataManager."""
         return self._parameters.keys()
@@ -232,3 +237,50 @@ class DataManager:
             tag: parameter for tag, parameter in self.parameters.items() if tag in tags
         }
         return TelemetryData(self._device_name, start_time, end_time, subset_parameters)
+
+    def save_data_to_file(
+        self,
+        filename: str,
+        start_time: datetime | None,
+        end_time: datetime | None,
+        tags: Iterable[Tag],
+        step: int
+    ) -> None:
+        """
+        Export telemetry data for the device of this DataManager to a file.
+
+        :param filename:
+            The path to save to. The export format is determined based on the file extension.
+        :param start_time:
+            Earliest allowed time for a telemetry frame in the exported data.
+            Use None to indicate that arbitrarily old telemetry frames are allowed.
+        :param end_time:
+            Latest allowed time for a telemetry frame in the exported data.
+            Use None to indicate that arbitrarily new telemetry frames are allowed.
+        :param tags:
+            The tags that will be included in the exported data.
+            Must be a subset of the tags for the device of this DataManager.
+            Must be nonempty.
+            # TODO: look into relaxing this restriction.
+        :param step:
+            When step=n, only export every nth value. Only positive steps are supported.
+
+        :raise ValueError:
+            If tags is not a subset of the tags for the device of this DataManager.
+            If tags is empty.
+            If step is zero or negative.
+        """
+        tags = set(tags)
+        device_tags = set(self.tags)
+        if not (tags <= device_tags):
+            raise ValueError(f'got unexpected tags {tags - device_tags}')
+        if not tags:
+            raise ValueError(f'data export with no selected tags is currently not supported')
+        if step <= 0:
+            raise ValueError(f'save_data_to_file step must be positive; got {step}')
+        subset_parameters = {
+            tag: parameter for tag, parameter in self.parameters.items() if tag in tags
+        }
+        export_manager.export_data(
+            filename, self._device_name, start_time, end_time, subset_parameters, step
+        )
