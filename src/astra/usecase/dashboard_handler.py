@@ -8,10 +8,6 @@ from astra.data.alarms import (
     Alarm,
     AlarmCriticality,
     AlarmPriority,
-    AllEventBase,
-    AnyEventBase,
-    EventBase,
-    SOEEventBase
 )
 from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
@@ -129,28 +125,6 @@ class DashboardHandler(UseCaseHandler):
             return f'{alarm.priority}: \n {eventbase_description}'
 
     @classmethod
-    def _get_related_tags(cls, eventbase: EventBase) -> list[Tag]:
-        """
-        Searches through <eventbase> to find its related Tag or Tags, then returns them
-        in a list.
-
-        :param eventbase: The eventbase to search through
-        :return: A list of the related tags
-        """
-        if not (isinstance(eventbase, SOEEventBase) or isinstance(eventbase, AllEventBase)
-                or isinstance(eventbase, AnyEventBase)):
-            # base case: we have a single tag alarm. (then eventbase.tag will exist)
-            return [eventbase.tag]
-        else:
-            # recursive case: we have a compound alarm.
-            # then we must grab the tag for each of the eventbases in the compound alarm.
-            list_of_tags = []
-            for eventbase in eventbase.event_bases:
-                list_of_tags.extend(cls._get_related_tags(eventbase))
-
-        return list_of_tags
-
-    @classmethod
     def _tag_to_alarms(cls, tags: list[Tag],
                        alarms: dict[AlarmPriority, list[Alarm]]) -> dict[Tag, Alarm]:
         """
@@ -170,11 +144,11 @@ class DashboardHandler(UseCaseHandler):
 
         # loop over each priority starting from the highest.
         for priority in priorities:
-            alarms_at_this_prio = alarms[priority.name]
+            alarms_at_this_prio = alarms[priority.value]
 
             # loop over each alarm at this priority and get their related tags
             for alarm in alarms_at_this_prio:
-                tags_for_this_alarm = cls._get_related_tags(alarm.event.base)
+                tags_for_this_alarm = alarm.event.base.tags
 
                 # If we haven't already seen this tag at a higher priority, add it to the dict along
                 # with the related alarm.
