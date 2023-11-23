@@ -104,6 +104,15 @@ class TestClass(unittest.TestCase):
                     "setpoint": 1,
                 },
             ),
+            (
+                "2e4",
+                {
+                    "description": "Pawn e2-2e4",
+                    "display_units": None,
+                    "dtype": "bool",
+                    "setpoint": False,
+                },
+            ),
         ]
 
         self.assertEqual(expected, actual)
@@ -141,13 +150,13 @@ class TestClass(unittest.TestCase):
         """tests if get_tag_id_name returns the correct tag id name"""
         data = get_tag_id_name("test_config1")
         actual = [(tag_id, tag_name) for tag_id, tag_name in data]
-        expected = [(2, "Nf3"), (1, "e4")]
+        expected = [(3, "2e4"), (2, "Nf3"), (1, "e4")]
 
         self.assertEqual(expected, actual)
 
         data = get_tag_id_name("test_config2")
         actual = [(tag_id, tag_name) for tag_id, tag_name in data]
-        expected = [(4, "2Nf3"), (3, "e4")]
+        expected = [(5, "2Nf3"), (4, "e4")]
 
         self.assertEqual(expected, actual)
 
@@ -196,7 +205,7 @@ class TestClass(unittest.TestCase):
         actual = get_telemetry_data_by_index(
             "test_config1", None, None, None, 4
         )
-        expected = [("Nf3", 466288.2692964514), ("e4", None)]
+        expected = [("Nf3", 466288.2692964514), ("e4", None), ('2e4', None)]
 
         self.assertEqual(expected, actual)
 
@@ -271,6 +280,7 @@ class TestClass(unittest.TestCase):
         read_telemetry("./test_files/test_telemetry1.yaml")
         read_config("./test_files/test_config2.yaml")
         read_telemetry("./test_files/test_telemetry2.yaml")
+
 
 if __name__ == "__main__":
     unittest.main()

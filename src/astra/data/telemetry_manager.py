@@ -29,32 +29,32 @@ def _read_telemetry_hdf5(filename: str) -> datetime:
         device_name = telemetry_metadata.attrs["device"]
         device = get_device(device_name)
         if device:
-            # included_tags = set(h5file["telemetry"].keys())
-            # excluded_tags = {
-            #     tag_name for _, tag_name in get_tag_id_name(device_name)
-            # } - included_tags
-            # [values_length] = {
-            #     len(values) for values in h5file["telemetry"].values()
-            # }
-            # # get the telemetry data and use pandas to store it in a dataframe
-            # telemetry_data = pd.DataFrame(
-            #     {
-            #         header: values
-            #         for header, values in h5file["telemetry"].items()
-            #     }
-            #     | {
-            #         tag_name: [None] * values_length
-            #         for tag_name in excluded_tags
-            #     }
-            # )
-
-            # create a dataframe from the telemetry data
+            included_tags = set(h5file["telemetry"].keys())
+            excluded_tags = {
+                tag_name for _, tag_name in get_tag_id_name(device_name)
+            } - included_tags
+            [values_length] = {
+                len(values) for values in h5file["telemetry"].values()
+            }
+            # get the telemetry data and use pandas to store it in a dataframe
             telemetry_data = pd.DataFrame(
                 {
                     header: values
                     for header, values in h5file["telemetry"].items()
                 }
+                | {
+                    tag_name: [None] * values_length
+                    for tag_name in excluded_tags
+                }
             )
+
+            # # create a dataframe from the telemetry data
+            # telemetry_data = pd.DataFrame(
+            #     {
+            #         header: values
+            #         for header, values in h5file["telemetry"].items()
+            #     }
+            # )
 
             # write the data to database
             earliest_added_timestamp = _dataframe_to_database(
@@ -79,14 +79,30 @@ def _read_telemetry_yaml(filename: str) -> datetime:
         config_contents = yaml.safe_load(yaml_file)
         metadata = config_contents["metadata"]
         telemetry_data = config_contents["telemetry"]
-
-        device = get_device(metadata["device"])
+        device_name = metadata["device"]
+        device = get_device(device_name)
 
         if device:
-            # create a dataframe from the telemetry data
-            telemetry_data = pd.DataFrame(telemetry_data)
+            included_tags = set(telemetry_data.keys())
+            excluded_tags = {
+                tag_name for _, tag_name in get_tag_id_name(device_name)
+            } - included_tags
+            [values_length] = {
+                len(values) for values in telemetry_data.values()
+            }
+            # get the telemetry data and use pandas to store it in a dataframe
+            telemetry_dataframe = pd.DataFrame(
+                {header: values for header, values in telemetry_data.items()}
+                | {
+                    tag_name: [None] * values_length
+                    for tag_name in excluded_tags
+                }
+            )
+
+            # # create a dataframe from the telemetry data
+            # telemetry_dataframe = pd.DataFrame(telemetry_data)
             earliest_added_timestamp = _dataframe_to_database(
-                telemetry_data, device
+                telemetry_dataframe, device
             )
 
             # return the earliest timestamp in the telemetry data

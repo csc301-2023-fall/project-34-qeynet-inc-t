@@ -43,3 +43,8 @@ tags:
       symbol: mm
     dtype: float
     setpoint: 1
+- 2e4:
+    description: Pawn e2-2e4
+    display_units: null
+    dtype: bool
+    setpoint: false
