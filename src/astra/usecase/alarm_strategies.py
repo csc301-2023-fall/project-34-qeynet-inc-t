@@ -260,8 +260,8 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
     return times
 
 
-def roc_from_time_check(data: Mapping[datetime, ParameterValue | None], times: list[datetime],
-                        start_date: datetime, time_window: float) -> float:
+def running_average_at_time(data: Mapping[datetime, ParameterValue | None], times: list[datetime],
+                            start_date: datetime, time_window: float) -> float:
     """
     Gets the rate of change of the tag within the <td> from <start_date> to <end_date>.
 
@@ -337,12 +337,20 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     # fall alarm, and 0 indicates no alarm.
     rising_or_falling_list = []
 
-    curr_roc = 0.0
+    curr_running_average = 0.0
+    if len(times) > 0:
+        prev_running_average = running_average_at_time(tag_values, times,
+                                                       times[0], alarm_base.time_window)
+    else:
+        prev_running_average = 0.0
     # Calculate the rate of change for each time window, and add the appropriate
     # number to the list.
-    for start_date in times:
+    for start_date in times[1:-1]:
 
-        curr_roc = roc_from_time_check(tag_values, times, start_date, alarm_base.time_window)
+        # ROC is found by subtracting the previous running average from the current one.
+        curr_running_average = running_average_at_time(tag_values, times,
+                                                       start_date, alarm_base.time_window)
+        curr_roc = curr_running_average - prev_running_average
 
         if (rate_of_rise_threshold is not None) and (curr_roc > rate_of_rise_threshold):
             rising_or_falling_list.append(1)
@@ -351,8 +359,9 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
         else:
             rising_or_falling_list.append(0)
 
-    # Now I will create one list for rising and falling alarms, and
-    # check for persistence.
+        prev_running_average = curr_running_average
+
+    # Now we create one list for rising and for falling alarms, and check for persistence.
     rising_alarm_indexes = []
     rising_false_indexes = []
     falling_alarm_indexes = []
@@ -384,6 +393,7 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     falling_persistence = persistence_check(falling_alarm_indexes, sequence, falling_false_indexes)
     alarms = []
 
+    # Now we create the appropriate alarms.
     for index in rising_persistence:
         new_alarm = create_alarm(index, times, alarm_base, criticality)
         alarms.append(new_alarm)
