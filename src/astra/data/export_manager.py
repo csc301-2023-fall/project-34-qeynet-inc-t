@@ -1,22 +1,13 @@
 """This module takes care of exporting telemetry data to a file."""
 
 from collections.abc import Callable, Mapping
-from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from astra.data.database import db_manager
-from astra.data.parameters import Parameter, ParameterValue, Tag
-
-
-def _convert_dtype(parameter: Parameter, value: float | None) -> ParameterValue:
-    # Convert the float telemetry value from the database
-    # to the correct type for the given parameter.
-    # Modified from TelemetryData.
-    if value is None:
-        return None
-    return parameter.dtype(value)
+if TYPE_CHECKING:
+    from astra.data.telemetry_data import TelemetryData
 
 
 # Exporter DataFrame input format:
@@ -37,14 +28,11 @@ _file_extension_to_exporter: Mapping[str, Callable[[str, pd.DataFrame], None]] =
 
 def export_data(
     filename: str,
-    device_name: str,
-    start_time: datetime | None,
-    end_time: datetime | None,
-    parameters: Mapping[Tag, Parameter],
+    telemetry_data: 'TelemetryData',
     step: int,
 ) -> None:
     """
-    Export data to a file, determining the format from the file extension.
+    Export telemetry data to a file, determining the format from the file extension.
 
     For now, raise ValueError for unexpected file extensions.
 
@@ -52,22 +40,10 @@ def export_data(
 
     :param filename:
         The path to save to.
-    :param device_name:
-        The name of the device to export data for.
-    :param start_time:
-        Earliest allowed time for a telemetry frame in the exported data.
-        Use None to indicate that arbitrarily old telemetry frames are allowed.
-    :param end_time:
-        Latest allowed time for a telemetry frame in the exported data.
-        Use None to indicate that arbitrarily new telemetry frames are allowed.
-    :param parameters:
-        A tag->parameter mapping with the tags that will be included in the exported data.
+    :param telemetry_data:
+        The telemetry data to export.
     :param step:
-        When step=n, only export every nth value. Only positive steps are supported.
-
-    Preconditions:
-        parameters is nonempty and only contains entries associated with the device.
-        step > 0.
+        When step=n, only export every nth telemetry frame. Only positive steps are supported.
     """
     file_extension = Path(filename).suffix
     try:
@@ -79,21 +55,11 @@ def export_data(
         )
 
     # With the current design, a tag is required to access lists of timestamps.
-    tag = next(iter(parameters.keys()))
-    timestamps = [
-        timestamp
-        for _, timestamp in db_manager.get_telemetry_data_by_tag(
-            device_name, start_time, end_time, tag, step
-        )
-    ]
+    tag = next(iter(telemetry_data.tags))
+    timestamps = list(telemetry_data.get_parameter_values(tag).keys())
 
     df = pd.DataFrame(index=timestamps)
-    for tag, parameter in parameters.items():
-        df[tag] = [
-            _convert_dtype(parameter, value)
-            for value, _ in db_manager.get_telemetry_data_by_tag(
-                device_name, start_time, end_time, tag, step
-            )
-        ]
+    for tag in telemetry_data.tags:
+        df[tag] = telemetry_data.get_parameter_values(tag, step).values()
 
     exporter(filename, df)

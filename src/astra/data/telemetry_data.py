@@ -1,10 +1,11 @@
 """This module defines the TelemetryData class, representing a collection of telemetry data."""
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 
+from astra.data import export_manager
 from astra.data.database import db_manager
 from astra.data.parameters import Parameter, ParameterValue, Tag
 
@@ -52,9 +53,9 @@ class TelemetryData:
         self._end_time = end_time
         self._parameters = parameters
 
-    @cached_property
-    def _tags(self) -> set[Tag]:
-        return set(self._parameters.keys())
+    @property
+    def tags(self) -> Iterable[Tag]:
+        return self._parameters.keys()
 
     def _convert_dtype(self, tag: Tag, value: float | None) -> ParameterValue:
         # Convert the float telemetry value from the database
@@ -91,7 +92,9 @@ class TelemetryData:
         timestamp = db_manager.get_timestamp_by_index(
             self._device_name, self._start_time, self._end_time, index
         )
-        data = db_manager.get_telemetry_data_by_timestamp(self._device_name, self._tags, timestamp)
+        data = db_manager.get_telemetry_data_by_timestamp(
+            self._device_name, set(self.tags), timestamp
+        )
         return TelemetryFrame(
             timestamp,
             {Tag(tag_name): self._convert_dtype(Tag(tag_name), value) for tag_name, value in data},
@@ -115,7 +118,7 @@ class TelemetryData:
         :return:
             A mapping from timestamps to the values of the given parameter at those timestamps.
         """
-        if tag not in self._tags:
+        if tag not in self.tags:
             raise ValueError(f'got unexpected tag {tag}')
         if step <= 0:
             raise ValueError(f'get_parameter_values step must be positive; got {step}')
@@ -123,3 +126,20 @@ class TelemetryData:
             self._device_name, self._start_time, self._end_time, tag, step
         )
         return {timestamp: self._convert_dtype(tag, value) for value, timestamp in data}
+
+    def save_to_file(self, filename: str, step: int = 1) -> None:
+        """
+        Export this TelemetryData to a file.
+
+        :param filename:
+            The path to save to. The export format is determined based on the file extension.
+        :param step:
+            When step=n, only export every nth telemetry frame. Only positive steps are supported.
+
+        :raise ValueError:
+            If step is zero or negative.
+        """
+        # TODO: look into supporting this operation when there are no tags selected.
+        if step <= 0:
+            raise ValueError(f'save_to_file step must be positive; got {step}')
+        export_manager.export_data(filename, self, step)
