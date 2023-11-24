@@ -271,19 +271,20 @@ def roc_from_time_check(data: Mapping[datetime, ParameterValue | None], times: l
 
     PRECONDITION: <start_date> is in <times> and <times> are the keys of <data>.
     """
-    end_date = start_date + timedelta(seconds=time_window)
-    prev_value = data[start_date]
-    curr_index = times.index(start_date) + 1
-    curr_date = times[curr_index]
+    # end_date = start_date + timedelta(seconds=time_window)
+    # prev_value = data[start_date]
+    # curr_index = times.index(start_date) + 1
+    # curr_date = times[curr_index]
     roc = 0.0
 
-    while (curr_date < end_date):
-        curr_value = data[curr_date]
+    # while (curr_date < end_date):
+    #     curr_value = data[curr_date]
 
-        # TODO: implement the algorithm for calculating the rate of change.
+    #     # TODO: implement the algorithm for calculating the rate of change.
 
-        curr_index += 1
-        curr_date = times[curr_index]
+    #     prev_value = curr_value
+    #     curr_index += 1
+    #     curr_date = times[curr_index]
 
     return roc
 
