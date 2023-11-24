@@ -116,13 +116,29 @@ class LimitedSlotAlarms:
 
         :param alarm: The alarm to insert into the banner slots
 
-        PRECONDITION: <alarm> is in <cls._slots[NEW_QUEUE_KEY]
+        PRECONDITION: <alarm> is in <cls._slots[NEW_QUEUE_KEY]>
         """
         old_q = cls._slots[OLD_QUEUE_KEY]
         new_q = cls._slots[NEW_QUEUE_KEY]
 
         new_q.remove(alarm)
         old_q.append(alarm)
+
+    @classmethod
+    def remove_alarm_from_banner(cls, alarm: Alarm) -> None:
+        """
+        Removes <alarm> from the appropriate queue
+
+        :param alarm: The alarm to insert into the banner slots
+
+        PRECONDITION: <alarm> is in one queue in <cls._slots>
+        """
+        if alarm.acknowledgement == UNACKNOWLEDGED:
+            old_q = cls._slots[OLD_QUEUE_KEY]
+            old_q.remove(alarm)
+        else:
+            new_q = cls._slots[NEW_QUEUE_KEY]
+            new_q.remove(alarm)
 
 
 @dataclass
@@ -381,6 +397,22 @@ class AlarmsHandler(UseCaseHandler):
 
         # No need to update the table directly from here, as the alarm observer in the container
         # will do it for us
+
+    @classmethod
+    def remove_alarm(cls, alarm: Alarm, dm: DataManager) -> None:
+        """
+        Removes <alarm> from the alarm container in <dm>
+
+        :param alarm: The alarm to remove
+        :param dm: Stores the global alarm container
+        """
+        # Note: While it should be possible to mutate the alarm straight from here,
+        # the alarm container needs to do it to enforce that modifying elements of the container
+        # is critical code among threads
+
+        alarm_container = dm.alarms
+        cls.banner_container.insert_into_old(alarm)
+        alarm_container.remove_alarm(alarm)
 
     @classmethod
     def get_banner_elems(cls) -> list[str]:

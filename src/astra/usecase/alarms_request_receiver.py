@@ -332,6 +332,16 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.handler.acknowledge_alarm(alarm, dm)
 
     @classmethod
+    def remove_alarm(cls, alarm: Alarm, dm: DataManager) -> None:
+        """
+        Interfacing method to remove an alarm from <dm>
+
+        :param alarm: The alarm to remove
+        :param dm: The holder of the global alarm container
+        """
+        cls.handler.remove_alarm(alarm, dm)
+
+    @classmethod
     def get_alarm_banner(cls) -> list[str]:
         """Returns a list of strings in order to show in the alarm banners"""
         return cls.handler.get_banner_elems()
