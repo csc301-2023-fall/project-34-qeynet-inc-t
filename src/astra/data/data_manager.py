@@ -56,11 +56,7 @@ class AlarmsContainer:
     :param mutex: A lock used for mutating cls.alarms
     :param observer: An Observer to monitor the state of the container
     """
-<<<<<<< HEAD
-
-=======
     observer: AlarmObserver
->>>>>>> 71f481a0b66a2bad24216dbba72bb70c5446c34f
     alarms: dict[AlarmPriority, list[Alarm]] = None
     mutex: Lock
 
@@ -284,11 +280,7 @@ class DataManager:
     def alarms(self) -> AlarmsContainer:
         return self._alarm_container
 
-<<<<<<< HEAD
-    def update_alarms(self, alarms: list[Alarm]) -> None:
-=======
     def add_alarms(self, alarms: list[Alarm]) -> None:
->>>>>>> 71f481a0b66a2bad24216dbba72bb70c5446c34f
         """
         Updates the alarms global variable after acquiring the lock for it
 
