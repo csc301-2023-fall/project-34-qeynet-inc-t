@@ -1,6 +1,6 @@
 from datetime import datetime
 from .use_case_handlers import TableReturn
-from .alarm_handler import AlarmsHandler, AlarmsFilters  # , ReturnType
+from .alarm_handler import AlarmsHandler, AlarmsFilters
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
 from ..data.alarms import AlarmCriticality, AlarmPriority, Alarm
@@ -32,9 +32,6 @@ class AlarmsRequestReceiver(RequestReceiver):
     def __init__(cls, dm: DataManager):
         cls.handler = AlarmsHandler(dm)
         cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
-        # maybe make this inherit from dashboard filters
-        # Im assuming the alarms filter will have:
-        # (sort, index, priority, criticality, alarm_type, start_time, end_time)
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
@@ -59,7 +56,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.priorities = priorities
 
         # get all alarm types from dm
-        all_types = [RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR]
+        all_types = {RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR}
 
         # Add all types to the shown types by default.
         cls.filters.types = all_types
@@ -78,7 +75,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.handler.update_data(previous_data, cls.filters)
 
     @classmethod
-    def add_shown_priority(cls, add: AlarmPriority) -> bool:
+    def add_shown_priority(cls, add: str) -> bool:
         """
         add_shown_priority is a method that adds a priority to the set of priorities
         that we are viewing. It returns True if it was successful and False otherwise.
@@ -89,11 +86,11 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of priorities that we are viewing is not None.
         if cls.filters.priorities is None:
-            return False
+            cls.filters.priorities = set()
 
         # Determine if we can add <add> to the set of priorities that we are viewing.
         if add not in cls.filters.priorities:
-            cls.filters.priorities.add(add)
+            cls.filters.priorities.add(AlarmCriticality(add))
             return True
         else:
             # <add> was already in the set of priorities that we are viewing.
@@ -112,7 +109,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of criticalities that we are viewing is not None.
         if cls.filters.criticalities is None:
-            return False
+            cls.filters.criticalities = set()
 
         # Determine if we can add <add> to the set of criticalities that we are viewing.
         if add not in cls.filters.criticalities:
@@ -134,11 +131,11 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of types that we are viewing is not None.
         if cls.filters.types is None:
-            return False
+            cls.filters.types = set()
 
         # Determine if we can add the type to the set of types that we are viewing.
         if add not in cls.filters.types:
-            cls.filters.types.add(add)  # TODO: Iterable type has no append method (switch to set)
+            cls.filters.types.add(add)
             return True
         else:
             # Type was already in the set of types that we are viewing.
@@ -190,7 +187,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of priorities that we are viewing is not None.
         if cls.filters.priorities is None:
-            return False
+            cls.filters.priorities = set()
 
         # Determine if we can remove <remove> from the set of priorities that we are viewing.
         if remove in cls.filters.priorities:
@@ -213,7 +210,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of criticalities that we are viewing is not None.
         if cls.filters.criticalities is None:
-            return False
+            cls.filters.criticalities = set()
 
         # Determine if we can remove <remove> from the set of criticalities that we are viewing.
         if remove in cls.filters.criticalities:
@@ -235,11 +232,11 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of types that we are viewing is not None.
         if cls.filters.types is None:
-            return False
+            cls.filters.types = set()
 
         # Determine if we can remove <remove> from the set of types that we are viewing.
         if remove in cls.filters.types:
-            cls.filters.types.remove(remove)  # TODO: Iterable has no remove attribute
+            cls.filters.types.remove(remove)
             return True
         else:
             # <remove> was not in the set of types that we are viewing.
