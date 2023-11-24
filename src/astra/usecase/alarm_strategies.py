@@ -776,18 +776,10 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
 
     # iterate through each of the eventbases and get their list indicating where alarm conditions
     # where met
-    inner_alarm_indexes = []
-    for possible_event in possible_events:
-        strategy = get_strategy(possible_event)
-        alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True, Condition())
 
-        if True not in alarm_indexes:
-            return_val = [False] * len(inner_alarm_indexes)
-            with cv:
-                cv.notify()
-                return return_val
-
-        inner_alarm_indexes.append(alarm_indexes)
+    alarm_indexes = []
+    taken_indices = set()
+    alarm_data = set()
 
     all_tags = dm.tags
     for tag in all_tags:
@@ -795,34 +787,45 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
         break
     times = list(telemetry_data.get_parameter_values(any_tag).keys())
 
-    # now, iterate through the all previous lists and find where alarms were unanimously raised
-    conds_met = []
-    false_indexes = []
-    for i in range(len(inner_alarm_indexes[0])):
-        telemetry_time = times[i]
-        frame_meets_condition = True
-        for j in range(len(inner_alarm_indexes)):
-            frame_meets_condition = frame_meets_condition and inner_alarm_indexes[j][i]
-        conds_met.append((frame_meets_condition, telemetry_time))
-        if not frame_meets_condition:
-            false_indexes.append(i)
+    for possible_event in possible_events:
+        strategy = get_strategy(possible_event)
+        inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True, Condition())
 
-    # create the appropriate alarms
-    alarm_indexes = persistence_check(conds_met, sequence, false_indexes)
+        if not alarm_indexes:
+            alarm_indexes = inner_alarm_indexes
+        # Check through returned indices to find where alarms should exist
+        active_alarm = False
+
+        for i in range(len(inner_alarm_indexes)):
+            alarm_indexes[i] = alarm_indexes[i] and inner_alarm_indexes[i]
+            if alarm_indexes[i]:
+                # Verifying that we havent already indicated an alarm is active in this frame and
+                # that not previously raised alarm overlaps with this one
+                if not active_alarm and i not in taken_indices:
+                    new_alarm_data = (i, i)
+                    active_alarm = True
+                    alarm_data.add(new_alarm_data)
+                taken_indices.add(i)
+            elif active_alarm:
+                active_alarm = False
+
+        if True not in alarm_indexes:
+            return_val = [False] * len(inner_alarm_indexes)
+            with cv:
+                cv.notify()
+                return return_val
+
     alarms = []
-    first_indexes = []
-    for alarm_index in alarm_indexes:
-        first_indexes.append(alarm_index[0])
-        new_alarm = create_alarm(alarm_index, times, alarm_base, criticality)
+    for alarm in alarm_data:
+        new_alarm = create_alarm(alarm, times, alarm_base, criticality)
         alarms.append(new_alarm)
-    alarm_frames = find_alarm_indexes(first_indexes, conds_met)
 
     if not compound:
         dm.add_alarms(alarms)
 
     with cv:
         cv.notify()
-        return alarm_frames
+        return alarm_indexes
 
 
 def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
