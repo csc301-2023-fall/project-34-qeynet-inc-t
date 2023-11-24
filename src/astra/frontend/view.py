@@ -354,7 +354,7 @@ class View(Tk):
                              command=lambda: self.sort_alarms('REGISTERED'))
         alarms_table.heading("Confirmed", text="Confirmed ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('CONFIRMED'))
-        alarms_table.heading("Type", text="Type", anchor=CENTER,
+        alarms_table.heading("Type", text="Type ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('TYPE'))
         alarms_table.heading("Parameter(s)", text="Parameter(s)", anchor=CENTER)
         alarms_table.heading("Description", text="Description", anchor=CENTER)
@@ -372,7 +372,7 @@ class View(Tk):
             self.refresh_alarms_table()
 
     def sort_alarms(self, tag: str):
-        headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed']
+        headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed', 'Type']
         ascending = self.alarms_view_model.toggle_sort(heading=tag)
 
         if tag != 'ID':
