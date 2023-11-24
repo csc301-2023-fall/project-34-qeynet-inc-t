@@ -47,17 +47,10 @@ class DashboardRequestReceiver(RequestReceiver):
     and updating the sorting filter to be applied.
     """
 
-    filters: DashboardFilters
-    handler: DashboardHandler
-    search_cache: dict[str, list[str]]
-    search_eviction: Queue
-
-    @classmethod
-    def __init__(cls):
-        cls.handler = DashboardHandler()
-        cls.filters = DashboardFilters(None, None, None, None, None)
-        cls.search_cache = dict()
-        cls.search_eviction = Queue()
+    filters = DashboardFilters(None, None, None, None, None)
+    handler = DashboardHandler()
+    search_cache = dict()
+    search_eviction = Queue()
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
