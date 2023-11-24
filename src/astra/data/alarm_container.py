@@ -22,11 +22,6 @@ class AlarmObserver:
     _mutex = Lock()
 
     @classmethod
-    def __int__(cls):
-        cls.watchers = []
-        cls._mutex = Lock()
-
-    @classmethod
     def add_watcher(cls, watcher: Callable):
         """
         Adds a new function to call on alarm container being updated
@@ -53,17 +48,11 @@ class AlarmsContainer:
     :param mutex: A lock used for mutating cls.alarms
     :param observer: An Observer to monitor the state of the container
     """
-    observer: AlarmObserver
-    alarms: dict[str, list[Alarm] | Queue]
-    mutex: Lock
-
-    @classmethod
-    def __init__(cls):
-        cls.alarms = {AlarmPriority.WARNING.name: [], AlarmPriority.LOW.name: [],
-                      AlarmPriority.MEDIUM.name: [], AlarmPriority.HIGH.name: [],
-                      AlarmPriority.CRITICAL.name: [], NEW_QUEUE_KEY: Queue()}
-        cls.mutex = Lock()
-        cls.observer = AlarmObserver()
+    observer = AlarmObserver()
+    alarms = {AlarmPriority.WARNING.name: [], AlarmPriority.LOW.name: [],
+              AlarmPriority.MEDIUM.name: [], AlarmPriority.HIGH.name: [],
+              AlarmPriority.CRITICAL.name: [], NEW_QUEUE_KEY: Queue()}
+    mutex = Lock()
 
     @classmethod
     def get_alarms(cls) -> dict[str, list[Alarm] | Queue]:

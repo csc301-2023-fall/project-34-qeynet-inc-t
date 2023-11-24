@@ -27,13 +27,8 @@ class AlarmsRequestReceiver(RequestReceiver):
     from the sets of them that we are viewing, and updating the sorting filter to be applied.
     """
 
-    filters: AlarmsFilters
-    handler: AlarmsHandler
-
-    @classmethod
-    def __init__(cls, dm: DataManager):
-        cls.handler = AlarmsHandler(dm)
-        cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
+    filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
+    handler = AlarmsHandler()
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:

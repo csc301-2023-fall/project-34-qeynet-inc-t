@@ -114,7 +114,7 @@ class View(Tk):
         tag_table.configure(yscrollcommand=tag_table_scroll.set)
         tag_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 4)
         self.data_tag_table = tag_table
-        tag_table['columns'] = ("tag")
+        tag_table['columns'] = ("tag",)
         tag_table.column("#0", width=0, stretch=NO)
         tag_table.column("tag")
         tag_table.grid(sticky='NEWS', row=4, column=0, columnspan=2, rowspan=num_rows - 4)
@@ -353,7 +353,7 @@ class View(Tk):
                              command=lambda: self.sort_alarms('REGISTERED'))
         alarms_table.heading("Confirmed", text="Confirmed ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('CONFIRMED'))
-        alarms_table.heading("Type", text="Type", anchor=CENTER,
+        alarms_table.heading("Type", text="Type ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('TYPE'))
         alarms_table.heading("Parameter(s)", text="Parameter(s)", anchor=CENTER)
         alarms_table.heading("Description", text="Description", anchor=CENTER)
@@ -372,7 +372,7 @@ class View(Tk):
             self.refresh_alarms_table()
 
     def sort_alarms(self, tag: str):
-        headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed']
+        headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed', 'Type']
         ascending = self.alarms_view_model.toggle_sort(heading=tag)
 
         if tag != 'ID':
@@ -608,7 +608,7 @@ class View(Tk):
         }:{
         self.end_sec.get()
         }"
-        if input_start_time:
+        if input_start_time != '-- ::':
             try:
                 start_time = datetime.strptime(input_start_time, '%Y-%m-%d %H:%M:%S')
             except ValueError:
@@ -622,7 +622,7 @@ class View(Tk):
                 return
         else:
             start_time = None
-        if input_end_time:
+        if input_end_time != '-- ::':
             try:
                 end_time = datetime.strptime(input_end_time, '%Y-%m-%d %H:%M:%S')
             except ValueError:
