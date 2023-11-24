@@ -5,13 +5,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import cached_property
-from typing import NewType, override
+from typing import ClassVar, NewType, override
 
 from astra.data.parameters import ParameterValue, Tag
 
 
 @dataclass(frozen=True)
 class EventBase(ABC):
+    type: ClassVar[str] = ''
     persistence: float | None
     description: str
 
@@ -43,6 +44,7 @@ class CompoundEventBase(EventBase):
 
 @dataclass(frozen=True)
 class RateOfChangeEventBase(SimpleEventBase):
+    type: ClassVar[str] = 'Rate of change'
     rate_of_fall_threshold: float | None
     rate_of_rise_threshold: float | None
     time_window: float
@@ -50,33 +52,36 @@ class RateOfChangeEventBase(SimpleEventBase):
 
 @dataclass(frozen=True)
 class StaticEventBase(SimpleEventBase):
-    pass
+    type: ClassVar[str] = 'Static'
 
 
 @dataclass(frozen=True)
 class ThresholdEventBase(SimpleEventBase):
+    type: ClassVar[str] = 'Threshold'
     lower_threshold: float | None
     upper_threshold: float | None
 
 
 @dataclass(frozen=True)
 class SetpointEventBase(SimpleEventBase):
+    type: ClassVar[str] = 'Setpoint'
     setpoint: ParameterValue
 
 
 @dataclass(frozen=True)
 class SOEEventBase(CompoundEventBase):
+    type: ClassVar[str] = 'SOE'
     intervals: list[tuple[float, float | None]]
 
 
 @dataclass(frozen=True)
 class AllEventBase(CompoundEventBase):
-    pass
+    type: ClassVar[str] = 'Logical AND'
 
 
 @dataclass(frozen=True)
 class AnyEventBase(CompoundEventBase):
-    pass
+    type: ClassVar[str] = 'Logical OR'
 
 
 EventID = NewType('EventID', int)
@@ -90,6 +95,10 @@ class Event:
     confirm_time: datetime
     creation_time: datetime
     description: str
+
+    @property
+    def type(self) -> str:
+        return type(self.base).type
 
 
 @functools.total_ordering

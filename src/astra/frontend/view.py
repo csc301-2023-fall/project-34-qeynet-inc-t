@@ -6,7 +6,7 @@ import pathlib
 import sys
 from datetime import datetime
 from tkinter import Button, Entry, Frame, Toplevel, Event
-from tkinter import CENTER, NO, END
+from tkinter import CENTER, BOTTOM, NO, END, BOTH
 from tkinter import StringVar
 from tkinter import filedialog, messagebox, ttk, Tk, Label
 from tkinter.ttk import Treeview
@@ -14,6 +14,7 @@ from tkinter.ttk import Treeview
 from astra.data import config_manager
 from astra.data.data_manager import DataManager
 from .view_model import DashboardViewModel, AlarmsViewModel
+from ..data.alarms import Alarm
 from ..data.parameters import Tag
 
 config_path = filedialog.askopenfilename(title='Select config file')
@@ -104,10 +105,8 @@ class View(Tk):
         Label(dashboard_tag_search_area, text="Search", background='#fff').grid(sticky='NSEW', row=0, column=0)
         Entry(dashboard_tag_search_area, textvariable=self.dashboard_search_bar).grid(sticky='NSEW', row=0, column=1)
         self.dashboard_search_bar.trace_add("write", self.search_bar_change)
-        # TODO
         (Button(dashboard_filter_tags, text="Check all search results",
                 wraplength=80, command=self.select_all_tags).grid(row=2, column=0, rowspan=2))
-        # TODO
         (Button(dashboard_filter_tags, text="Uncheck all search results",
                 wraplength=80, command=self.deselect_all_tags).grid(row=2, column=1, rowspan=2))
         tag_table = ttk.Treeview(dashboard_filter_tags, show='tree')
@@ -222,7 +221,7 @@ class View(Tk):
         dashboard_table.heading("value", text="Value", anchor=CENTER)
         dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
         dashboard_table.heading("alarm", text="Alarm", anchor=CENTER)
-        dashboard_table.bind('<Double-1>', self.double_click_table_row)
+        dashboard_table.bind('<Double-1>', self.double_click_dashboard_table_row)
 
         # elements of alarms_frame
 
@@ -358,6 +357,7 @@ class View(Tk):
                              command=lambda: self.sort_alarms('TYPE'))
         alarms_table.heading("Parameter(s)", text="Parameter(s)", anchor=CENTER)
         alarms_table.heading("Description", text="Description", anchor=CENTER)
+        alarms_table.bind('<Double-1>', self.double_click_alarms_table_row)
 
         if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
             self.dashboard_view_model.toggle_start_time(None)
@@ -449,17 +449,29 @@ class View(Tk):
                 self.dashboard_table.heading('tag', text='Tag ●')
             self.refresh_data_table()
 
-    def double_click_table_row(self, event) -> None:
+    def double_click_dashboard_table_row(self, event) -> None:
         """
         This method specifies what happens if a double click were to happen
         in the dashboard table
         """
-        if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            cur_item = self.dashboard_table.focus()
+        cur_item = self.dashboard_table.focus()
 
-            region = self.dashboard_table.identify("region", event.x, event.y)
-            if region != "heading":
-                self.open_new_window(self.dashboard_table.item(cur_item)['values'])
+        region = self.dashboard_table.identify("region", event.x, event.y)
+        if cur_item and region != "heading":
+            self.open_telemetry_popup(self.dashboard_table.item(cur_item)['values'])
+
+    def double_click_alarms_table_row(self, event) -> None:
+        """
+        This method specifies what happens if a double click were to happen
+        in the alarms table
+        """
+        cur_item = self.alarms_table.focus()
+
+        region = self.alarms_table.identify("region", event.x, event.y)
+        if cur_item and region != "heading":
+            index = self.alarms_table.index(cur_item)
+            alarm = self.alarms_view_model.get_table_entries()[index][-1]
+            self.open_alarm_popup(alarm)
 
     def refresh_data_table(self) -> None:
         """
@@ -487,7 +499,7 @@ class View(Tk):
         for item in self.alarms_view_model.get_table_entries():
             self.alarms_table.insert("", END, values=tuple(item))
 
-    def open_new_window(self, values: list[str]) -> None:
+    def open_telemetry_popup(self, values: list[str]) -> None:
         """
         This method opens a new window to display one row of telemetry data
 
@@ -496,10 +508,52 @@ class View(Tk):
                 new window
         """
         new_window = Toplevel(self)
-        new_window.title("New Window")
+        new_window.title("Telemetry information")
         new_window.geometry("200x200")
         for column in values:
             Label(new_window, text=column).pack()
+
+    def open_alarm_popup(self, alarm: Alarm) -> None:
+        """
+        This method opens a popup displaying details and options for an alarm
+
+        Args:
+            alarm (Alarm): the alarm the popup pertains to
+        """
+        new_window = Toplevel(self)
+        event = alarm.event
+        new_window.title(f"{'[NEW] ' if alarm.acknowledgement else ''}Alarm #{event.id}")
+        new_window.geometry('300x300')
+        Label(new_window, text=f'Priority: {alarm.priority.value}', anchor='w').pack(fill=BOTH)
+        Label(
+            new_window, text=f'Criticality: {alarm.criticality.value}', anchor='w'
+        ).pack(fill=BOTH)
+        Label(new_window, text=f'Registered: {
+            event.register_time.strftime('%Y-%m-%d %H:%M:%S')
+        }', anchor='w').pack(fill=BOTH)
+        Label(new_window, text=f'Confirmed: {
+            event.confirm_time.strftime('%Y-%m-%d %H:%M:%S')
+        }', anchor='w').pack(fill=BOTH)
+        Label(new_window, text=f'Type: {event.type}', anchor='w').pack(fill=BOTH)
+        Label(new_window).pack()
+        Label(new_window, text='Parameters:', anchor='w').pack(fill=BOTH)
+        for tag in event.base.tags:
+            Label(
+                new_window, text=f'- {tag}: {self._dm.parameters[tag].description}', anchor='w'
+            ).pack(fill=BOTH)
+        Label(new_window).pack()
+        Label(new_window, text=f'Description: {event.description}', anchor='w').pack(fill=BOTH)
+        # TODO: fill in commands for buttons
+        buttons = Frame(new_window)
+        if not alarm.acknowledgement:
+            Button(
+                buttons, text='Acknowledge', width=12,
+                command=lambda: print(f'Acknowledge: {alarm}')
+            ).grid(row=0, column=0, padx=10, pady=10)
+        Button(
+            buttons, text='Remove', width=12, command=lambda: print(f'Remove: {alarm}')
+        ).grid(row=0, column=1, padx=10, pady=10)
+        buttons.pack(side=BOTTOM)
 
     def open_file(self):
         """
