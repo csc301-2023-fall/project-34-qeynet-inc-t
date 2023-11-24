@@ -6,7 +6,7 @@ For this deliverable, it just contains the view model for the dashboard
 
 from .model import Model
 import datetime
-from typing import List, Iterable
+from typing import List
 
 from ..data.data_manager import DataManager
 from ..data.parameters import Tag
@@ -167,6 +167,7 @@ class DashboardViewModel:
     def get_alarms(self):
         return self._data_reciever.get_alarms()
 
+
 class AlarmsViewModel:
     """
     Alarms view model
@@ -188,7 +189,7 @@ class AlarmsViewModel:
         self._sorting = [1, 1, 1, 1, 1, 1]
         self._priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
         self._criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
-        self._types = {'RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE','L_AND', 'L_OR'}
+        self._types = {'RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR'}
         self._table_entries = []
         self._time = None
 
@@ -312,7 +313,6 @@ class AlarmsViewModel:
         self.model.request_receiver.set_shown_priorities(self._priorities)
         self.model.receive_updates()
         self.update_table_entries()
-
 
     def toggle_criticality(self, tag: Tag):
         """
