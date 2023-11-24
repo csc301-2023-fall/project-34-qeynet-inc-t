@@ -12,7 +12,6 @@ def check_alarms(dm: DataManager,
 
     :param earliest_time:
     :param dm: The manager of all data known to the program
-    :param alarms: The global variable storing all current alarms
     """
 
     alarm_bases = dm.alarm_bases
