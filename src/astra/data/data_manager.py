@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from threading import Lock, Timer
 from typing import Self, Callable
 
-from astra.data import dict_parsing, telemetry_manager
+from astra.data import config_manager, dict_parsing, export_manager, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
 from astra.data.database import db_manager
 from astra.data.dict_parsing import ParsingError
@@ -176,12 +176,43 @@ class DataManager:
     _alarm_bases: list[AlarmBase]
     _alarm_container: AlarmsContainer
 
+    @staticmethod
+    def add_device(config_filename: str) -> None:
+        """
+        Add a device, specified by a configuration file, to the database.
+
+        :param config_filename:
+            The path to the configuration file.
+        """
+        config_manager.read_config(config_filename)
+
+    @staticmethod
+    def remove_device(device_name: str) -> None:
+        """
+        Remove a device and all of its associated data from the database.
+
+        :param device_name:
+            The name of the device to remove (metadata.device in the device configuration file).
+        """
+        db_manager.delete_device(device_name)
+
+    @staticmethod
+    def get_device_names() -> Iterable[str]:
+        """
+        Get the names of all devices in the database.
+
+        :return:
+            An iterable of device names (metadata.device in the device configuration file).
+            The name of every device in the database is included exactly once.
+        """
+        return db_manager.get_device_names()
+
     def __init__(self, device_name: str):
         """
         Construct a DataManager for the device with the given name.
 
         :param device_name:
-            The name of the device (metadata.device in the device configuration file)
+            The name of the device (metadata.device in the device configuration file).
 
         :raise ValueError:
             If there is no device with the given name.
@@ -226,8 +257,13 @@ class DataManager:
         return cls(device_name)
 
     @property
+    def device_name(self) -> str:
+        """The name of the device of this DataManager."""
+        return self._device_name
+
+    @property
     def tags(self) -> Iterable[Tag]:
-        """Iterable of tags for the device of this DataManager."""
+        """All the tags for the device of this DataManager."""
         return self._parameters.keys()
 
     @property
@@ -237,6 +273,7 @@ class DataManager:
 
     @property
     def alarm_bases(self) -> Iterable[AlarmBase]:
+        """The alarm bases for the device of this DataManager."""
         return self._alarm_bases
 
     @property
@@ -310,11 +347,8 @@ class DataManager:
         :return:
             A TelemetryData object for this DataManager's device and the given time range and tags.
         """
-        tags = set(tags)
-        device_tags = set(self.tags)
-        if not (tags <= device_tags):
-            raise ValueError(f'got unexpected tags {tags - device_tags}')
-        subset_parameters = {
-            tag: parameter for tag, parameter in self.parameters.items() if tag in tags
-        }
-        return TelemetryData(self._device_name, start_time, end_time, subset_parameters)
+        selected_tag_set = set(tags)
+        device_tag_set = set(self.tags)
+        if not (selected_tag_set <= device_tag_set):
+            raise ValueError(f'got unexpected tags {selected_tag_set - device_tag_set}')
+        return TelemetryData(self, start_time, end_time, tags)
