@@ -115,7 +115,7 @@ class View(Tk):
         tag_table.configure(yscrollcommand=tag_table_scroll.set)
         tag_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 4)
         self.data_tag_table = tag_table
-        tag_table['columns'] = ("tag")
+        tag_table['columns'] = ("tag",)
         tag_table.column("#0", width=0, stretch=NO)
         tag_table.column("tag")
         tag_table.grid(sticky='NEWS', row=4, column=0, columnspan=2, rowspan=num_rows - 4)

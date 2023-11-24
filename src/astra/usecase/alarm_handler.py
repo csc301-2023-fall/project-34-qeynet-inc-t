@@ -32,16 +32,8 @@ class LimitedSlotAlarms:
     :param _slots: A dict of priority queues
     :param _priorities: an ordered list of keys in _slots, where elements are ordered by descending importance
     """
-    _slots: dict[str, Queue | list]
-    _priorities: list[str]
-
-    @classmethod
-    def __init__(cls):
-        cls._priorities = [NEW_QUEUE_KEY, OLD_QUEUE_KEY]
-        new_queue = []
-        old_queue = []
-
-        cls._slots = {NEW_QUEUE_KEY: new_queue, OLD_QUEUE_KEY: old_queue}
+    _slots = {NEW_QUEUE_KEY: [], OLD_QUEUE_KEY: []}
+    _priorities = [NEW_QUEUE_KEY, OLD_QUEUE_KEY]
 
     @staticmethod
     def create_banner_string(alarm: Alarm) -> str:
@@ -176,11 +168,7 @@ class AlarmsFilters:
 
 
 class AlarmsHandler(UseCaseHandler):
-    banner_container: LimitedSlotAlarms
-
-    @classmethod
-    def __init__(cls, dm: DataManager):
-        cls.banner_container = LimitedSlotAlarms()
+    banner_container = LimitedSlotAlarms()
 
     @staticmethod
     def _get_alarm_type(alarm: Alarm) -> str:

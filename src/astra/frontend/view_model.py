@@ -186,7 +186,7 @@ class AlarmsViewModel:
         """
         Initializes the view model
         """
-        self.model = Model(AlarmsRequestReceiver(dm))
+        self.model = Model(AlarmsRequestReceiver())
         self._sorting = [1, 1, 1, 1, 1, 1]
         self._priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
         self._criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
