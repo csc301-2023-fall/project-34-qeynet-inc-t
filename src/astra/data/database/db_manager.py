@@ -350,8 +350,10 @@ def get_telemetry_data_by_index(
         index (int): the index of the timestamp
 
     Returns:
-        list[tuple[str, float]]: a list of tuple (tag_name, value) for the given
-                                 device/tags with the given timestamp
+        tuple[list[tuple[str, float]], datetime]: a tuple that contains
+         1. a list of tuple (tag_name, value) for the given device/tags with the
+            given timestamp
+         2. the timestamp for the data
     """
     device = get_device(device_name)
     if device:
