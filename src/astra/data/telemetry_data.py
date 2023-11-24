@@ -123,11 +123,9 @@ class TelemetryData:
             raise IndexError(f'telemetry frame index {index} out of range')
         if index < 0:
             index += self.num_telemetry_frames
-        timestamp = db_manager.get_timestamp_by_index(
-            self._data_manager.device_name, self._start_time, self._end_time, index
-        )
-        data = db_manager.get_telemetry_data_by_timestamp(
-            self._data_manager.device_name, set(self.tags), timestamp
+        data, timestamp = db_manager.get_telemetry_data_by_index(
+            self._data_manager.device_name, set(self.tags), self._start_time,
+            self._end_time, index
         )
         return TelemetryFrame(
             timestamp,
