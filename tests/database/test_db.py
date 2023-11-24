@@ -1,11 +1,7 @@
 import unittest
-import os
 from astra.data.database.db_initializer import (
     initialize_sqlite_db,
     Device,
-    Data,
-    Tag,
-    Alarm,
 )
 from astra.data.database.db_manager import (
     get_device,
