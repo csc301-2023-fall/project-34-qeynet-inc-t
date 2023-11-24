@@ -46,7 +46,9 @@ class View(Tk):
         super().__init__()
         self.title("View Prototype")
         self.dashboard_view_model = DashboardViewModel()
-        self.alarms_view_model = AlarmsViewModel(self._dm)
+
+        watchers = [self.construct_alarms_table]
+        self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
 
         # Get the screen size information, and fullscreen the app
         width = self.winfo_screenwidth()
@@ -368,7 +370,6 @@ class View(Tk):
             # self.alarms_view_model.model.receive_new_data(self._dm)
             # self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
-            self._dm.alarms.observer.add_watcher(self.construct_alarms_table)
 
     def sort_alarms(self, tag: str):
         headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed']

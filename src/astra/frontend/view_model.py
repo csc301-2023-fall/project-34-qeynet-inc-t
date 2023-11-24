@@ -182,7 +182,7 @@ class AlarmsViewModel:
     _time: datetime.datetime
     _table_entries: List[list]
 
-    def __init__(self, dm: DataManager) -> None:
+    def __init__(self, dm: DataManager, watchers: List[callable]) -> None:
         """
         Initializes the view model
         """
@@ -197,6 +197,9 @@ class AlarmsViewModel:
         self.model.request_receiver.set_shown_priorities(self._priorities)
         self.model.request_receiver.set_shown_criticalities(self._criticalities)
         self.model.request_receiver.set_shown_types(self._types)
+
+        for watcher in watchers:
+            self.model.request_receiver.install_alarm_watcher(dm, watcher)
 
     def load_file(self, dm: DataManager, file: str):
         """

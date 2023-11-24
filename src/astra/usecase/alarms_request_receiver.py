@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Callable
+
 from .use_case_handlers import TableReturn
 from .alarm_handler import AlarmsHandler, AlarmsFilters
 from .request_receiver import RequestReceiver
@@ -333,3 +335,10 @@ class AlarmsRequestReceiver(RequestReceiver):
     def get_alarm_banner(cls) -> list[str]:
         """Returns a list of strings in order to show in the alarm banners"""
         return cls.handler.get_banner_elems()
+
+    @classmethod
+    def install_alarm_watcher(cls, dm: DataManager, watcher: Callable) -> None:
+        """
+        An interfacing function for the alarm container to install a watcher function
+        """
+        dm.alarms.observer.add_watcher(watcher)

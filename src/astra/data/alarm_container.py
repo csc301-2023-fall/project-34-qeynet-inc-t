@@ -18,14 +18,12 @@ class AlarmObserver:
     :param watchers: A list of functions to call on any update to the alarm container
     :param mutex: Synchronization tool as many threads may notify watchers of updates
     """
-    watchers_added = []
-    watchers_modified = []
+    watchers = []
     _mutex = Lock()
 
     @classmethod
     def __int__(cls):
-        cls.watchers_added = []
-        cls.watchers_modified = []
+        cls.watchers = []
         cls._mutex = Lock()
 
     @classmethod
@@ -35,7 +33,7 @@ class AlarmObserver:
 
         :param watcher: The new function to call
         """
-        cls.watchers_added.append(watcher)
+        cls.watchers.append(watcher)
 
     @classmethod
     def notify_watchers(cls) -> None:
@@ -43,7 +41,7 @@ class AlarmObserver:
         Calls all functions that wish to be called on container being updated
         """
         with cls._mutex:
-            for watcher in cls.watchers_added:
+            for watcher in cls.watchers:
                 watcher()
 
 
