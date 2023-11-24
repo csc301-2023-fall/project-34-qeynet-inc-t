@@ -116,7 +116,7 @@ class AlarmsContainer:
                     timer_vals.append(alarm_timer_vals)
 
             # Now that the state of the alarms container has been update, notify watchers
-            cls.observer.notify_watchers()
+            # cls.observer.notify_watchers()
 
             # Now, we need to create a timer thread for each alarm
             for i in range(len(new_alarms)):
