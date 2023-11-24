@@ -14,7 +14,6 @@ CRITICALITY = 'CRITICALITY'
 TYPE = 'TYPE'
 REGISTERED_DATE = 'REGISTERED_DATE'
 CONFIRMED_DATE = 'CONFIRMED_DATE'
-UNACKNOWLEDGED = False
 DESCENDING = '>'
 PRIORITIES = [AlarmPriority.WARNING.name, AlarmPriority.LOW.name, AlarmPriority.MEDIUM.name,
               AlarmPriority.HIGH.name, AlarmPriority.CRITICAL.name]
@@ -125,12 +124,12 @@ class LimitedSlotAlarms:
 
         PRECONDITION: <alarm> is in one queue in <cls._slots>
         """
-        if alarm.acknowledgement == UNACKNOWLEDGED:
-            new_q = cls._slots[NEW_QUEUE_KEY]
-            new_q.remove(alarm)
-        else:
+        if alarm.acknowledged:
             old_q = cls._slots[OLD_QUEUE_KEY]
             old_q.remove(alarm)
+        else:
+            new_q = cls._slots[NEW_QUEUE_KEY]
+            new_q.remove(alarm)
 
 
 @dataclass
@@ -253,7 +252,7 @@ class AlarmsHandler(UseCaseHandler):
 
         # Finally, checking if we only show unacknowledged alarms
         if filter_args.new:
-            show = show and alarm.acknowledgement == UNACKNOWLEDGED
+            show = show and not alarm.acknowledged
         return show
 
     @classmethod

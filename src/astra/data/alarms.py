@@ -143,7 +143,7 @@ class Alarm:
     event: Event
     criticality: AlarmCriticality
     priority: AlarmPriority
-    acknowledgement: bool
+    acknowledged: bool
 
     def __gt__(self, other) -> bool:
         return self.priority > other.priority

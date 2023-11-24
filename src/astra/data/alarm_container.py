@@ -6,7 +6,6 @@ from typing import Callable, Mapping
 from astra.data.alarms import AlarmPriority, Alarm, AlarmCriticality
 
 NEW_QUEUE_KEY = 'n'
-ACKNOWLEDGED = True
 
 
 class AlarmObserver:
@@ -166,7 +165,7 @@ class AlarmsContainer:
         with cls.mutex:
             # Note: because the alarm container should store every known alarm, this mutation
             # should work
-            alarm.acknowledgement = ACKNOWLEDGED
+            alarm.acknowledged = True
         cls.observer.notify_watchers()
 
     @classmethod

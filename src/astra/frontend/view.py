@@ -526,8 +526,9 @@ class View(Tk):
             alarm (Alarm): the alarm the popup pertains to
         """
         new_window = Toplevel(self)
+        new_window.grab_set()
         event = alarm.event
-        new_window.title(f"{'[NEW] ' if not alarm.acknowledgement else ''}Alarm #{event.id}")
+        new_window.title(f"{'[NEW] ' if not alarm.acknowledged else ''}Alarm #{event.id}")
         new_window.geometry('300x300')
         Label(new_window, text=f'Priority: {alarm.priority.value}', anchor='w').pack(fill=BOTH)
         Label(
@@ -548,18 +549,41 @@ class View(Tk):
             ).pack(fill=BOTH)
         Label(new_window).pack()
         Label(new_window, text=f'Description: {event.description}', anchor='w').pack(fill=BOTH)
-        # TODO: fill in commands for buttons
         buttons = Frame(new_window)
-        if not alarm.acknowledgement:
+        if not alarm.acknowledged:
             Button(
                 buttons, text='Acknowledge', width=12,
-                command=lambda: self.alarms_view_model.model.request_receiver.acknowledge_alarm(alarm, self._dm)
+                command=lambda: self.acknowledge_alarm(alarm, new_window)
             ).grid(row=0, column=0, padx=10, pady=10)
         Button(
-            buttons, text='Remove', width=12, command=lambda:
-            self.alarms_view_model.model.request_receiver.remove_alarm(alarm, self._dm)
+            buttons, text='Remove', width=12, command=lambda: self.remove_alarm(alarm, new_window)
         ).grid(row=0, column=1, padx=10, pady=10)
         buttons.pack(side=BOTTOM)
+
+    def acknowledge_alarm(self, alarm: Alarm, popup: Toplevel) -> None:
+        """
+        This method handles acknowledging an alarm.
+
+        Args:
+            alarm (Alarm): the alarm to acknowledge
+            popup (Toplevel): the popup that the alarm acknowledgement happens from,
+                closed upon alarm acknowledgement
+        """
+        self.alarms_view_model.model.request_receiver.acknowledge_alarm(alarm, self._dm)
+        popup.destroy()
+
+    def remove_alarm(self, alarm: Alarm, popup: Toplevel) -> None:
+        """
+        This method handles removing an alarm.
+
+        Args:
+            alarm (Alarm): the alarm to remove
+            popup (Toplevel): the popup that the alarm removal happens from,
+                closed upon alarm removal
+        """
+        if messagebox.askokcancel(title='Remove alarm', message=f'Remove alarm #{alarm.event.id}?'):
+            self.alarms_view_model.model.request_receiver.remove_alarm(alarm, self._dm)
+            popup.destroy()
 
     def open_file(self):
         """
