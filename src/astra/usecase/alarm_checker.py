@@ -1,5 +1,3 @@
-import threading
-import time
 from datetime import datetime
 from threading import Thread, Condition
 from .alarm_strategies import get_strategy
@@ -16,7 +14,6 @@ def check_alarms(dm: DataManager,
     :param dm: The manager of all data known to the program
     :param alarms: The global variable storing all current alarms
     """
-
 
     alarm_bases = dm.alarm_bases
     cv = Condition()
