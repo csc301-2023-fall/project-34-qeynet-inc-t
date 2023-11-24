@@ -205,7 +205,10 @@ class TestClass(unittest.TestCase):
         actual = get_telemetry_data_by_index(
             "test_config1", None, None, None, 4
         )
-        expected = [("Nf3", 466288.2692964514), ("e4", None), ('2e4', None)]
+        expected = (
+            [("Nf3", 466288.2692964514), ("e4", None), ("2e4", None)],
+            datetime.datetime(2023, 10, 11, 19, 30, 4),
+        )
 
         self.assertEqual(expected, actual)
 
@@ -217,7 +220,7 @@ class TestClass(unittest.TestCase):
             "2023-10-11 19:30:07.000000",
             4,
         )
-        expected = [("Nf3", None)]
+        expected = ([("Nf3", None)], datetime.datetime(2023, 10, 11, 19, 30, 7))
 
         self.assertEqual(expected, actual)
 
