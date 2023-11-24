@@ -1,4 +1,5 @@
 import unittest
+import os
 from astra.data.database.db_initializer import (
     initialize_sqlite_db,
     Device,
@@ -32,6 +33,7 @@ class TestInitializeSqliteDb(unittest.TestCase):
 
 
 class TestClass(unittest.TestCase):
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     read_config("./test_files/test_config1.yaml")
     read_telemetry("./test_files/test_telemetry1.yaml")
     read_config("./test_files/test_config2.yaml")
