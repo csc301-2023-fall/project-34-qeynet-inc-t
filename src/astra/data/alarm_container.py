@@ -110,6 +110,7 @@ class AlarmsContainer:
                     # Case where the alarm was confirmed at least 30 minutes ago already
                     if not alarm_timer_vals:
                         priority = apm[timedelta(minutes=30)][criticality]
+                        alarm.priority = priority
                         cls.alarms[priority.name].append(alarm)
                         new_alarms.append([alarm, priority])
                     timer_vals.append(alarm_timer_vals)
