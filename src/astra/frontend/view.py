@@ -551,7 +551,8 @@ class View(Tk):
                 command=lambda: print(f'Acknowledge: {alarm}')
             ).grid(row=0, column=0, padx=10, pady=10)
         Button(
-            buttons, text='Remove', width=12, command=lambda: print(f'Remove: {alarm}')
+            buttons, text='Remove', width=12, command=lambda:
+            self.alarms_view_model.model.request_receiver.remove_alarm(alarm, self._dm)
         ).grid(row=0, column=1, padx=10, pady=10)
         buttons.pack(side=BOTTOM)
 

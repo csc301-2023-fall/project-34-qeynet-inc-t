@@ -6,7 +6,6 @@ from typing import Callable, Mapping
 from astra.data.alarms import AlarmPriority, Alarm, AlarmCriticality
 
 NEW_QUEUE_KEY = 'n'
-MAX_QUEUE_SIZE = 3
 ACKNOWLEDGED = False
 
 
@@ -85,6 +84,7 @@ class AlarmsContainer:
                 for alarm in alarms:
                     criticality = alarm.criticality
                     alarm_timer_vals = []
+                    cls.alarms[NEW_QUEUE_KEY].put(alarm)
 
                     # Find the closest timeframe from 0, 5, 15, and 30 minutes from when the
                     # alarm was created to when it was actually confirmed
@@ -112,11 +112,6 @@ class AlarmsContainer:
                     if not alarm_timer_vals:
                         priority = apm[timedelta(minutes=30)][criticality]
                         cls.alarms[priority.name].append(alarm)
-
-                        cls.alarms[NEW_QUEUE_KEY].put(alarm)
-                        if cls.alarms[NEW_QUEUE_KEY].qsize() > MAX_QUEUE_SIZE:
-                            cls.alarms[NEW_QUEUE_KEY].get()
-
                         new_alarms.append([alarm, priority])
                     timer_vals.append(alarm_timer_vals)
 

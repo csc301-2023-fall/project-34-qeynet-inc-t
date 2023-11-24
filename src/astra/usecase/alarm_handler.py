@@ -126,11 +126,11 @@ class LimitedSlotAlarms:
         PRECONDITION: <alarm> is in one queue in <cls._slots>
         """
         if alarm.acknowledgement == UNACKNOWLEDGED:
-            old_q = cls._slots[OLD_QUEUE_KEY]
-            old_q.remove(alarm)
-        else:
             new_q = cls._slots[NEW_QUEUE_KEY]
             new_q.remove(alarm)
+        else:
+            old_q = cls._slots[OLD_QUEUE_KEY]
+            old_q.remove(alarm)
 
 
 @dataclass
@@ -399,7 +399,7 @@ class AlarmsHandler(UseCaseHandler):
         # is critical code among threads
 
         alarm_container = dm.alarms
-        cls.banner_container.insert_into_old(alarm)
+        cls.banner_container.remove_alarm_from_banner(alarm)
         alarm_container.remove_alarm(alarm)
 
     @classmethod
