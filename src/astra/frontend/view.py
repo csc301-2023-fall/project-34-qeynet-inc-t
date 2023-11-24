@@ -554,7 +554,7 @@ class View(Tk):
         }:{
         self.end_sec.get()
         }"
-        if input_start_time:
+        if input_start_time != '-- ::':
             try:
                 start_time = datetime.strptime(input_start_time, '%Y-%m-%d %H:%M:%S')
             except ValueError:
@@ -568,7 +568,7 @@ class View(Tk):
                 return
         else:
             start_time = None
-        if input_end_time:
+        if input_end_time != '-- ::':
             try:
                 end_time = datetime.strptime(input_end_time, '%Y-%m-%d %H:%M:%S')
             except ValueError:
