@@ -368,7 +368,7 @@ class View(Tk):
             # self.alarms_view_model.model.receive_new_data(self._dm)
             # self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
-            self._dm.alarms.observer.add_watcher_adding(self.construct_alarms_table)
+            self._dm.alarms.observer.add_watcher(self.construct_alarms_table)
 
     def sort_alarms(self, tag: str):
         headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed']

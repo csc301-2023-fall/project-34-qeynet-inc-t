@@ -29,40 +29,22 @@ class AlarmObserver:
         cls._mutex = Lock()
 
     @classmethod
-    def add_watcher_adding(cls, watcher: Callable):
+    def add_watcher(cls, watcher: Callable):
         """
-        Adds a new function to call on alarm container receiving new data
+        Adds a new function to call on alarm container being updated
 
         :param watcher: The new function to call
         """
         cls.watchers_added.append(watcher)
 
     @classmethod
-    def add_watcher_modifying(cls, watcher: Callable):
+    def notify_watchers(cls) -> None:
         """
-        Adds a new function to call on alarm container elements being modified
-
-        :param watcher: The new function to call
-        """
-        cls.watchers_modified.append(watcher)
-
-    @classmethod
-    def notify_watchers_added(cls) -> None:
-        """
-        Calls all functions that wish to be called on container receiving new data
+        Calls all functions that wish to be called on container being updated
         """
         with cls._mutex:
             for watcher in cls.watchers_added:
                 watcher()
-
-    @classmethod
-    def notify_watchers_added_modified(cls, alarm) -> None:
-        """
-        Calls all functions that should be notified on a container item being modified
-        """
-        with cls._mutex:
-            for watcher in cls.watchers_modified:
-                watcher(alarm)
 
 
 class AlarmsContainer:
@@ -152,7 +134,7 @@ class AlarmsContainer:
                     timer_vals.append(alarm_timer_vals)
 
             # Now that the state of the alarms container has been update, notify watchers
-            cls.observer.notify_watchers_added()
+            cls.observer.notify_watchers()
 
             # Now, we need to create a timer thread for each alarm
             for i in range(len(new_alarms)):
@@ -188,8 +170,7 @@ class AlarmsContainer:
             alarm_data[1] = new_priority
         # Because of the nature of priorities, we need to notify both modification observers
         # and addition observers
-        cls.observer.notify_watchers_added_modified(alarm_data[0])
-        cls.observer.notify_watchers_added()
+        cls.observer.notify_watchers()
 
     @classmethod
     def acknowledge_alarm(cls, alarm: Alarm) -> None:
@@ -204,7 +185,7 @@ class AlarmsContainer:
             # Note: because the alarm container should store every known alarm, this mutation
             # should work
             alarm.acknowledgement = ACKNOWLEDGED
-        cls.observer.notify_watchers_added_modified(alarm)
+        cls.observer.notify_watchers()
 
     @classmethod
     def remove_alarm(cls, alarm: Alarm) -> None:
@@ -220,4 +201,4 @@ class AlarmsContainer:
                     # Note: We don't consider the queue of new alarms, since by the time
                     # the alarm can be removed, it's already be taken out of the queue
                     cls.alarms[priority].remove(alarm)
-        cls.observer.notify_watchers_added_modified(alarm)
+        cls.observer.notify_watchers()
