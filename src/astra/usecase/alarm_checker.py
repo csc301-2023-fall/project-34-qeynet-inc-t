@@ -1,6 +1,6 @@
 from datetime import datetime
 from threading import Thread, Condition
-from .alarm_strategies import get_strategy, check_alive
+from .alarm_strategies import get_strategy
 from ..data.data_manager import DataManager
 
 
@@ -23,7 +23,7 @@ def check_alarms(dm: DataManager,
         criticality = alarm_base.criticality
 
         strategy = get_strategy(base)
-        new_thread = Thread(target=strategy, args=[dm, base, criticality, earliest_time, None, cv])
+        new_thread = Thread(target=strategy, args=[dm, base, criticality, earliest_time, False, cv])
         new_thread.start()
         threads.append(new_thread)
     wait_for_children(dm, cv, threads)
@@ -47,3 +47,17 @@ def wait_for_children(dm: DataManager, cv: Condition, threads: list[Thread]) -> 
             cv.wait()
             thread_active = check_alive(threads)
     dm.alarms.observer.notify_watchers()
+
+
+def check_alive(threads: list[Thread]) -> bool:
+    """
+    Checks if any thread in <threds> is alive and returns an appropriate boolean
+
+    :param threads: The list of threads to check
+    """
+    thread_active = False
+    for thread in threads:
+        if thread.is_alive():
+            thread_active = True
+            return thread_active
+    return thread_active
