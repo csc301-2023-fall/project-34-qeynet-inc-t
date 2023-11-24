@@ -175,6 +175,7 @@ class AlarmsViewModel:
     """
 
     model: Model
+    _new: bool
     _sorting: List[int]
     _priorities: set[Tag]
     _criticalities: set[Tag]
@@ -197,6 +198,7 @@ class AlarmsViewModel:
         self.model.request_receiver.set_shown_priorities(self._priorities)
         self.model.request_receiver.set_shown_criticalities(self._criticalities)
         self.model.request_receiver.set_shown_types(self._types)
+        self._new = False
 
         for watcher in watchers:
             self.model.request_receiver.install_alarm_watcher(dm, watcher)
@@ -295,6 +297,16 @@ class AlarmsViewModel:
         self.update_table_entries()
         return sort_value == 1
 
+    def toggle_new(self):
+        """
+        Method for toggling whether alarms should only be shown if they are acknowledged
+        or not
+        """
+        self._new = not self._new
+        self.model.request_receiver.toggle_new_only()
+        self.model.receive_updates()
+        self.update_table_entries()
+
     def toggle_priority(self, tag: Tag):
         """
         Method for toggling filtering of specific priority
@@ -373,6 +385,9 @@ class AlarmsViewModel:
 
     def get_criticalities(self):
         return self._criticalities
-    
+
     def get_types(self):
         return self._types
+
+    def get_new(self) -> bool:
+        return self._new
