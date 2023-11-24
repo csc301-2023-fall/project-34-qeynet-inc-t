@@ -282,7 +282,6 @@ def roc_from_time_check(data: Mapping[datetime, ParameterValue | None], times: l
 
         # TODO: implement the algorithm for calculating the rate of change.
 
-        prev_value = curr_value
         curr_index += 1
         curr_date = times[curr_index]
 
