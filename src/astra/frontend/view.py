@@ -522,7 +522,7 @@ class View(Tk):
         """
         new_window = Toplevel(self)
         event = alarm.event
-        new_window.title(f"{'[NEW] ' if alarm.acknowledgement else ''}Alarm #{event.id}")
+        new_window.title(f"{'[NEW] ' if not alarm.acknowledgement else ''}Alarm #{event.id}")
         new_window.geometry('300x300')
         Label(new_window, text=f'Priority: {alarm.priority.value}', anchor='w').pack(fill=BOTH)
         Label(
@@ -548,7 +548,7 @@ class View(Tk):
         if not alarm.acknowledgement:
             Button(
                 buttons, text='Acknowledge', width=12,
-                command=lambda: print(f'Acknowledge: {alarm}')
+                command=lambda: self.alarms_view_model.model.request_receiver.acknowledge_alarm(alarm, self._dm)
             ).grid(row=0, column=0, padx=10, pady=10)
         Button(
             buttons, text='Remove', width=12, command=lambda:

@@ -6,7 +6,7 @@ from typing import Callable, Mapping
 from astra.data.alarms import AlarmPriority, Alarm, AlarmCriticality
 
 NEW_QUEUE_KEY = 'n'
-ACKNOWLEDGED = False
+ACKNOWLEDGED = True
 
 
 class AlarmObserver:

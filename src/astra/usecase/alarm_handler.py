@@ -14,7 +14,7 @@ CRITICALITY = 'CRITICALITY'
 TYPE = 'TYPE'
 REGISTERED_DATE = 'REGISTERED_DATE'
 CONFIRMED_DATE = 'CONFIRMED_DATE'
-UNACKNOWLEDGED = True
+UNACKNOWLEDGED = False
 DESCENDING = '>'
 PRIORITIES = [AlarmPriority.WARNING.name, AlarmPriority.LOW.name, AlarmPriority.MEDIUM.name,
               AlarmPriority.HIGH.name, AlarmPriority.CRITICAL.name]
