@@ -48,7 +48,7 @@ class View(Tk):
         self.title("View Prototype")
         self.dashboard_view_model = DashboardViewModel()
 
-        watchers = [self.construct_alarms_table]
+        watchers = [self.construct_alarms_table, self.construct_dashboard_table]
         self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
 
         # Get the screen size information, and fullscreen the app
@@ -488,6 +488,11 @@ class View(Tk):
         self.alarms_view_model.model.receive_new_data(self._dm)
         self.alarms_view_model.toggle_all()
         self.refresh_alarms_table()
+
+    def construct_dashboard_table(self):
+        self.dashboard_view_model.model.receive_new_data(self._dm)
+        self.dashboard_view_model.update_table_entries()
+        self.refresh_data_table()
 
     def refresh_alarms_table(self) -> None:
         """
