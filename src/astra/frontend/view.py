@@ -2,6 +2,7 @@
 This file holds the view class that will be run in main.py
 """
 
+import itertools
 import pathlib
 import sys
 from datetime import datetime
@@ -48,7 +49,11 @@ class View(Tk):
         self.title("View Prototype")
         self.dashboard_view_model = DashboardViewModel()
 
-        watchers = [self.construct_alarms_table, self.construct_dashboard_table]
+        watchers = [
+            self.update_alarm_banners,
+            self.construct_alarms_table,
+            self.construct_dashboard_table,
+        ]
         self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
 
         # Get the screen size information, and fullscreen the app
@@ -56,6 +61,13 @@ class View(Tk):
         height = self.winfo_screenheight()
         self.geometry("%dx%d" % (width, height))
         self.state('zoomed')
+
+        # alarm banners
+        alarm_banners_container = ttk.Frame(self)
+        self.alarm_banners = [Label(alarm_banners_container, anchor='w') for i in range(6)]
+        for alarm_banner in self.alarm_banners:
+            alarm_banner.pack(fill=BOTH)
+        alarm_banners_container.pack(fill=BOTH)
 
         # tab widget
         tab_control = ttk.Notebook(self)
@@ -330,6 +342,17 @@ class View(Tk):
             # self.alarms_view_model.model.receive_new_data(self._dm)
             # self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
+
+        # self.sort_alarms('ID')
+
+    def update_alarm_banners(self):
+        print('UPDATE ALARM BANNERS')
+        print(self.alarm_banners)
+        print(self.alarms_view_model.get_alarm_banners())
+        for alarm_banner, text in itertools.zip_longest(
+                self.alarm_banners, ['PLACEHOLDER', 'ALARM', 'TEXT']
+        ):
+            alarm_banner['text'] = text if text is not None else ''
 
     def sort_alarms(self, tag: str):
         headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed', 'Type']

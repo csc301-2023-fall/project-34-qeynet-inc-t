@@ -207,6 +207,10 @@ class AlarmsViewModel:
         for watcher in watchers:
             self.model.request_receiver.install_alarm_watcher(dm, watcher)
 
+    def get_alarm_banners(self) -> list[str]:
+        """ :return: A list of strings to show in the alarm banners. """
+        return AlarmsRequestReceiver.get_alarm_banner()
+
     def load_file(self, dm: DataManager, file: str):
         """
         Loads a telemetry file for its alarms for the alarm table
