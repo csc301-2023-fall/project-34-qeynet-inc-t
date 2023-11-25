@@ -670,7 +670,7 @@ def forward_checking_propagator(first_events: list[tuple[int, datetime]],
             else:
                 # If upper threshold is None, we need a time that's guaranteed to be greater than
                 # any second event time
-                upper_threshold = first_events[-1][1] + timedelta(seconds=window_duration[1] + 10)
+                upper_threshold = first_events[-1][1] + timedelta(seconds=10)
 
             if lower_threshold < second_event[1] < upper_threshold:
                 satisfying_events.append(second_event)
