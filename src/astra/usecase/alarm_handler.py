@@ -281,7 +281,7 @@ class AlarmsHandler(UseCaseHandler):
                 reverse = True
 
             return_data.table = sorted(return_data.table,
-                                       key=lambda x: x[key_index],
+                                       key=lambda x: (x[key_index], x[0]),
                                        reverse=reverse)
 
     @classmethod
