@@ -154,44 +154,13 @@ class View(Tk):
         dashboard_time_range_row = Frame(dashboard_time_range_row_outside)
         dashboard_time_range_row.pack(expand=False)
         Label(dashboard_time_range_row, text='From (YYYY-MM-DD HH:MM:SS)   ').pack(side="left")
-        Entry(dashboard_time_range_row, width=5,
-              textvariable=self.start_year).pack(side="left")
 
-        Label(dashboard_time_range_row, text='-').pack(side="left")
-        entry_1 = Entry(dashboard_time_range_row, width=3,
-              textvariable=self.start_month)
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.start_month).pack(side="left")
-        Label(dashboard_time_range_row, text='-').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.start_day).pack(side="left", padx=(0, 3))
-        Label(dashboard_time_range_row, text=' ').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.start_hour).pack(side="left")
-        Label(dashboard_time_range_row, text=':').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.start_min).pack(side="left")
-        Label(dashboard_time_range_row, text=':').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.start_sec).pack(side="left")
-        Label(dashboard_time_range_row, text='   to   ').pack(side="left")
-        Entry(dashboard_time_range_row, width=5,
-              textvariable=self.end_year).pack(side="left")
-        Label(dashboard_time_range_row, text='-').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.end_month).pack(side="left")
-        Label(dashboard_time_range_row, text='-').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.end_day).pack(side="left", padx=(0, 3))
-        Label(dashboard_time_range_row, text=' ').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.end_hour).pack(side="left")
-        Label(dashboard_time_range_row, text=':').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.end_min).pack(side="left")
-        Label(dashboard_time_range_row, text=':').pack(side="left")
-        Entry(dashboard_time_range_row, width=3,
-              textvariable=self.end_sec).pack(side="left", padx=(0, 3))
+        entry_variables = [[self.start_year, self.start_month, self.start_day,
+                            self.start_hour, self.start_min, self.start_sec],
+                           [self.end_year, self.end_month, self.end_day,
+                            self.end_hour, self.end_min, self.end_sec]]
+        self.create_time_entry_field(dashboard_time_range_row, entry_variables)
+
         Button(dashboard_time_range_row, text='Update time',
                command=self.update_time).pack(side="left")
 
@@ -349,6 +318,25 @@ class View(Tk):
             self.refresh_alarms_table()
 
         # self.sort_alarms('ID')
+
+    def create_time_entry_field(self, frame: Frame, entry_variables: list[list[StringVar]]) -> None:
+        for i in range(len(entry_variables)):
+            for j in range(len(entry_variables[i])):
+                width = 3 + (j == 0) * 2
+                if j < 2:
+                    text = "-"
+                elif j == 2:
+                    text = " "
+                elif j < 5:
+                    text = ":"
+                else:
+                    text = ""
+
+                Entry(frame, width=width,
+                      textvariable=entry_variables[i][j]).pack(side="left")
+                Label(frame, text=text).pack(side="left")
+            if i == 0:
+                Label(frame, text='   to   ').pack(side="left")
 
     def update_alarm_banners(self):
         for alarm_banner, text in itertools.zip_longest(
