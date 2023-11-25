@@ -69,7 +69,8 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param previous_data: The previous table that was in the view and we want to update.
         :param dm: Contains all data stored by the program to date.
         """
-        cls.handler.update_data(previous_data, cls.filters)
+        if previous_data is not None:
+            cls.handler.update_data(previous_data, cls.filters)
 
     @classmethod
     def add_shown_priority(cls, add: str) -> bool:

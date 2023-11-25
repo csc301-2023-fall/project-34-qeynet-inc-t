@@ -241,7 +241,8 @@ class AlarmsViewModel:
         table_data: TableReturn
         table_data = self.model.get_data()
 
-        self._table_entries = table_data.table
+        if table_data is not None:
+            self._table_entries = table_data.table
 
     def toggle_all(self) -> None:
         self.model.request_receiver.set_shown_priorities(self._priorities)
