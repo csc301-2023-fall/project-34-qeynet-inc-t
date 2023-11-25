@@ -14,6 +14,9 @@ from ..usecase.use_case_handlers import TableReturn
 from ..usecase.request_receiver import DashboardRequestReceiver, DataRequestReceiver
 from ..usecase.alarms_request_receiver import AlarmsRequestReceiver
 
+DASHBOARD_HEADINGS = ['TAG', 'DESCRIPTION']
+ALARM_HEADINGS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+
 
 class DashboardViewModel:
     """
@@ -34,7 +37,7 @@ class DashboardViewModel:
         Initializes the view model
         """
         self.model = Model(DashboardRequestReceiver())
-        self._sorting = [1, 1]
+        self._sorting = [-1, 1]
         self._table_entries = []
         self._time = None
         self._num_frames = 0
@@ -79,13 +82,13 @@ class DashboardViewModel:
         Args:
             heading (str): string representing which heading was toggled
         """
-
-        if heading == "TAG":
-            self._sorting[0] *= -1
-            sort_value = self._sorting[0]
-        else:
-            self._sorting[1] *= -1
-            sort_value = self._sorting[1]
+        for i in range(len(DASHBOARD_HEADINGS)):
+            check_heading = DASHBOARD_HEADINGS[i]
+            if heading == check_heading:
+                self._sorting[i] *= -1
+                sort_value = self._sorting[0]
+            else:
+                self._sorting[i] = 1
 
         if sort_value == 1:
             # ascending
@@ -198,6 +201,7 @@ class AlarmsViewModel:
         self.model.request_receiver.set_shown_priorities(self._priorities)
         self.model.request_receiver.set_shown_criticalities(self._criticalities)
         self.model.request_receiver.set_shown_types(self._types)
+        self.model.request_receiver.update_sort(('<', 'ID'))
         self._new = False
 
         for watcher in watchers:
@@ -268,24 +272,13 @@ class AlarmsViewModel:
             heading (str): string representing which heading was toggled
         """
 
-        if heading == 'ID':
-            self._sorting[0] *= -1
-            sort_value = self._sorting[0]
-        elif heading == 'PRIORITY':
-            self._sorting[1] *= -1
-            sort_value = self._sorting[1]
-        elif heading == 'CRITICALITY':
-            self._sorting[2] *= -1
-            sort_value = self._sorting[2]
-        elif heading == 'REGISTERED':
-            self._sorting[3] *= -1
-            sort_value = self._sorting[3]
-        elif heading == 'CONFIRMED':
-            self._sorting[4] *= -1
-            sort_value = self._sorting[4]
-        elif heading == 'TYPE':
-            self._sorting[5] *= -1
-            sort_value = self._sorting[5]
+        for i in range(len(ALARM_HEADINGS)):
+            check_heading = ALARM_HEADINGS[i]
+            if check_heading == heading:
+                self._sorting[i] *= -1
+                sort_value = self._sorting[i] * (heading == check_heading)
+            else:
+                self._sorting[i] = 1
 
         if sort_value == 1:
             # ascending

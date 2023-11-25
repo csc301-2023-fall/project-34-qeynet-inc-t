@@ -215,7 +215,7 @@ class View(Tk):
         dashboard_table.column("value", anchor=CENTER, width=80)
         dashboard_table.column("setpoint", anchor=CENTER, width=80)
         dashboard_table.column("alarm", anchor=CENTER, width=80)
-        dashboard_table.heading("tag", text="Tag ●", anchor=CENTER, command=self.toggle_tag)
+        dashboard_table.heading("tag", text="Tag ▲", anchor=CENTER, command=self.toggle_tag)
         dashboard_table.heading("description", text="Description ●", anchor=CENTER,
                                 command=self.toggle_description)
         dashboard_table.heading("value", text="Value", anchor=CENTER)
@@ -302,7 +302,7 @@ class View(Tk):
         alarms_table.column("Parameter(s)", anchor=CENTER, width=100)
         alarms_table.column("Description", anchor=CENTER, width=200)
 
-        alarms_table.heading("ID", text="ID ●", anchor=CENTER,
+        alarms_table.heading("ID", text="ID ▲", anchor=CENTER,
                              command=lambda: self.sort_alarms('ID'))
         alarms_table.heading("Priority", text="Priority ●", anchor=CENTER,
                              command=lambda: self.sort_alarms('PRIORITY'))
@@ -322,6 +322,7 @@ class View(Tk):
             self.dashboard_view_model.toggle_start_time(None)
             self.dashboard_view_model.toggle_end_time(None)
             self.dashboard_view_model.choose_frame(self._dm, 0)
+            self.dashboard_view_model.toggle_sort('TAG')
             self.refresh_data_table()
             self.search_bar_change()
             self.select_all_tags()
