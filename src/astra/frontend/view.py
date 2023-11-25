@@ -156,7 +156,10 @@ class View(Tk):
         Label(dashboard_time_range_row, text='From (YYYY-MM-DD HH:MM:SS)   ').pack(side="left")
         Entry(dashboard_time_range_row, width=5,
               textvariable=self.start_year).pack(side="left")
+
         Label(dashboard_time_range_row, text='-').pack(side="left")
+        entry_1 = Entry(dashboard_time_range_row, width=3,
+              textvariable=self.start_month)
         Entry(dashboard_time_range_row, width=3,
               textvariable=self.start_month).pack(side="left")
         Label(dashboard_time_range_row, text='-').pack(side="left")
@@ -219,19 +222,21 @@ class View(Tk):
         dashboard_table.configure(yscrollcommand=dashboard_table_scroll.set)
         dashboard_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 5)
         self.dashboard_table = dashboard_table
-        dashboard_table['columns'] = ("tag", "description", "value", "setpoint", 'alarm')
+        dashboard_table['columns'] = ("tag", "description", "value", "setpoint", 'units', 'alarm')
         dashboard_table.grid(sticky='NSEW', row=4, column=1, rowspan=num_rows - 5)
         dashboard_table.column("#0", width=0, stretch=NO)
         dashboard_table.column("tag", anchor=CENTER, width=80)
         dashboard_table.column("description", anchor=CENTER, width=100)
         dashboard_table.column("value", anchor=CENTER, width=80)
         dashboard_table.column("setpoint", anchor=CENTER, width=80)
+        dashboard_table.column("units", anchor=CENTER, width=80)
         dashboard_table.column("alarm", anchor=CENTER, width=80)
         dashboard_table.heading("tag", text="Tag ▲", anchor=CENTER, command=self.toggle_tag)
         dashboard_table.heading("description", text="Description ●", anchor=CENTER,
                                 command=self.toggle_description)
         dashboard_table.heading("value", text="Value", anchor=CENTER)
         dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
+        dashboard_table.heading("units", text="Units", anchor=CENTER)
         dashboard_table.heading("alarm", text="Alarm", anchor=CENTER)
         dashboard_table.bind('<Double-1>', self.double_click_dashboard_table_row)
 

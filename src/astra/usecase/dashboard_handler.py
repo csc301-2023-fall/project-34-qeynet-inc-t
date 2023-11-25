@@ -95,7 +95,7 @@ class DashboardHandler(UseCaseHandler):
         return matching
 
     @classmethod
-    def _format_param_value(cls, tag_data: ParameterValue | None, units: DisplayUnit | None) -> str:
+    def _format_param_value(cls, tag_data: ParameterValue | None) -> str:
         """
         Formats the <tag_data> with the given units
 
@@ -105,9 +105,7 @@ class DashboardHandler(UseCaseHandler):
         """
         if tag_data is None:
             return 'None'
-        if units is None:
-            return str(tag_data)
-        return f'{round(tag_data, ROUNDING_DECMIALS)} {units.symbol}'
+        return f'{round(tag_data, ROUNDING_DECMIALS)}'
 
     @classmethod
     def _format_alarm_data(cls, alarm: Alarm | None) -> str:
@@ -197,15 +195,21 @@ class DashboardHandler(UseCaseHandler):
             tag_setpoint_value = eval_param_value(
                 tag_parameters, raw_tag_setpoint_value)
 
-            tag_value = cls._format_param_value(tag_data, tag_parameters.display_units)
-            tag_setpoint = cls._format_param_value(tag_setpoint_value, tag_parameters.display_units)
+            tag_value = cls._format_param_value(tag_data)
+            tag_setpoint = cls._format_param_value(tag_setpoint_value)
+
+            if tag_parameters.display_units is None:
+                tag_units = "None"
+            else:
+                tag_units = tag_parameters.display_units.description
+
             tag_alarm_data = cls._format_alarm_data(tag_alarm)
 
             include_tag = tag in input_tags
             if include_tag:
-                include.append([tag, tag_description, tag_value, tag_setpoint, tag_alarm_data])
+                include.append([tag, tag_description, tag_value, tag_setpoint, tag_units, tag_alarm_data])
             else:
-                removed.append([tag, tag_description, tag_value, tag_setpoint, tag_alarm_data])
+                removed.append([tag, tag_description, tag_value, tag_setpoint, tag_units, tag_alarm_data])
         return include, removed
 
     @classmethod
