@@ -50,9 +50,9 @@ class View(Tk):
         self.dashboard_view_model = DashboardViewModel()
 
         watchers = [
-            self.update_alarm_banners,
             self.construct_alarms_table,
             self.construct_dashboard_table,
+            self.update_alarm_banners,
         ]
         self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
 
@@ -350,7 +350,7 @@ class View(Tk):
         print(self.alarm_banners)
         print(self.alarms_view_model.get_alarm_banners())
         for alarm_banner, text in itertools.zip_longest(
-                self.alarm_banners, ['PLACEHOLDER', 'ALARM', 'TEXT']
+                self.alarm_banners, self.alarms_view_model.get_alarm_banners()
         ):
             alarm_banner['text'] = text if text is not None else ''
 
