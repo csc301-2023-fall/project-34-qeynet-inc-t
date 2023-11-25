@@ -162,7 +162,7 @@ class View(Tk):
         self.create_time_entry_field(dashboard_time_range_row, entry_variables)
 
         Button(dashboard_time_range_row, text='Update time',
-               command=self.update_time).pack(side="left")
+               command=lambda: self.update_dashboard_times(entry_variables)).pack(side="left")
 
         self.dashboard_current_frame_number = 0
         self.dashboard_frame_navigation_text = StringVar(value='Frame --- at ---')
@@ -257,7 +257,7 @@ class View(Tk):
         label.grid(sticky="news", row=3, column=0)
         self.alarms_buttons_type = []
 
-        for i in range (len(self.types)):
+        for i in range(len(self.types)):
             button = Button(alarms_tag_table, text=self.types[i], relief="sunken",
                             command=lambda x=i: self.flick_type(x))
             button.grid(sticky="news", row=3, column=i + 1)
@@ -320,6 +320,12 @@ class View(Tk):
         # self.sort_alarms('ID')
 
     def create_time_entry_field(self, frame: Frame, entry_variables: list[list[StringVar]]) -> None:
+        """
+        Creates a series of entries within <frame> designated for inputting times
+
+        :param frame: The frame to insert the entry fields into
+        :param entry_variables: A 2D list of string variables, each corresponding to entry field
+        """
         for i in range(len(entry_variables)):
             for j in range(len(entry_variables[i])):
                 width = 3 + (j == 0) * 2
@@ -516,10 +522,10 @@ class View(Tk):
             new_window, text=f'Criticality: {alarm.criticality.value}', anchor='w'
         ).pack(fill=BOTH)
         Label(new_window, text=f'Registered: {
-            event.register_time.strftime('%Y-%m-%d %H:%M:%S')
+        event.register_time.strftime('%Y-%m-%d %H:%M:%S')
         }', anchor='w').pack(fill=BOTH)
         Label(new_window, text=f'Confirmed: {
-            event.confirm_time.strftime('%Y-%m-%d %H:%M:%S')
+        event.confirm_time.strftime('%Y-%m-%d %H:%M:%S')
         }', anchor='w').pack(fill=BOTH)
         Label(new_window, text=f'Type: {event.type}', anchor='w').pack(fill=BOTH)
         Label(new_window).pack()
@@ -592,33 +598,20 @@ class View(Tk):
 
         self.construct_alarms_table()
 
-    def update_time(self):
-        input_start_time = f"{
-        self.start_year.get()
-        }-{
-        self.start_month.get()
-        }-{
-        self.start_day.get()
-        } {
-        self.start_hour.get()
-        }:{
-        self.start_min.get()
-        }:{
-        self.start_sec.get()
-        }"
-        input_end_time = f"{
-        self.end_year.get()
-        }-{
-        self.end_month.get()
-        }-{
-        self.end_day.get()
-        } {
-        self.end_hour.get()
-        }:{
-        self.end_min.get()
-        }:{
-        self.end_sec.get()
-        }"
+    def update_time(self, associated_vars: list[list[StringVar]]) -> (datetime, datetime):
+        input_times = ["", ""]
+        for j in range(len(associated_vars)):
+            for i in range(len(associated_vars[j])):
+                input_times[j] += associated_vars[j][i].get()
+                if i < 2:
+                    input_times[j] += '-'
+                elif i == 2:
+                    input_times[j] += ' '
+                elif i < 5:
+                    input_times[j] += ':'
+
+        input_start_time = input_times[0]
+        input_end_time = input_times[1]
         if input_start_time != '-- ::':
             try:
                 start_time = datetime.strptime(input_start_time, '%Y-%m-%d %H:%M:%S')
@@ -653,6 +646,11 @@ class View(Tk):
                 message='The chosen time range does not have any telemetry frames.'
             )
             return
+
+        return start_time, end_time
+
+    def update_dashboard_times(self, associated_vars: list[list[StringVar]]):
+        start_time, end_time = self.update_time(associated_vars)
         self.dashboard_view_model.toggle_start_time(start_time)
         self.dashboard_view_model.toggle_end_time(end_time)
         self.dashboard_current_frame_number = 0
