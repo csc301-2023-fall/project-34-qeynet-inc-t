@@ -87,6 +87,7 @@ class LimitedSlotAlarms:
             item = old_q_items[i]
             old_str = cls.create_banner_string(item)
             all_items.append(old_str)
+            i += 1
 
         return all_items
 
