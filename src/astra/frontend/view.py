@@ -351,9 +351,6 @@ class View(Tk):
         # self.sort_alarms('ID')
 
     def update_alarm_banners(self):
-        print('UPDATE ALARM BANNERS')
-        print(self.alarm_banners)
-        print(self.alarms_view_model.get_alarm_banners())
         for alarm_banner, text in itertools.zip_longest(
                 self.alarm_banners, self.alarms_view_model.get_alarm_banners()
         ):

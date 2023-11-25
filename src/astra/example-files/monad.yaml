@@ -32,21 +32,50 @@ alarms:
 - criticality: HIGH
   event:
     tags:
+    - Bb5
+    - Ba4
+    type: sequence_of_events
+    description: SOE alarm
+    persistence: null
+    intervals:
+    - - 0.0
+      - null
+    - - 5.0
+      - 10.0
+    events:
+    - tag: Bb5
+      type: static
+      description: static alarm
+      persistence: 3
+    - tag: Ba4
+      type: threshold
+      description: threshold alarm
+      persistence: null
+      lower_threshold: null
+      upper_threshold: 0.0
+    - tag: Ba4
+      type: setpoint
+      description: setpoint alarm
+      persistence: null
+      setpoint: 0
+- criticality: HIGH
+  event:
+    tags:
     - e4
     - e5
     type: logical_and
     description: logical AND alarm
-    persistence: 0
+    persistence: null
     events:
     - tag: e4
       type: setpoint
       description: setpoint alarm
-      persistence: 0
+      persistence: null
       setpoint: true
     - tag: e5
       type: setpoint
       description: setpoint alarm
-      persistence: 0
+      persistence: null
       setpoint: false
 - criticality: CRITICAL
   event:
@@ -65,7 +94,7 @@ alarms:
     - tag: e5
       type: setpoint
       description: setpoint alarm
-      persistence: 0
+      persistence: null
       setpoint: true
 metadata:
   comments: ''
@@ -123,4 +152,13 @@ tags:
     description: Pawn a7-a6
     display_units: null
     dtype: float
+    setpoint: null
+- Ba4:
+    description: Bishop b5-a4
+    display_units:
+      constant: 1
+      description: odd
+      multiplier: 2
+      symbol: o
+    dtype: int
     setpoint: null
