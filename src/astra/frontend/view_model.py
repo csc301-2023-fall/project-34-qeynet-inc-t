@@ -360,7 +360,7 @@ class AlarmsViewModel:
         self.model.request_receiver.set_registered_end_time(end)
 
     def toggle_confirmed_start_time(self, start: datetime) -> None:
-        self.model.request_receiver.set_confirmedd_start_time(start)
+        self.model.request_receiver.set_confirmed_start_time(start)
 
     def toggle_confirmed_end_time(self, end: datetime) -> None:
         self.model.request_receiver.set_confirmed_end_time(end)

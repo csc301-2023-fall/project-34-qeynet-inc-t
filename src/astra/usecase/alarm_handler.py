@@ -236,20 +236,20 @@ class AlarmsHandler(UseCaseHandler):
         alarm_confirm_time = alarm.event.confirm_time
         alarm_register_time = alarm.event.confirm_time
         if filter_args.confirmed_start_time is not None:
-            compare_time = filter_args.registered_start_time
-            show = show and alarm_confirm_time > compare_time
+            compare_time = filter_args.confirmed_start_time
+            show = show and alarm_confirm_time >= compare_time
 
         if filter_args.confirmed_end_time is not None:
-            compare_time = filter_args.registered_end_time
-            show = show and alarm_confirm_time < compare_time
+            compare_time = filter_args.confirmed_end_time
+            show = show and alarm_confirm_time <= compare_time
 
         if filter_args.registered_start_time is not None:
             register_time = filter_args.registered_start_time
-            show = show and alarm_register_time > register_time
+            show = show and alarm_register_time >= register_time
 
-        if filter_args.registered_start_time is not None:
-            register_time = filter_args.registered_start_time
-            show = show and alarm_register_time < register_time
+        if filter_args.registered_end_time is not None:
+            register_time = filter_args.registered_end_time
+            show = show and alarm_register_time <= register_time
 
         # Finally, checking if we only show unacknowledged alarms
         if filter_args.new:

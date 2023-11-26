@@ -394,6 +394,8 @@ class View(Tk):
     ) -> OperationControl:
         self.alarms_view_model.toggle_confirmed_start_time(start_time)
         self.alarms_view_model.toggle_confirmed_end_time(end_time)
+        self.alarms_view_model.model.receive_updates()
+        self.alarms_view_model.update_table_entries()
         self.refresh_alarms_table()
         return OperationControl.CONTINUE
 
