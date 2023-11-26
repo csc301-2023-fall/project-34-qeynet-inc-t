@@ -211,7 +211,7 @@ class AlarmsHandler(UseCaseHandler):
             all_tags = []
             for inner_event_base in event_base.event_bases:
                 all_tags += cls._get_relevant_tags(inner_event_base)
-            return all_tags
+            return list(set(all_tags))
 
     @classmethod
     def _determine_toggled(cls, alarm: Alarm, filter_args: AlarmsFilters) -> bool:
