@@ -353,6 +353,18 @@ class AlarmsViewModel:
         self.model.receive_updates()
         self.update_table_entries()
 
+    def toggle_registered_start_time(self, start: datetime) -> None:
+        self.model.request_receiver.set_registered_start_time(start)
+
+    def toggle_registered_end_time(self, end: datetime) -> None:
+        self.model.request_receiver.set_registered_end_time(end)
+
+    def toggle_confirmed_start_time(self, start: datetime) -> None:
+        self.model.request_receiver.set_confirmedd_start_time(start)
+
+    def toggle_confirmed_end_time(self, end: datetime) -> None:
+        self.model.request_receiver.set_confirmed_end_time(end)
+
     def toggle_type(self, tag: Tag):
         """
         Method for toggling filtering of specific criticality

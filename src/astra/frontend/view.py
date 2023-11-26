@@ -14,19 +14,21 @@ from tkinter.ttk import Treeview
 
 from astra.data import config_manager
 from astra.data.data_manager import DataManager
+from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
 from ..data.parameters import Tag
 
-config_path = filedialog.askopenfilename(title='Select config file')
-if not config_path:
-    sys.exit()
-try:
-    config_manager.read_config(config_path)
-except Exception as e:
-    messagebox.showerror(title='Cannot read config', message=f'{type(e).__name__}: {e}')
-    sys.exit(1)
-device_name = pathlib.Path(config_path).stem
+# config_path = filedialog.askopenfilename(title='Select config file')
+# if not config_path:
+#     sys.exit()
+# try:
+#     config_manager.read_config(config_path)
+# except Exception as e:
+#     messagebox.showerror(title='Cannot read config', message=f'{type(e).__name__}: {e}')
+#     sys.exit(1)
+# device_name = pathlib.Path(config_path).stem
+device_name = 'monad'
 
 
 class View(Tk):
@@ -63,7 +65,7 @@ class View(Tk):
         self.state('zoomed')
 
         # alarm banners
-        alarm_banners_container = ttk.Frame(self)
+        alarm_banners_container = Frame(self)
         self.alarm_banners = [Label(alarm_banners_container, anchor='w') for i in range(6)]
         for alarm_banner in self.alarm_banners:
             alarm_banner.pack(fill=BOTH)
@@ -73,8 +75,8 @@ class View(Tk):
         tab_control = ttk.Notebook(self)
 
         # frames corresponding to each tab
-        dashboard_frame = ttk.Frame(tab_control)
-        alarms_frame = ttk.Frame(tab_control)
+        dashboard_frame = Frame(tab_control)
+        alarms_frame = Frame(tab_control)
 
         # Needs testing
         # I do not know of a clever way of doing this. To ensure even
@@ -135,40 +137,15 @@ class View(Tk):
         add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
         add_data_button.grid(sticky='W', row=0, column=1)
 
-        self.start_year = StringVar()
-        self.start_month = StringVar()
-        self.start_day = StringVar()
-        self.start_hour = StringVar()
-        self.start_min = StringVar()
-        self.start_sec = StringVar()
-
-        self.end_year = StringVar()
-        self.end_month = StringVar()
-        self.end_day = StringVar()
-        self.end_hour = StringVar()
-        self.end_min = StringVar()
-        self.end_sec = StringVar()
-
-        dashboard_time_range_row_outside = Frame(dashboard_frame)
-        dashboard_time_range_row_outside.grid(sticky='ew', row=1, column=1)
-        dashboard_time_range_row = Frame(dashboard_time_range_row_outside)
-        dashboard_time_range_row.pack(expand=False)
-        Label(dashboard_time_range_row, text='From (YYYY-MM-DD HH:MM:SS)   ').pack(side="left")
-
-        entry_variables = [[self.start_year, self.start_month, self.start_day,
-                            self.start_hour, self.start_min, self.start_sec],
-                           [self.end_year, self.end_month, self.end_day,
-                            self.end_hour, self.end_min, self.end_sec]]
-        self.create_time_entry_field(dashboard_time_range_row, entry_variables)
-
-        Button(dashboard_time_range_row, text='Update time',
-               command=lambda: self.update_dashboard_times(entry_variables)).pack(side="left")
+        TimerangeInput(
+            dashboard_frame, 'Time range', self.update_dashboard_times
+        ).grid(sticky='W', row=1, column=1)
 
         self.dashboard_current_frame_number = 0
         self.dashboard_frame_navigation_text = StringVar(value='Frame --- at ---')
 
         dashboard_frame_navigation_row_outside = Frame(dashboard_frame)
-        dashboard_frame_navigation_row_outside.grid(sticky='ew', row=2, column=1)
+        dashboard_frame_navigation_row_outside.grid(sticky='ew', row=2, column=1, pady=(10, 0))
         dashboard_frame_navigation_row = Frame(dashboard_frame_navigation_row_outside)
         dashboard_frame_navigation_row.pack(expand=False)
         Button(dashboard_frame_navigation_row, text='|<',
@@ -225,16 +202,13 @@ class View(Tk):
         self.dangers = ['WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
         self.types = ['RATE_OF_CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR']
 
-        label = Label(alarms_tag_table, text="filter by new")
-        label.grid(sticky="news", row=0, column=0)
-
-        button = Button(alarms_tag_table, text="Show New Only", relief="raised",
+        button = Button(alarms_tag_table, text="Show new alarms only", relief="raised",
                         command=lambda: self.flick_new())
-        button.grid(sticky="news", row=0, column=1)
+        button.grid(sticky="w", row=0, columnspan=8)
         self.alarms_button_new = button
 
         self.alarms_buttons_priority = []
-        label = Label(alarms_tag_table, text="filter priority")
+        label = Label(alarms_tag_table, text="Filter priority:")
         label.grid(sticky="news", row=1, column=0)
 
         for i in range(len(self.dangers)):
@@ -243,7 +217,7 @@ class View(Tk):
             button.grid(sticky="news", row=1, column=i + 1)
             self.alarms_buttons_priority.append(button)
 
-        label = Label(alarms_tag_table, text="filter criticality")
+        label = Label(alarms_tag_table, text="Filter criticality:")
         label.grid(sticky="news", row=2, column=0)
         self.alarms_buttons_criticality = []
 
@@ -253,14 +227,22 @@ class View(Tk):
             button.grid(sticky="news", row=2, column=i + 1)
             self.alarms_buttons_criticality.append(button)
 
-        label = Label(alarms_tag_table, text="filter type")
-        label.grid(sticky="news", row=3, column=0)
+        TimerangeInput(
+            alarms_tag_table, 'Registered', self.update_alarm_registered_times
+        ).grid(sticky='W', row=3, columnspan=8)
+
+        TimerangeInput(
+            alarms_tag_table, 'Confirmed', self.update_alarm_confirmed_times
+        ).grid(sticky='W', row=4, columnspan=8)
+
+        label = Label(alarms_tag_table, text="Filter type:")
+        label.grid(sticky="news", row=5, column=0)
         self.alarms_buttons_type = []
 
         for i in range(len(self.types)):
             button = Button(alarms_tag_table, text=self.types[i], relief="sunken",
                             command=lambda x=i: self.flick_type(x))
-            button.grid(sticky="news", row=3, column=i + 1)
+            button.grid(sticky="news", row=5, column=i + 1)
             self.alarms_buttons_type.append(button)
 
         # alarms table
@@ -396,6 +378,24 @@ class View(Tk):
             self.alarms_buttons_criticality[index].config(relief="sunken")
         self.alarms_view_model.toggle_criticality(tag)
         self.refresh_alarms_table()
+
+    def update_alarm_registered_times(
+            self, start_time: datetime | None, end_time: datetime | None
+    ) -> OperationControl:
+        self.alarms_view_model.toggle_registered_start_time(start_time)
+        self.alarms_view_model.toggle_registered_end_time(end_time)
+        self.alarms_view_model.model.receive_updates()
+        self.alarms_view_model.update_table_entries()
+        self.refresh_alarms_table()
+        return OperationControl.CONTINUE
+
+    def update_alarm_confirmed_times(
+            self, start_time: datetime | None, end_time: datetime | None
+    ) -> OperationControl:
+        self.alarms_view_model.toggle_confirmed_start_time(start_time)
+        self.alarms_view_model.toggle_confirmed_end_time(end_time)
+        self.refresh_alarms_table()
+        return OperationControl.CONTINUE
 
     def flick_type(self, index: int):
         tag = self.types[index]
@@ -649,13 +649,21 @@ class View(Tk):
 
         return start_time, end_time
 
-    def update_dashboard_times(self, associated_vars: list[list[StringVar]]):
-        start_time, end_time = self.update_time(associated_vars)
+    def update_dashboard_times(
+            self, start_time: datetime | None, end_time: datetime | None
+    ) -> OperationControl:
+        if self._dm.get_telemetry_data(start_time, end_time, {}).num_telemetry_frames == 0:
+            messagebox.showinfo(
+                title='No telemetry frames',
+                message='The chosen time range does not have any telemetry frames.'
+            )
+            return OperationControl.CANCEL
         self.dashboard_view_model.toggle_start_time(start_time)
         self.dashboard_view_model.toggle_end_time(end_time)
         self.dashboard_current_frame_number = 0
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_data_table()
+        return OperationControl.CONTINUE
 
     def first_frame(self):
         if self.dashboard_view_model.get_num_frames() == 0:
