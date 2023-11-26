@@ -97,14 +97,13 @@ class DashboardHandler(UseCaseHandler):
     @classmethod
     def _format_param_value(cls, tag_data: ParameterValue | None) -> str:
         """
-        Formats the <tag_data> with the given units
+        Formats the <tag_data>.
 
-        :param tag_data: The (converted) data to display with units
-        :param units: Units to display, or None for simple stringification
-        :return: A string with the data and units appropriately formatted
+        :param tag_data: The (converted) data to format
+        :return: A string with the appropriate formatting
         """
         if tag_data is None:
-            return 'None'
+            return '-'
         return f'{round(tag_data, ROUNDING_DECMIALS)}'
 
     @classmethod
@@ -117,7 +116,7 @@ class DashboardHandler(UseCaseHandler):
         """
 
         if alarm is None:
-            return 'None'
+            return '-'
         else:
             eventbase_description = alarm.event.base.description
             return f'{alarm.priority}: {eventbase_description}'
@@ -199,9 +198,9 @@ class DashboardHandler(UseCaseHandler):
             tag_setpoint = cls._format_param_value(tag_setpoint_value)
 
             if tag_parameters.display_units is None:
-                tag_units = "None"
+                tag_units = "-"
             else:
-                tag_units = tag_parameters.display_units.description
+                tag_units = tag_parameters.display_units.symbol
 
             tag_alarm_data = cls._format_alarm_data(tag_alarm)
 
