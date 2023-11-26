@@ -113,19 +113,38 @@ class SetTimerangePopup(tkinter.Toplevel):
                 else:
                     Label(time_display_frame, text=element).pack(side=LEFT)
             time_display_frame.grid(row=row, column=1)
-        self.set_time(self.timerange_input.start_time, self.start_time_vars)
-        self.set_time(self.timerange_input.end_time, self.end_time_vars)
+        self.set_entries_by_time(self.start_time_vars, self.timerange_input.start_time)
+        self.set_entries_by_time(self.end_time_vars, self.timerange_input.end_time)
         Button(
-            self, text='Clear', command=lambda: self.set_time(None, self.start_time_vars)
-        ).grid(row=0, column=2)
+            self, text='Clear', command=lambda: self.set_entries_by_time(self.start_time_vars, None)
+        ).grid(row=0, column=2, sticky='nsew')
         Button(
-            self, text='Clear', command=lambda: self.set_time(None, self.end_time_vars)
-        ).grid(row=1, column=2)
+            self, text='Clear', command=lambda: self.set_entries_by_time(self.end_time_vars, None)
+        ).grid(row=1, column=2, sticky='nsew')
+        Button(self, text='Fill with end time', command=lambda: self.set_entries_by_values(
+            self.start_time_vars, [time_var.get() for time_var in self.end_time_vars]
+        )).grid(row=0, column=3, sticky='nsew')
+        Button(self, text='Fill with start time', command=lambda: self.set_entries_by_values(
+            self.end_time_vars, [time_var.get() for time_var in self.start_time_vars]
+        )).grid(row=1, column=3, sticky='nsew')
         set_timerange_button = Button(self, text='Set time range', command=self.set_timerange)
-        set_timerange_button.grid(row=2, columnspan=3)
+        set_timerange_button.grid(row=2, columnspan=4, pady=(10, 0))
 
     @staticmethod
-    def set_time(time: datetime | None, time_vars: list[StringVar]) -> None:
+    def set_entries_by_values(time_vars: list[StringVar], values: list[str]) -> None:
+        """
+        Set the text fields for a time input according to the given string values.
+
+        :param values:
+            The values that the text fields should be set with.
+        :param time_vars:
+            A list of time StringVars for the corresponding set of text fields.
+        """
+        for value, time_var in zip(values, time_vars):
+            time_var.set(value)
+
+    @staticmethod
+    def set_entries_by_time(time_vars: list[StringVar], time: datetime | None) -> None:
         """
         Set the text fields for a time input according to the given time.
 
@@ -137,8 +156,7 @@ class SetTimerangePopup(tkinter.Toplevel):
         values = ([format(value, '04' if i == 0 else '02') for i, value in enumerate([
             time.year, time.month, time.day, time.hour, time.minute, time.second
         ])] if time is not None else [''] * 6)
-        for value, time_var in zip(values, time_vars):
-            time_var.set(value)
+        SetTimerangePopup.set_entries_by_values(time_vars, values)
 
     def set_timerange(self) -> None:
         """Actually perform the action of setting a timerange."""
