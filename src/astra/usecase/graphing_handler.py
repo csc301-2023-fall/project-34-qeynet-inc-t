@@ -1,34 +1,40 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import NewType
+from astra.data.data_manager import DataManager
 from astra.data.parameters import ParameterValue, Tag
 from use_case_handlers import UseCaseHandler
+
 
 @dataclass
 class GraphingData:
     """
     A container for data needed by the fronted to graph the requested tags.
+
+    :param shown_tags: A dictionary where each key is a tag, and each value it a tuple of lists.
+    the first list is a list of times and the second is a list of values at those times for
+    that tag.
+    :param removed_tags: The same as <shown_tags> but for tags that have
+    been removed from the graph. We keep this data so that we can add the tag back
+    to the graph without accessing the database each time.
     """
-    
-    dict[tag, tuple[tuple[datetime, ParameterValue]]]
-    # dictionary where each key is a tag, and each value is a tuple of length-2 tuples
-    # which contain a date and value to be graphed that correspond to that tag.
+
+    shown_tags: dict[Tag, tuple[list[datetime], list[ParameterValue]]]
+    removed_tags: dict[Tag, tuple[list[datetime], list[ParameterValue]]]
+
 
 @dataclass
 class GraphingFilters:
     """
     A container for all the data required by the graphing handler.
 
-    :param shown_tags: a dictionary mapping each tag to a list of values that are
-    the value of that tag in order beginning at <start_date> and ending at <end_date>.
-    :param shown_tags: a list of tags that are currently shown on the graph.
-    :param removed_tags: a list of tags that are currently not shown on the graph.
+    :param shown_tags: a set of tags that should be shown on the graph.
     :param start_date: the earliest time that values for each tag are from.
     :param end_date: the latest time that values for each tag are from.
-    :param interval: ?????.
+    :param interval: The number of frams between each value in the list of values.
     """
 
-    shown_tags: list[Tag]
+    shown_tags: set[Tag]
     start_date: datetime | None
     end_date: datetime | None
     # maybe left to fronted as they can simply take every n-th value from the list.
@@ -36,4 +42,29 @@ class GraphingFilters:
 
 
 class GraphingHandler(UseCaseHandler):
-    pass
+
+    @classmethod
+    def get_data(cls, dm: DataManager, filter_args: GraphingFilters) -> GraphingData:
+        """
+        get_data is a method that processes the data according to determined
+        filters by <filter_args>.
+
+        :param dm: All data stored in the program.
+        :param filter_args: Contains all information on filters to be applied
+        :return: A GraphingData object containing the data needed to graph the requested tags.
+        """
+
+        return GraphingData({}, {})
+
+    @classmethod
+    def update_data(cls, prev_data: GraphingData,
+                    filter_args: GraphingFilters, dm: DataManager = None) -> None:
+        """
+        update_data is a method that updates the currently represented information,
+        by modifying <prev_data> to match the current filters.
+        
+        :param prev_data: The representation of the current state of displayed data
+        :param filter_args: Contains all information on filters to be applied
+        :param dm: Contains all data stored by the program to date
+        """
+        pass
