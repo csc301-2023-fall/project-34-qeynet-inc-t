@@ -196,7 +196,7 @@ class AlarmsHandler(UseCaseHandler):
                 return 'L_OR'
 
     @classmethod
-    def _get_relevant_tags(cls, event_base: EventBase) -> list[Tag]:
+    def _get_relevant_tags(cls, event_base: EventBase) -> set[Tag]:
         """
         Takes an event base and outputs a list of all relevant tags to the base
 
@@ -206,11 +206,11 @@ class AlarmsHandler(UseCaseHandler):
         if type(event_base) is not AllEventBase \
                 and type(event_base) is not AnyEventBase \
                 and type(event_base) is not SOEEventBase:
-            return [event_base.tag]
+            return {event_base.tag}
         else:
-            all_tags = []
+            all_tags = set()
             for inner_event_base in event_base.event_bases:
-                all_tags += cls._get_relevant_tags(inner_event_base)
+                all_tags = all_tags.union(cls._get_relevant_tags(inner_event_base))
             return all_tags
 
     @classmethod
@@ -303,10 +303,14 @@ class AlarmsHandler(UseCaseHandler):
         alarm_confirm_time = alarm.event.confirm_time
         alarm_type = cls._get_alarm_type(alarm)
         alarm_tags = cls._get_relevant_tags(alarm.event.base)
+        tag_string = ''
+        for tag in alarm_tags:
+            tag_string += tag + ' '
+
         alarm_description = alarm.event.description
 
         new_row = [alarm_id, alarm_priority, alarm_criticality, alarm_register_time,
-                   alarm_confirm_time, alarm_type, alarm_tags, alarm_description, alarm]
+                   alarm_confirm_time, alarm_type, tag_string, alarm_description, alarm]
         return new_row
 
     @classmethod
