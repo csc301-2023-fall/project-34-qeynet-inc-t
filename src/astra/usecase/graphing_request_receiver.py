@@ -1,6 +1,6 @@
 from datetime import datetime
 from astra.data.data_manager import DataManager
-from astra.data.parameters import ParameterValue
+from astra.data.parameters import Tag
 from .graphing_handler import GraphingData, GraphingHandler, GraphingFilters
 from .request_receiver import RequestReceiver
 
@@ -20,7 +20,7 @@ class GraphingRequestReceiver(RequestReceiver):
 
     def __init__(self) -> None:
         self.handler = GraphingHandler()
-        self.filters = GraphingFilters([], None, None, 1)
+        self.filters = GraphingFilters(set(), None, None, 1)
 
     @classmethod
     def create(cls, dm: DataManager) -> GraphingData:
@@ -39,15 +39,18 @@ class GraphingRequestReceiver(RequestReceiver):
         cls.filters.end_date = end_date
 
     @classmethod
-    def set_shown_tags(cls, tags: list[str]) -> None:
-        cls.filters.shown_tags = tags
+    def set_shown_tags(cls, tags: set[str]) -> None:
+
+        # convert <tags> to Tag objects
+        tag_tags = {Tag(tag) for tag in tags}
+        cls.filters.shown_tags = tag_tags
 
     @classmethod
     def remove_shown_tag(cls, tag: str) -> None:
         if tag in cls.filters.shown_tags:
-            cls.filters.shown_tags.remove(tag)
+            cls.filters.shown_tags.remove(Tag(tag))
 
     @classmethod
     def add_shown_tag(cls, tag: str) -> None:
-        if tag not in cls.filters.shown_tags:
-            cls.filters.shown_tags.append(tag)
+
+        cls.filters.shown_tags.add(Tag(tag))
