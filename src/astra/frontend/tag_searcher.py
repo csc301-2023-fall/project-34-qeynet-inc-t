@@ -19,9 +19,8 @@ class TagSearcher:
         self.search_controller = DashboardRequestReceiver()
         self.dm = dm
 
-        self.all_tags = self.search_controller.search_tags("", self.dm)
-        self.shown_tags = self.all_tags.copy()
-        self.selected_tags = list(self.dm.tags)
+        self.shown_tags = self.search_controller.search_tags("", self.dm)
+        self.selected_tags = set(self.dm.tags)
 
         self.watcher = watcher
 
@@ -81,7 +80,6 @@ class TagSearcher:
             if tag[:tag_index] in self.selected_tags:
                 check = "x"
             self.tag_table.insert("", END, value=(f"[{check}] {tag}",))
-        self.selected_tags.sort()
         self.watcher()
 
     def toggle_tag_table_row(self, event):
@@ -101,17 +99,17 @@ class TagSearcher:
         if tag in self.selected_tags:
             self.selected_tags.remove(tag)
         else:
-            self.selected_tags.append(tag)
+            self.selected_tags.add(tag)
         self.update_searched_tags()
 
     def select_all_tags(self):
         # Clone the toggled tags, as it will mutate
-        self.selected_tags = list(self.dm.tags)
+        self.selected_tags = set(self.dm.tags)
         self.update_searched_tags()
 
     def deselect_all_tags(self):
         # Clone the toggled tags, as it will mutate
-        self.selected_tags = []
+        self.selected_tags = set()
         self.update_searched_tags()
 
 
@@ -121,3 +119,16 @@ class AlarmTagSearcher(TagSearcher):
 
     def get_label_text(self) -> str:
         return "Filter Parameters"
+
+
+class GraphingTagSearcher(TagSearcher):
+    def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
+        super().__init__(num_rows, frame, dm, watcher)
+        self.tag_description_lookup = dict()
+
+        for tag in self.shown_tags:
+            tag_index = tag.index(':')
+            self.tag_description_lookup[tag[:tag_index]] = tag
+
+    def get_label_text(self) -> str:
+        return "Select Parameters to Graph"

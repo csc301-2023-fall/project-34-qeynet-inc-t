@@ -4,17 +4,19 @@ This file holds the view class that will be run in main.py
 
 import itertools
 from datetime import datetime
-from tkinter import Button, Entry, Frame, Toplevel, Event
+from tkinter import Button, Entry, Frame, Toplevel, Event, Listbox
 from tkinter import CENTER, BOTTOM, NO, END, BOTH
 from tkinter import StringVar
 from tkinter import filedialog, messagebox, ttk, Tk, Label
-from tkinter.ttk import Treeview
+from tkinter.ttk import Treeview, Combobox
 
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
-from .tag_searcher import TagSearcher, AlarmTagSearcher
+from .GraphingView import GraphingView
+from .tag_searcher import TagSearcher, AlarmTagSearcher, GraphingTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
+from ..usecase.graphing_request_receiver import GraphingRequestReceiver
 
 # config_path = filedialog.askopenfilename(title='Select config file')
 # if not config_path:
@@ -75,6 +77,9 @@ class View(Tk):
         dashboard_frame = Frame(tab_control)
         alarms_frame = Frame(tab_control)
 
+        self.graphing_tab = GraphingView(tab_control, height // 4, self._dm)
+        graphing_frame = self.graphing_tab.overall_frame
+
         # Needs testing
         # I do not know of a clever way of doing this. To ensure even
         # spacing, I want each row to be always the same number of pixels
@@ -92,6 +97,7 @@ class View(Tk):
         # adding the tabs to the tab control
         tab_control.add(dashboard_frame, text='Dashboard')
         tab_control.add(alarms_frame, text='Alarms')
+        tab_control.add(graphing_frame, text="Graphing")
 
         # packing tab control to make tabs visible
         tab_control.pack(expand=1, fill="both")
