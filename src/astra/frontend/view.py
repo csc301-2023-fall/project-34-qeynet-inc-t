@@ -158,10 +158,12 @@ class View(Tk):
 
         # elements of alarms_frame
 
+        self.alarms_searcher = TagSearcher(num_rows, alarms_frame, self._dm,
+                                           self.alarms_searcher_update)
         # alarms notifications
-        alarms_notifications = Frame(alarms_frame)
-        alarms_notifications.config(background='#fff')
-        alarms_notifications.grid(sticky='NSEW', row=0, column=0, rowspan=20)
+        # alarms_notifications = Frame(alarms_frame)
+        # alarms_notifications.config(background='#fff')
+        # alarms_notifications.grid(sticky='NSEW', row=0, column=0, rowspan=20)
 
         # alarms filters (for the table)
         alarms_tag_table = Frame(alarms_frame)
@@ -268,6 +270,9 @@ class View(Tk):
             self.refresh_alarms_table()
             self.dashboard_searcher.update_searched_tags()
             self.dashboard_searcher.select_all_tags()
+
+            self.alarms_searcher.update_searched_tags()
+            self.alarms_searcher.select_all_tags()
 
         # self.sort_alarms('ID')
 
@@ -684,3 +689,11 @@ class View(Tk):
         self.dashboard_view_model.model.receive_updates()
         self.dashboard_view_model.update_table_entries()
         self.refresh_data_table()
+
+    def alarms_searcher_update(self):
+        # Convert to list to enforce ordering
+        selected_tags = list(self.alarms_searcher.selected_tags)
+        self.alarms_view_model.model.request_receiver.set_shown_tags(selected_tags)
+        self.alarms_view_model.model.receive_updates()
+        self.alarms_view_model.update_table_entries()
+        self.refresh_alarms_table()
