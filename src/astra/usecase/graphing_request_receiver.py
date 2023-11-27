@@ -16,7 +16,7 @@ class GraphingRequestReceiver(RequestReceiver):
     """
 
     handler = GraphingHandler()
-    filters = GraphingFilters(set(), None, None, 1)
+    filters = GraphingFilters(set(), None, None)
 
     @classmethod
     def create(cls, dm: DataManager) -> GraphingData:
@@ -31,7 +31,7 @@ class GraphingRequestReceiver(RequestReceiver):
     @classmethod
     def update(cls, previous_data: GraphingData, dm: DataManager = None) -> None:
         """
-        update is a method that updates the currently represented information, 
+        update is a method that updates the currently represented information,
         by mutating the data in <previous_data> to match the current filters.
         """
 

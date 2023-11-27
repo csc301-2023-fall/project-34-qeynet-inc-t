@@ -37,8 +37,6 @@ class GraphingFilters:
     shown_tags: set[Tag]
     start_time: datetime | None
     end_time: datetime | None
-    # maybe left to fronted as they can simply take every n-th value from the list.
-    interval: int
 
 
 class GraphingHandler(UseCaseHandler):
@@ -55,10 +53,8 @@ class GraphingHandler(UseCaseHandler):
         """
         graphing_data = GraphingData({}, {})
         telemetry_data = dm.get_telemetry_data(
-            filter_args.start_time, filter_args.end_time, filter_args.tags)
-        telemetry_frame = telemetry_data.get_telemetry_frame(filter_args.index)
-        
-        
+            filter_args.start_time, filter_args.end_time, filter_args.shown_tags)
+
         return GraphingData({}, {})
 
     @classmethod
@@ -67,7 +63,7 @@ class GraphingHandler(UseCaseHandler):
         """
         update_data is a method that updates the currently represented information,
         by modifying <prev_data> to match the current filters.
-        
+
         :param prev_data: The representation of the current state of displayed data
         :param filter_args: Contains all information on filters to be applied
         :param dm: Contains all data stored by the program to date
