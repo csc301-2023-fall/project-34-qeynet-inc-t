@@ -29,14 +29,14 @@ class GraphingFilters:
     A container for all the data required by the graphing handler.
 
     :param shown_tags: a set of tags that should be shown on the graph.
-    :param start_date: the earliest time that values for each tag are from.
-    :param end_date: the latest time that values for each tag are from.
+    :param start_time: the earliest time that values for each tag are from.
+    :param end_time: the latest time that values for each tag are from.
     :param interval: The number of frams between each value in the list of values.
     """
 
     shown_tags: set[Tag]
-    start_date: datetime | None
-    end_date: datetime | None
+    start_time: datetime | None
+    end_time: datetime | None
     # maybe left to fronted as they can simply take every n-th value from the list.
     interval: int
 
@@ -53,7 +53,12 @@ class GraphingHandler(UseCaseHandler):
         :param filter_args: Contains all information on filters to be applied
         :return: A GraphingData object containing the data needed to graph the requested tags.
         """
-
+        graphing_data = GraphingData({}, {})
+        telemetry_data = dm.get_telemetry_data(
+            filter_args.start_time, filter_args.end_time, filter_args.tags)
+        telemetry_frame = telemetry_data.get_telemetry_frame(filter_args.index)
+        
+        
         return GraphingData({}, {})
 
     @classmethod
