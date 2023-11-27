@@ -67,15 +67,6 @@ class DashboardRequestReceiver(RequestReceiver):
         # Add all tags to the shown tags by default.
         cls.filters.tags = set(all_tags)
 
-        if len(cls.search_cache) == 0:
-            all_params = dm.parameters
-            tag_strs = []
-            for tag in all_tags:
-                param = all_params[tag]
-                tag_strs.append(tag + ": " + param.description)
-            tag_strs.sort()
-            cls.search_cache[''] = tag_strs
-
         # Set the index to the first index by default.
         if cls.filters.index is None:
             cls.filters.index = 0
@@ -206,15 +197,24 @@ class DashboardRequestReceiver(RequestReceiver):
         cls.filters.end_time = end_time
 
     @classmethod
-    def search_tags(cls, search: str) -> list[Tag]:
+    def search_tags(cls, search: str, dm: DataManager) -> list[Tag]:
         """
         Finds all tags in <cls.filters.tags> where <search> is a substring
 
         :param search: The substring to search for
+        :param dm: The source of all data known to the program
         :return: A list of all satisfying tags
         """
+        all_tags = dm.tags
         if len(cls.search_cache) == 0:
-            return []
+            all_params = dm.parameters
+            tag_strs = []
+            for tag in all_tags:
+                param = all_params[tag]
+                tag_strs.append(tag + ": " + param.description)
+            tag_strs.sort()
+            cls.search_cache[''] = tag_strs
+
         return cls.handler.search_tags(search, cls.search_cache, cls.search_eviction)
 
 
