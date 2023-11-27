@@ -1,4 +1,3 @@
-from copy import copy
 import queue
 from dataclasses import dataclass
 from datetime import datetime
@@ -12,7 +11,7 @@ from astra.data.alarms import (
 from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryFrame
-from astra.data.parameters import DisplayUnit, ParameterValue, Tag
+from astra.data.parameters import ParameterValue, Tag
 from .utils import eval_param_value
 
 SORT = 'SORT'
@@ -206,9 +205,11 @@ class DashboardHandler(UseCaseHandler):
 
             include_tag = tag in input_tags
             if include_tag:
-                include.append([tag, tag_description, tag_value, tag_setpoint, tag_units, tag_alarm_data])
+                include.append([tag, tag_description, tag_value, tag_setpoint, tag_units,
+                                tag_alarm_data])
             else:
-                removed.append([tag, tag_description, tag_value, tag_setpoint, tag_units, tag_alarm_data])
+                removed.append([tag, tag_description, tag_value, tag_setpoint, tag_units,
+                                tag_alarm_data])
         return include, removed
 
     @classmethod

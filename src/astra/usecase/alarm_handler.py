@@ -29,7 +29,8 @@ class LimitedSlotAlarms:
     Contains all alarms to be shown in the banner at the top of the screen
 
     :param _slots: A dict of priority queues
-    :param _priorities: an ordered list of keys in _slots, where elements are ordered by descending importance
+    :param _priorities: an ordered list of keys in _slots, where elements are ordered by
+    descending importance
     """
     _slots = {NEW_QUEUE_KEY: [], OLD_QUEUE_KEY: []}
     _priorities = [NEW_QUEUE_KEY, OLD_QUEUE_KEY]
@@ -41,8 +42,8 @@ class LimitedSlotAlarms:
         :param alarm: The alarm to use in creating a string
         :return A representation of the alarm for the banner
         """
-        priority_str = f"{alarm.priority.name[0] +
-                          alarm.priority.name[1:].lower()}-priority alarm "
+        priority_str = (f"{alarm.priority.name[0] + alarm.priority.name[1:].lower()}"
+                        f"-priority alarm ")
         num_str = f'(#{alarm.event.id}): '
         desc_str = alarm.event.description
         return priority_str + num_str + desc_str
@@ -320,8 +321,8 @@ class AlarmsHandler(UseCaseHandler):
         return new_row
 
     @classmethod
-    def get_data(cls, dm: dict[AlarmPriority | str, set[Alarm] | Queue], filter_args: AlarmsFilters) \
-            -> TableReturn:
+    def get_data(cls, dm: dict[AlarmPriority | str, set[Alarm] | Queue],
+                 filter_args: AlarmsFilters) -> TableReturn:
         """
         Using the current data structure of alarms, packs all data stored by the alarms into
         an easily accessible format

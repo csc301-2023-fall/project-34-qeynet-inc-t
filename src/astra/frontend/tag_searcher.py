@@ -10,10 +10,9 @@ class TagSearcher:
     """
     Defines a widget that can be used to search through a series of tags and allows the user to
     make selections on those tags for a number of purposes
-    
     """
 
-    def __init__(self, num_rows: int, frame: Frame,  dm: DataManager, watcher: Callable):
+    def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
 
         # elements of dashboard_frame
         self.search_bar = StringVar()
@@ -43,7 +42,8 @@ class TagSearcher:
         tag_search_area.grid_columnconfigure(1, weight=3)
         tag_search_area.grid(sticky='NSEW', row=1, column=0, columnspan=2)
 
-        Label(tag_search_area, text="Search", background='#fff').grid(sticky='NSEW', row=0, column=0)
+        Label(tag_search_area, text="Search", background='#fff').grid(sticky='NSEW', row=0,
+                                                                      column=0)
         Entry(tag_search_area, textvariable=self.search_bar).grid(sticky='NSEW', row=0, column=1)
         self.search_bar.trace_add("write", self.search_bar_change)
 

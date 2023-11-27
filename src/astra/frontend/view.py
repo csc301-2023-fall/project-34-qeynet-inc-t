@@ -3,8 +3,6 @@ This file holds the view class that will be run in main.py
 """
 
 import itertools
-import pathlib
-import sys
 from datetime import datetime
 from tkinter import Button, Entry, Frame, Toplevel, Event
 from tkinter import CENTER, BOTTOM, NO, END, BOTH
@@ -12,13 +10,11 @@ from tkinter import StringVar
 from tkinter import filedialog, messagebox, ttk, Tk, Label
 from tkinter.ttk import Treeview
 
-from astra.data import config_manager
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .tag_searcher import TagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
-from ..data.parameters import Tag
 
 # config_path = filedialog.askopenfilename(title='Select config file')
 # if not config_path:
@@ -134,7 +130,8 @@ class View(Tk):
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
         dashboard_table = ttk.Treeview(dashboard_frame, height=10, padding=3)
-        dashboard_table_scroll = ttk.Scrollbar(dashboard_frame, orient="vertical", command=dashboard_table.yview)
+        dashboard_table_scroll = ttk.Scrollbar(dashboard_frame, orient="vertical",
+                                               command=dashboard_table.yview)
         dashboard_table.configure(yscrollcommand=dashboard_table_scroll.set)
         dashboard_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 5)
         self.dashboard_table = dashboard_table
@@ -227,7 +224,8 @@ class View(Tk):
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
         alarms_table = ttk.Treeview(alarms_table_frame, padding=3)
-        alarms_table_scroll = ttk.Scrollbar(alarms_table_frame, orient="vertical", command=alarms_table.yview)
+        alarms_table_scroll = ttk.Scrollbar(alarms_table_frame, orient="vertical",
+                                            command=alarms_table.yview)
         alarms_table.configure(yscrollcommand=alarms_table_scroll.set)
         alarms_table_scroll.pack(side="right", fill="y")
         self.alarms_table = alarms_table
@@ -501,12 +499,10 @@ class View(Tk):
         Label(
             new_window, text=f'Criticality: {alarm.criticality.value}', anchor='w'
         ).pack(fill=BOTH)
-        Label(new_window, text=f'Registered: {
-        event.register_time.strftime('%Y-%m-%d %H:%M:%S')
-        }', anchor='w').pack(fill=BOTH)
-        Label(new_window, text=f'Confirmed: {
-        event.confirm_time.strftime('%Y-%m-%d %H:%M:%S')
-        }', anchor='w').pack(fill=BOTH)
+        Label(new_window, text=f'Registered: {event.register_time.strftime('%Y-%m-%d %H:%M:%S')}',
+              anchor='w').pack(fill=BOTH)
+        Label(new_window, text=f'Confirmed: {event.confirm_time.strftime('%Y-%m-%d %H:%M:%S')}',
+              anchor='w').pack(fill=BOTH)
         Label(new_window, text=f'Type: {event.type}', anchor='w').pack(fill=BOTH)
         Label(new_window).pack()
         Label(new_window, text='Parameters:', anchor='w').pack(fill=BOTH)

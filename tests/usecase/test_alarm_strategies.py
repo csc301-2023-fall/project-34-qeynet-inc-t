@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 import unittest
 
-from astra.data.alarms import EventBase, SimpleEventBase, StaticEventBase
+from astra.data.alarms import SimpleEventBase, StaticEventBase
 from astra.usecase.alarm_strategies import (
     find_first_time,
     persistence_check,
