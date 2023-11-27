@@ -12,7 +12,7 @@ from tkinter.ttk import Treeview
 
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
-from .tag_searcher import TagSearcher
+from .tag_searcher import TagSearcher, AlarmTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
 
@@ -158,8 +158,8 @@ class View(Tk):
 
         # elements of alarms_frame
 
-        self.alarms_searcher = TagSearcher(num_rows, alarms_frame, self._dm,
-                                           self.alarms_searcher_update)
+        self.alarms_searcher = AlarmTagSearcher(num_rows, alarms_frame, self._dm,
+                                                self.alarms_searcher_update)
         # alarms notifications
         # alarms_notifications = Frame(alarms_frame)
         # alarms_notifications.config(background='#fff')

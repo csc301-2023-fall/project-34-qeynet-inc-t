@@ -34,7 +34,7 @@ class TagSearcher:
             filter_tags.grid_rowconfigure(i, weight=1)
 
         filter_tags.grid(sticky='NSEW', row=0, column=0, rowspan=num_rows - 1, padx=(0, 3))
-        Label(filter_tags, text="Parameters to display", background='#fff').grid(
+        Label(filter_tags, text=self.get_label_text(), background='#fff').grid(
             sticky='NSEW', row=0, column=0, columnspan=2)
         tag_search_area = Frame(filter_tags)
         tag_search_area.config(background='#fff')
@@ -62,6 +62,10 @@ class TagSearcher:
         tag_table.column("tag")
         tag_table.grid(sticky='NEWS', row=4, column=0, columnspan=2, rowspan=num_rows - 4)
         tag_table.bind('<ButtonRelease-1>', self.toggle_tag_table_row)
+
+    def get_label_text(self) -> str:
+        """Returns an appropriate descriptor for this search widget"""
+        return "Parameters to display"
 
     def search_bar_change(self, *args):
         del args
@@ -109,3 +113,11 @@ class TagSearcher:
         # Clone the toggled tags, as it will mutate
         self.selected_tags = []
         self.update_searched_tags()
+
+
+class AlarmTagSearcher(TagSearcher):
+    def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
+        super().__init__(num_rows, frame, dm, watcher)
+
+    def get_label_text(self) -> str:
+        return "Filter Parameters"
