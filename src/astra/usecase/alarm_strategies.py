@@ -772,7 +772,8 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
     times = list(telemetry_data.get_parameter_values(any_tag).keys())
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True, Condition())
+        inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True,
+                                       Condition())
 
         if not inner_alarm_indexes:
             with cv:
@@ -807,8 +808,10 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         first_index = sequence_of_events[0]
         last_index = sequence_of_events[1]
 
-        alarm_indexes = ([False] * first_index + [True] * (last_index - first_index) +
-                         [False] * (len(times) - last_index - 1))
+        up_to_first = [False] * first_index
+        up_to_last = [True] * (last_index - first_index)
+        up_to_end = [False] * (len(times) - last_index - 1)
+        alarm_indexes = up_to_first + up_to_last + up_to_end
 
         new_alarm = create_alarm((first_index, last_index), times, alarm_base, criticality)
 
@@ -857,7 +860,8 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
 
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True, Condition())
+        inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True,
+                                       Condition())
 
         if not alarm_indexes:
             alarm_indexes = inner_alarm_indexes
@@ -930,7 +934,8 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     alarm_data = set()
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
-        inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True, Condition())
+        inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True,
+                                       Condition())
 
         if not alarm_indexes:
             alarm_indexes = inner_alarm_indexes

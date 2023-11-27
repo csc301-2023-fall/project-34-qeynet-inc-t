@@ -86,7 +86,7 @@ class DashboardViewModel:
             check_heading = DASHBOARD_HEADINGS[i]
             if heading == check_heading:
                 self._sorting[i] *= -1
-                sort_value = self._sorting[0]
+                sort_value = self._sorting[i]
             else:
                 self._sorting[i] = 1
 
@@ -352,6 +352,18 @@ class AlarmsViewModel:
         self.model.request_receiver.set_shown_criticalities(self._criticalities)
         self.model.receive_updates()
         self.update_table_entries()
+
+    def toggle_registered_start_time(self, start: datetime) -> None:
+        self.model.request_receiver.set_registered_start_time(start)
+
+    def toggle_registered_end_time(self, end: datetime) -> None:
+        self.model.request_receiver.set_registered_end_time(end)
+
+    def toggle_confirmed_start_time(self, start: datetime) -> None:
+        self.model.request_receiver.set_confirmed_start_time(start)
+
+    def toggle_confirmed_end_time(self, end: datetime) -> None:
+        self.model.request_receiver.set_confirmed_end_time(end)
 
     def toggle_type(self, tag: Tag):
         """

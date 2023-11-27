@@ -29,7 +29,8 @@ class LimitedSlotAlarms:
     Contains all alarms to be shown in the banner at the top of the screen
 
     :param _slots: A dict of priority queues
-    :param _priorities: an ordered list of keys in _slots, where elements are ordered by descending importance
+    :param _priorities: an ordered list of keys in _slots, where elements are ordered by
+    descending importance
     """
     _slots = {NEW_QUEUE_KEY: [], OLD_QUEUE_KEY: []}
     _priorities = [NEW_QUEUE_KEY, OLD_QUEUE_KEY]
@@ -41,8 +42,8 @@ class LimitedSlotAlarms:
         :param alarm: The alarm to use in creating a string
         :return A representation of the alarm for the banner
         """
-        priority_str = f"{alarm.priority.name[0] +
-                          alarm.priority.name[1:].lower()}-priority alarm "
+        priority_str = (f"{alarm.priority.name[0] + alarm.priority.name[1:].lower()}"
+                        f"-priority alarm ")
         num_str = f'(#{alarm.event.id}): '
         desc_str = alarm.event.description
         return priority_str + num_str + desc_str
@@ -138,6 +139,7 @@ class AlarmsFilters:
     """
     A container for all the filters that can be applied in the alarm dashboard.
 
+    :param tags: Indicates which tags alarms should have to be shown
     :param sort: indicates what type of sort should be applied to which column.
     A tuple in the form (sort_type, sort_column), where sort_type is one
     of '>' or '<', and
@@ -156,6 +158,7 @@ class AlarmsFilters:
     All of the above parameters may be None iff they have never been set before
     """
 
+    tags: set[Tag] | None
     sort: tuple[str, str] | None
     priorities: set[AlarmPriority] | None
     criticalities: set[AlarmCriticality] | None
@@ -196,7 +199,7 @@ class AlarmsHandler(UseCaseHandler):
                 return 'L_OR'
 
     @classmethod
-    def _get_relevant_tags(cls, event_base: EventBase) -> list[Tag]:
+    def _get_relevant_tags(cls, event_base: EventBase) -> set[Tag]:
         """
         Takes an event base and outputs a list of all relevant tags to the base
 
@@ -206,11 +209,11 @@ class AlarmsHandler(UseCaseHandler):
         if type(event_base) is not AllEventBase \
                 and type(event_base) is not AnyEventBase \
                 and type(event_base) is not SOEEventBase:
-            return [event_base.tag]
+            return {event_base.tag}
         else:
-            all_tags = []
+            all_tags = set()
             for inner_event_base in event_base.event_bases:
-                all_tags += cls._get_relevant_tags(inner_event_base)
+                all_tags = all_tags.union(cls._get_relevant_tags(inner_event_base))
             return all_tags
 
     @classmethod
@@ -232,24 +235,28 @@ class AlarmsHandler(UseCaseHandler):
         # Checking if the alarm type matches
         show = show and cls._get_alarm_type(alarm) in filter_args.types
 
+        # Checking if the tag of the alarm is requested to be shown
+        relevant_tags = set(cls._get_relevant_tags(alarm.event.base))
+        show = show and len(relevant_tags.difference(filter_args.tags)) == 0
+
         # Now we need to make sure the alarm fits in the time parameters
         alarm_confirm_time = alarm.event.confirm_time
         alarm_register_time = alarm.event.confirm_time
         if filter_args.confirmed_start_time is not None:
-            compare_time = filter_args.registered_start_time
-            show = show and alarm_confirm_time > compare_time
+            compare_time = filter_args.confirmed_start_time
+            show = show and alarm_confirm_time >= compare_time
 
         if filter_args.confirmed_end_time is not None:
-            compare_time = filter_args.registered_end_time
-            show = show and alarm_confirm_time < compare_time
+            compare_time = filter_args.confirmed_end_time
+            show = show and alarm_confirm_time <= compare_time
 
         if filter_args.registered_start_time is not None:
             register_time = filter_args.registered_start_time
-            show = show and alarm_register_time > register_time
+            show = show and alarm_register_time >= register_time
 
-        if filter_args.registered_start_time is not None:
-            register_time = filter_args.registered_start_time
-            show = show and alarm_register_time < register_time
+        if filter_args.registered_end_time is not None:
+            register_time = filter_args.registered_end_time
+            show = show and alarm_register_time <= register_time
 
         # Finally, checking if we only show unacknowledged alarms
         if filter_args.new:
@@ -303,15 +310,19 @@ class AlarmsHandler(UseCaseHandler):
         alarm_confirm_time = alarm.event.confirm_time
         alarm_type = cls._get_alarm_type(alarm)
         alarm_tags = cls._get_relevant_tags(alarm.event.base)
+        tag_string = ''
+        for tag in alarm_tags:
+            tag_string += tag + ' '
+
         alarm_description = alarm.event.description
 
         new_row = [alarm_id, alarm_priority, alarm_criticality, alarm_register_time,
-                   alarm_confirm_time, alarm_type, alarm_tags, alarm_description, alarm]
+                   alarm_confirm_time, alarm_type, tag_string, alarm_description, alarm]
         return new_row
 
     @classmethod
-    def get_data(cls, dm: dict[AlarmPriority | str, set[Alarm] | Queue], filter_args: AlarmsFilters) \
-            -> TableReturn:
+    def get_data(cls, dm: dict[AlarmPriority | str, set[Alarm] | Queue],
+                 filter_args: AlarmsFilters) -> TableReturn:
         """
         Using the current data structure of alarms, packs all data stored by the alarms into
         an easily accessible format

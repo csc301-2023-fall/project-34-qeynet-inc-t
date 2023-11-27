@@ -1,4 +1,3 @@
-from copy import copy
 import queue
 from dataclasses import dataclass
 from datetime import datetime
@@ -12,7 +11,7 @@ from astra.data.alarms import (
 from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryFrame
-from astra.data.parameters import DisplayUnit, ParameterValue, Tag
+from astra.data.parameters import ParameterValue, Tag
 from .utils import eval_param_value
 
 SORT = 'SORT'
@@ -97,14 +96,13 @@ class DashboardHandler(UseCaseHandler):
     @classmethod
     def _format_param_value(cls, tag_data: ParameterValue | None) -> str:
         """
-        Formats the <tag_data> with the given units
+        Formats the <tag_data>.
 
-        :param tag_data: The (converted) data to display with units
-        :param units: Units to display, or None for simple stringification
-        :return: A string with the data and units appropriately formatted
+        :param tag_data: The (converted) data to format
+        :return: A string with the appropriate formatting
         """
         if tag_data is None:
-            return 'None'
+            return '-'
         return f'{round(tag_data, ROUNDING_DECMIALS)}'
 
     @classmethod
@@ -117,7 +115,7 @@ class DashboardHandler(UseCaseHandler):
         """
 
         if alarm is None:
-            return 'None'
+            return '-'
         else:
             eventbase_description = alarm.event.base.description
             return f'{alarm.priority}: {eventbase_description}'
@@ -159,8 +157,8 @@ class DashboardHandler(UseCaseHandler):
         return tag_to_alarms
 
     @classmethod
-    def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, tf: TelemetryFrame,
-                            timestamp: datetime) -> tuple[list[list[str]], list[list[str]]]:
+    def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, tf: TelemetryFrame) \
+            -> tuple[list[list[str]], list[list[str]]]:
         """
         Adds tags from <input_tags> and their relevant data to <output_list>
 
@@ -199,17 +197,19 @@ class DashboardHandler(UseCaseHandler):
             tag_setpoint = cls._format_param_value(tag_setpoint_value)
 
             if tag_parameters.display_units is None:
-                tag_units = "None"
+                tag_units = "-"
             else:
-                tag_units = tag_parameters.display_units.description
+                tag_units = tag_parameters.display_units.symbol
 
             tag_alarm_data = cls._format_alarm_data(tag_alarm)
 
             include_tag = tag in input_tags
             if include_tag:
-                include.append([tag, tag_description, tag_value, tag_setpoint, tag_units, tag_alarm_data])
+                include.append([tag, tag_description, tag_value, tag_setpoint, tag_units,
+                                tag_alarm_data])
             else:
-                removed.append([tag, tag_description, tag_value, tag_setpoint, tag_units, tag_alarm_data])
+                removed.append([tag, tag_description, tag_value, tag_setpoint, tag_units,
+                                tag_alarm_data])
         return include, removed
 
     @classmethod
@@ -258,15 +258,14 @@ class DashboardHandler(UseCaseHandler):
         """
 
         telemetry_data = dm.get_telemetry_data(
-            filter_args.start_time, filter_args.end_time, filter_args.tags)
+            filter_args.start_time, filter_args.end_time, dm.tags)
         telemetry_frame = telemetry_data.get_telemetry_frame(filter_args.index)
 
         # First, all the return data
         timestamp = telemetry_frame.time
         include, remove = cls._add_rows_to_output(
             filter_args.tags, dm,
-            telemetry_frame,
-            timestamp)
+            telemetry_frame)
         frame_quantity = telemetry_data.num_telemetry_frames
 
         return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp)
@@ -292,6 +291,9 @@ class DashboardHandler(UseCaseHandler):
 
         # Technically inefficient, but far better than re-building every time.
         # Potential choice for optimization if needed
+        new_table = previous_table.table.copy()
+        new_removed = previous_table.removed.copy()
+
         if filter_args.tags is not None:
             tags = filter_args.tags
             if len(previous_table.table) < len(tags):
@@ -299,18 +301,17 @@ class DashboardHandler(UseCaseHandler):
                 for i in range(len(previous_table.removed)):
                     removed_row = previous_table.removed[i]
                     if removed_row[0] in tags:
-                        previous_table.removed.remove(removed_row)
-                        previous_table.table.append(removed_row)
-                        break
+                        new_removed.remove(removed_row)
+                        new_table.append(removed_row)
             elif len(previous_table.table) > len(tags):
                 # Indicates some tag from <previous_table.table> needs to be removed
                 for i in range(len(previous_table.table)):
                     removed_row = previous_table.table[i]
                     if removed_row[0] not in tags:
-                        previous_table.removed.append(removed_row)
-                        previous_table.table.remove(removed_row)
-                        break
-
+                        new_removed.append(removed_row)
+                        new_table.remove(removed_row)
+        previous_table.table = new_table
+        previous_table.removed = new_removed
         cls._sort_output(previous_table, filter_args.sort)
 
         if dm is not None:
