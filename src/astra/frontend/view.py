@@ -156,6 +156,9 @@ class View(Tk):
         dashboard_table.heading("alarm", text="Alarm", anchor=CENTER)
         dashboard_table.bind('<Double-1>', self.double_click_dashboard_table_row)
 
+        dashboard_table.bind('<Up>', self.move_row_up)
+        dashboard_table.bind('<Down>', self.move_row_down)
+
         # elements of alarms_frame
 
         self.alarms_searcher = TagSearcher(num_rows, alarms_frame, self._dm,
@@ -663,6 +666,40 @@ class View(Tk):
         index = self.dashboard_current_frame_number
         self.dashboard_view_model.choose_frame(self._dm, index)
         self.refresh_data_table()
+
+    def move_row_up(self, event: Event):
+        focus_item = self.dashboard_table.focus()
+
+        region = self.dashboard_table.identify("region", event.x, event.y)
+        if focus_item and region != "heading":
+            focus_row = self.dashboard_table.selection()
+            index = self.dashboard_table.index(focus_item)
+
+            if len(focus_row) == 1 and index > 0:
+                self.dashboard_table.move(focus_row[0],
+                                          self.dashboard_table.parent(focus_row[0]), index - 1)
+
+                # Workaround for selection skipping where we previously were
+                prev_row = self.dashboard_table.get_children()[index]
+                self.dashboard_table.focus(prev_row)
+                self.dashboard_table.selection_set(prev_row)
+
+    def move_row_down(self, event: Event):
+        focus_item = self.dashboard_table.focus()
+
+        region = self.dashboard_table.identify("region", event.x, event.y)
+        if focus_item and region != "heading":
+            focus_row = self.dashboard_table.selection()
+            index = self.dashboard_table.index(focus_item)
+
+            if len(focus_row) == 1 and index < len(self.dashboard_table.get_children()):
+                self.dashboard_table.move(focus_row[0],
+                                          self.dashboard_table.parent(focus_row[0]), index + 1)
+
+                # Workaround for selection skipping where we previously were
+                prev_row = self.dashboard_table.get_children()[index]
+                self.dashboard_table.focus(prev_row)
+                self.dashboard_table.selection_set(prev_row)
 
     def increment_frame(self):
         if self.dashboard_view_model.get_num_frames() == 0:
