@@ -65,7 +65,8 @@ class DashboardRequestReceiver(RequestReceiver):
         all_tags = dm.tags
 
         # Add all tags to the shown tags by default.
-        cls.filters.tags = set(all_tags)
+        if cls.filters.tags is None:
+            cls.filters.tags = set(all_tags)
 
         # Set the index to the first index by default.
         if cls.filters.index is None:

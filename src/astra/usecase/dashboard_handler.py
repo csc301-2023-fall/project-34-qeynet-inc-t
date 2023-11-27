@@ -157,8 +157,8 @@ class DashboardHandler(UseCaseHandler):
         return tag_to_alarms
 
     @classmethod
-    def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, tf: TelemetryFrame,
-                            timestamp: datetime) -> tuple[list[list[str]], list[list[str]]]:
+    def _add_rows_to_output(cls, input_tags: Iterable[Tag], dm: DataManager, tf: TelemetryFrame) \
+            -> tuple[list[list[str]], list[list[str]]]:
         """
         Adds tags from <input_tags> and their relevant data to <output_list>
 
@@ -258,15 +258,14 @@ class DashboardHandler(UseCaseHandler):
         """
 
         telemetry_data = dm.get_telemetry_data(
-            filter_args.start_time, filter_args.end_time, filter_args.tags)
+            filter_args.start_time, filter_args.end_time, dm.tags)
         telemetry_frame = telemetry_data.get_telemetry_frame(filter_args.index)
 
         # First, all the return data
         timestamp = telemetry_frame.time
         include, remove = cls._add_rows_to_output(
             filter_args.tags, dm,
-            telemetry_frame,
-            timestamp)
+            telemetry_frame)
         frame_quantity = telemetry_data.num_telemetry_frames
 
         return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp)
