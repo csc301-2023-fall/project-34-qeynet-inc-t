@@ -4,15 +4,15 @@ This file holds the view class that will be run in main.py
 
 import itertools
 from datetime import datetime
-from tkinter import Button, Entry, Frame, Toplevel, Event
+from tkinter import Button, Entry, Frame, Toplevel, Event, Listbox
 from tkinter import CENTER, BOTTOM, NO, END, BOTH
 from tkinter import StringVar
 from tkinter import filedialog, messagebox, ttk, Tk, Label
-from tkinter.ttk import Treeview
+from tkinter.ttk import Treeview, Combobox
 
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
-from .tag_searcher import TagSearcher, AlarmTagSearcher
+from .tag_searcher import TagSearcher, AlarmTagSearcher, GraphingTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
 
@@ -75,6 +75,9 @@ class View(Tk):
         dashboard_frame = Frame(tab_control)
         alarms_frame = Frame(tab_control)
 
+        self.graphing_tab = GraphingView(tab_control, height // 4, self._dm)
+        graphing_frame = self.graphing_tab.overall_frame
+
         # Needs testing
         # I do not know of a clever way of doing this. To ensure even
         # spacing, I want each row to be always the same number of pixels
@@ -92,6 +95,7 @@ class View(Tk):
         # adding the tabs to the tab control
         tab_control.add(dashboard_frame, text='Dashboard')
         tab_control.add(alarms_frame, text='Alarms')
+        tab_control.add(graphing_frame, text="Graphing")
 
         # packing tab control to make tabs visible
         tab_control.pack(expand=1, fill="both")
@@ -730,3 +734,61 @@ class View(Tk):
         self.alarms_view_model.model.receive_updates()
         self.alarms_view_model.update_table_entries()
         self.refresh_alarms_table()
+
+
+class GraphingView:
+    def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager):
+        self.overall_frame = Frame(frame)
+
+        for i in range(num_rows):
+            self.overall_frame.grid_rowconfigure(i, weight=1)
+        # Ratio determines weighting on tag searcher vs the rest of the tab
+        self.overall_frame.grid_columnconfigure(0, weight=1)
+        self.overall_frame.grid_columnconfigure(1, weight=10)
+
+        self.searcher = GraphingTagSearcher(num_rows, self.overall_frame, dm, self.searcher_update)
+
+        graphing_frame = Frame(self.overall_frame)
+        graphing_frame.grid(sticky="news", row=0, column=1)
+
+        graphing_time_option = Frame(graphing_frame)
+        graphing_time_option.grid(sticky="news", row=0, column=0)
+
+        TimerangeInput(
+            graphing_time_option, 'Time range', self.times_update
+        ).grid(row=0, column=0, padx=20, pady=20)
+
+        graphing_region = Frame(graphing_frame)
+        graphing_region.grid(sticky="news", row=1, column=0)
+
+        y_axis_selection_region = Frame(graphing_frame)
+        y_axis_selection_region.grid(sticky="news", row=2, column=0)
+
+        y_axis_label = Label(y_axis_selection_region, text="y-axis labels:")
+        y_axis_label.grid(row=0, column=0, padx=5, pady=20)
+
+        y_axis_selector = Combobox(y_axis_selection_region)
+        y_axis_selector.grid(row=0, column=1, padx=5, pady=20)
+
+        button_selection_region = Frame(graphing_frame)
+        button_selection_region.grid(sticky="nes", row=3, column=0, padx=20, pady=20)
+
+        export_graph_button = Button(button_selection_region, text="Export Graph", command=self.export_graph)
+        export_graph_button.grid(row=0, column=0)
+
+        export_data_button = Button(button_selection_region, text="Export Data", command=self.export_data)
+        export_data_button.grid(row=0, column=1, padx=20, pady=20)
+
+        self.searcher.update_searched_tags()
+
+    def searcher_update(self):
+        pass
+
+    def times_update(self):
+        pass
+
+    def export_graph(self):
+        pass
+
+    def export_data(self):
+        pass

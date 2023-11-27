@@ -121,3 +121,11 @@ class AlarmTagSearcher(TagSearcher):
 
     def get_label_text(self) -> str:
         return "Filter Parameters"
+
+
+class GraphingTagSearcher(TagSearcher):
+    def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
+        super().__init__(num_rows, frame, dm, watcher)
+
+    def get_label_text(self) -> str:
+        return "Select Parameters to Graph"
