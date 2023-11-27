@@ -291,6 +291,9 @@ class DashboardHandler(UseCaseHandler):
 
         # Technically inefficient, but far better than re-building every time.
         # Potential choice for optimization if needed
+        new_table = previous_table.table.copy()
+        new_removed = previous_table.removed.copy()
+
         if filter_args.tags is not None:
             tags = filter_args.tags
             if len(previous_table.table) < len(tags):
@@ -298,18 +301,17 @@ class DashboardHandler(UseCaseHandler):
                 for i in range(len(previous_table.removed)):
                     removed_row = previous_table.removed[i]
                     if removed_row[0] in tags:
-                        previous_table.removed.remove(removed_row)
-                        previous_table.table.append(removed_row)
-                        break
+                        new_removed.remove(removed_row)
+                        new_table.append(removed_row)
             elif len(previous_table.table) > len(tags):
                 # Indicates some tag from <previous_table.table> needs to be removed
                 for i in range(len(previous_table.table)):
                     removed_row = previous_table.table[i]
                     if removed_row[0] not in tags:
-                        previous_table.removed.append(removed_row)
-                        previous_table.table.remove(removed_row)
-                        break
-
+                        new_removed.append(removed_row)
+                        new_table.remove(removed_row)
+        previous_table.table = new_table
+        previous_table.removed = new_removed
         cls._sort_output(previous_table, filter_args.sort)
 
         if dm is not None:
