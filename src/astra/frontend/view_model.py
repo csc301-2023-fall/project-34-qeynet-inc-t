@@ -86,7 +86,7 @@ class DashboardViewModel:
             check_heading = DASHBOARD_HEADINGS[i]
             if heading == check_heading:
                 self._sorting[i] *= -1
-                sort_value = self._sorting[0]
+                sort_value = self._sorting[i]
             else:
                 self._sorting[i] = 1
 
