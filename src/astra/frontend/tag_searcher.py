@@ -10,9 +10,26 @@ class TagSearcher:
     """
     Defines a widget that can be used to search through a series of tags and allows the user to
     make selections on those tags for a number of purposes
+
+    :param search_bar: Contains the text held in the search bar
+    :param search_controller: Defines the controller used to make search requests
+    :param dm: Stores all data known to the program
+    :param shown_tags: An ordered list of tags and their descriptions to show in the search results
+    :param selected_tags: The set of tags selected by the user
+    :param watcher: A arbitrary function with no inputs to call any time a search toggle
+    occurs
+    :param tag_table: Re[resemts the area of the screen holding all tags matching search query
     """
 
     def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
+        """
+        Sets up all visual elements of the searcher
+
+        :param num_rows: Used for resolution scaling
+        :param frame: The frame to insert this widget into
+        :param dm: Contains all data known to the program
+        :param watcher: The watcher function to call on toggle
+        """
 
         # elements of dashboard_frame
         self.search_bar = StringVar()
@@ -66,14 +83,24 @@ class TagSearcher:
         """Returns an appropriate descriptor for this search widget"""
         return "Parameters to display"
 
-    def search_bar_change(self, *args):
+    def search_bar_change(self, *args) -> None:
+        """
+        Updates available tag results upon any keystroke to the search bar
+
+        :param args: required by trace update, not used in the function
+        """
         del args
         self.shown_tags = self.search_controller.search_tags(self.search_bar.get(), self.dm)
         self.update_searched_tags()
 
-    def update_searched_tags(self):
+    def update_searched_tags(self) -> None:
+        """
+        Updates the actual view of tag results
+        """
+        # Refreshing the table
         for tag in self.tag_table.get_children():
             self.tag_table.delete(tag)
+        # Inserting rows based on what tags match search query and if they were toggled or not
         for tag in self.shown_tags:
             check = " "
             tag_index = tag.index(':')
@@ -82,38 +109,57 @@ class TagSearcher:
             self.tag_table.insert("", END, value=(f"[{check}] {tag}",))
         self.watcher()
 
-    def toggle_tag_table_row(self, event):
+    def toggle_tag_table_row(self, event) -> None:
+        """
+        Toggles the selected tag as being either on/off
+
+        :param event: Used by the Treeview callee, not used by function
+        """
         del event
         cur_item = self.tag_table.focus()
 
+        # Getting the actual string representation of the table entry
         try:
             tag_str = self.tag_table.item(cur_item)['values'][0][4:]
         except IndexError:
             # Do nothing
             return
 
+        # Getting the actual tag name from the row string
         tag_info = Tag(tag_str)
         tag_index = tag_info.index(':')
         tag = tag_info[:tag_index]
 
+        # Indicating tag is not selected
         if tag in self.selected_tags:
             self.selected_tags.remove(tag)
         else:
+        # Indicating tag is now selected
             self.selected_tags.add(tag)
         self.update_searched_tags()
 
-    def select_all_tags(self):
+    def select_all_tags(self) -> None:
+        """
+        Force selects every single tag, not just shown ones
+        """
+
         # Clone the toggled tags, as it will mutate
         self.selected_tags = set(self.dm.tags)
         self.update_searched_tags()
 
-    def deselect_all_tags(self):
+    def deselect_all_tags(self) -> None:
+        """
+        Force de-selects all tags, not just shown ones
+        """
         # Clone the toggled tags, as it will mutate
         self.selected_tags = set()
         self.update_searched_tags()
 
 
 class AlarmTagSearcher(TagSearcher):
+    """
+    A child class of TagSearcher helping distinguish certain shown text
+    """
     def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
         super().__init__(num_rows, frame, dm, watcher)
 
@@ -122,6 +168,9 @@ class AlarmTagSearcher(TagSearcher):
 
 
 class GraphingTagSearcher(TagSearcher):
+    """
+    A child class of TagSearcher helping distinguish certain shown text
+    """
     def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
         super().__init__(num_rows, frame, dm, watcher)
         self.tag_description_lookup = dict()
