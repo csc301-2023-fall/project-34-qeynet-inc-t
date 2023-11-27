@@ -808,8 +808,10 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         first_index = sequence_of_events[0]
         last_index = sequence_of_events[1]
 
-        alarm_indexes = ([False] * first_index + [True] * (last_index - first_index) + [False] * (
-                len(times) - last_index - 1))
+        up_to_first = [False] * first_index
+        up_to_last = [True] * (last_index - first_index)
+        up_to_end = [False] * (len(times) - last_index - 1)
+        alarm_indexes = up_to_first + up_to_last + up_to_end
 
         new_alarm = create_alarm((first_index, last_index), times, alarm_base, criticality)
 
