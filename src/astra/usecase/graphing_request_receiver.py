@@ -89,3 +89,16 @@ class GraphingRequestReceiver(RequestReceiver):
         """
 
         cls.filters.shown_tags.add(Tag(tag))
+
+    @classmethod
+    def export_graph_to_file(cls, filter_args: GraphingFilters,
+                             dm: DataManager, filename: str) -> None:
+        """
+        Exports the graph to a file.
+
+        :param filename: The path to save to. The export format is
+        determined based on the file extension.
+        :param data: The data to be exported.
+        """
+
+        cls.handler.export_graph_to_file(filter_args, dm, filename)

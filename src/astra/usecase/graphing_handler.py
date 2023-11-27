@@ -84,6 +84,23 @@ class GraphingHandler(UseCaseHandler):
         cls._filter_graphing_data(prev_data, filter_args)
 
     @classmethod
+    def export_graph_to_file(cls, filter_args: GraphingFilters,
+                             dm: DataManager, file_name: str) -> None:
+        """
+        export_graph_to_file is a method that exports the graph to a file.
+
+        :param prev_data: The representation of the current state of displayed data
+        :param file_name: The name of the file to export the graph to.
+        """
+        telemetry_data = dm.get_telemetry_data(filter_args.start_time,
+                                               filter_args.end_time,
+                                               filter_args.shown_tags)
+
+        interval = 1
+
+        telemetry_data.save_to_file(file_name, interval)
+
+    @classmethod
     def _initialize_graphing_data(cls, telemetry_data: TelemetryData) -> GraphingData:
         """
         fill_in_data is a method that fills in the data in <graphing_data> with
