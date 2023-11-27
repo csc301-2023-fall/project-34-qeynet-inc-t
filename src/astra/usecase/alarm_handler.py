@@ -138,6 +138,7 @@ class AlarmsFilters:
     """
     A container for all the filters that can be applied in the alarm dashboard.
 
+    :param tags: Indicates which tags alarms should have to be shown
     :param sort: indicates what type of sort should be applied to which column.
     A tuple in the form (sort_type, sort_column), where sort_type is one
     of '>' or '<', and
@@ -156,6 +157,7 @@ class AlarmsFilters:
     All of the above parameters may be None iff they have never been set before
     """
 
+    tags: set[Tag] | None
     sort: tuple[str, str] | None
     priorities: set[AlarmPriority] | None
     criticalities: set[AlarmCriticality] | None
@@ -231,6 +233,10 @@ class AlarmsHandler(UseCaseHandler):
 
         # Checking if the alarm type matches
         show = show and cls._get_alarm_type(alarm) in filter_args.types
+
+        # Checking if the tag of the alarm is requested to be shown
+        relevant_tags = set(cls._get_relevant_tags(alarm.event.base))
+        show = show and len(relevant_tags.difference(filter_args.tags)) == 0
 
         # Now we need to make sure the alarm fits in the time parameters
         alarm_confirm_time = alarm.event.confirm_time

@@ -6,6 +6,7 @@ from .alarm_handler import AlarmsHandler, AlarmsFilters
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
 from ..data.alarms import AlarmCriticality, AlarmPriority, Alarm
+from ..data.parameters import Tag
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
@@ -27,7 +28,7 @@ class AlarmsRequestReceiver(RequestReceiver):
     from the sets of them that we are viewing, and updating the sorting filter to be applied.
     """
 
-    filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
+    filters = AlarmsFilters(None, None, None, None, None, None, None, None, None, False)
     handler = AlarmsHandler()
 
     @classmethod
@@ -47,6 +48,8 @@ class AlarmsRequestReceiver(RequestReceiver):
                       AlarmPriority.MEDIUM.name, AlarmPriority.HIGH.name,
                       AlarmPriority.CRITICAL.name}
         # TODO: Switch these back to use AlarmPriority (also sorting methods)
+
+        cls.filters.tags = set(dm.tags)
 
         # add all priorities and criticalities to the shown priorities and criticalities by default
         cls.filters.criticalities = criticalities
@@ -71,6 +74,15 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         if previous_data is not None:
             cls.handler.update_data(previous_data, cls.filters)
+
+    @classmethod
+    def set_shown_tags(cls, tags: set[Tag]):
+        """
+        Sets the filtered tags to be equivalent to <tags>
+
+        :param tags: The new set of tags to exclusively include in the table
+        """
+        cls.filters.tags = tags
 
     @classmethod
     def add_shown_priority(cls, add: str) -> bool:

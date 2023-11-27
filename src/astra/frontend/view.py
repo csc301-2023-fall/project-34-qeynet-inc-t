@@ -565,8 +565,6 @@ class View(Tk):
         self.dashboard_view_model.toggle_end_time(None)
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_data_table()
-        self.search_bar_change()
-        self.select_all_tags()
 
         self.construct_alarms_table()
 
