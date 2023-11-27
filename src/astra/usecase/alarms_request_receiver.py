@@ -26,6 +26,7 @@ PRIORITIES = {AlarmPriority.WARNING.name, AlarmPriority.LOW.name,
               AlarmPriority.CRITICAL.name}
 ALL_TYPES = {RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR}
 
+
 class AlarmsRequestReceiver(RequestReceiver):
     """
     AlarmsRequestReceiver is a class that implements the RequestReceiver interface.
