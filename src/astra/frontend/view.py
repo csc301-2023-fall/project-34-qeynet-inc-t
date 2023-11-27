@@ -15,6 +15,7 @@ from tkinter.ttk import Treeview
 from astra.data import config_manager
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
+from .tag_searcher import TagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
 from ..data.parameters import Tag
@@ -100,39 +101,8 @@ class View(Tk):
         tab_control.pack(expand=1, fill="both")
 
         # elements of dashboard_frame
-        self.dashboard_search_bar = StringVar()
-
-        dashboard_filter_tags = Frame(dashboard_frame)
-        dashboard_filter_tags.config(background='#fff')
-        dashboard_filter_tags.grid_columnconfigure(0, weight=1)
-        dashboard_filter_tags.grid_columnconfigure(1, weight=1)
-        for i in range(num_rows):
-            dashboard_filter_tags.grid_rowconfigure(i, weight=1)
-        dashboard_filter_tags.grid(sticky='NSEW', row=0, column=0, rowspan=num_rows - 1, padx=(0, 3))
-        Label(dashboard_filter_tags, text="Parameters to display", background='#fff').grid(
-            sticky='NSEW', row=0, column=0, columnspan=2)
-        dashboard_tag_search_area = Frame(dashboard_filter_tags)
-        dashboard_tag_search_area.config(background='#fff')
-        dashboard_tag_search_area.grid_columnconfigure(0, weight=1)
-        dashboard_tag_search_area.grid_columnconfigure(1, weight=3)
-        dashboard_tag_search_area.grid(sticky='NSEW', row=1, column=0, columnspan=2)
-        Label(dashboard_tag_search_area, text="Search", background='#fff').grid(sticky='NSEW', row=0, column=0)
-        Entry(dashboard_tag_search_area, textvariable=self.dashboard_search_bar).grid(sticky='NSEW', row=0, column=1)
-        self.dashboard_search_bar.trace_add("write", self.search_bar_change)
-        (Button(dashboard_filter_tags, text="Check all search results",
-                wraplength=80, command=self.select_all_tags).grid(row=2, column=0, rowspan=2))
-        (Button(dashboard_filter_tags, text="Uncheck all search results",
-                wraplength=80, command=self.deselect_all_tags).grid(row=2, column=1, rowspan=2))
-        tag_table = ttk.Treeview(dashboard_filter_tags, show='tree')
-        tag_table_scroll = ttk.Scrollbar(dashboard_filter_tags, orient="vertical", command=tag_table.yview)
-        tag_table.configure(yscrollcommand=tag_table_scroll.set)
-        tag_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 4)
-        self.data_tag_table = tag_table
-        tag_table['columns'] = ("tag",)
-        tag_table.column("#0", width=0, stretch=NO)
-        tag_table.column("tag")
-        tag_table.grid(sticky='NEWS', row=4, column=0, columnspan=2, rowspan=num_rows - 4)
-        tag_table.bind('<ButtonRelease-1>', self.toggle_tag_table_row)
+        self.dashboard_searcher = TagSearcher(num_rows, dashboard_frame, self._dm,
+                                              self.dashboard_searcher_update)
 
         add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
         add_data_button.grid(sticky='W', row=0, column=1)
@@ -292,12 +262,12 @@ class View(Tk):
             self.dashboard_view_model.choose_frame(self._dm, 0)
             self.dashboard_view_model.toggle_sort('TAG')
             self.refresh_data_table()
-            self.search_bar_change()
-            self.select_all_tags()
 
             # self.alarms_view_model.model.receive_new_data(self._dm)
             # self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
+            self.dashboard_searcher.update_searched_tags()
+            self.dashboard_searcher.select_all_tags()
 
         # self.sort_alarms('ID')
 
@@ -709,53 +679,10 @@ class View(Tk):
             f"Frame {curr}/{total} at {time}"
         )
 
-    def update_data_table_searched_tags(self):
-        for tag in self.data_tag_table.get_children():
-            self.data_tag_table.delete(tag)
-        for tag in self.dashboard_view_model.get_tag_list():
-            check = " "
-            if tag in self.dashboard_view_model.get_toggled_tags():
-                check = "x"
-            self.data_tag_table.insert("", END, value=(f"[{check}] {tag}",))
-
-    def search_bar_change(self, *args):
-        del args
-        self.dashboard_view_model.search_tags(self.dashboard_search_bar.get())
-        self.update_data_table_searched_tags()
-
-    def toggle_tag_table_row(self, event):
-        del event
-        cur_item = self.data_tag_table.focus()
-        try:
-            tag_str = self.data_tag_table.item(cur_item)['values'][0][4:]
-        except IndexError:
-            # Do nothing
-            return
-        tag = Tag(tag_str)
-        self.dashboard_view_model.toggle_tag(tag)
-        self.update_data_table_searched_tags()
-        self.refresh_data_table()
-
-    def select_all_tags(self):
-        # Clone the toggled tags, as it will mutate
-        toggled_tags = set()
-        for tag in self.dashboard_view_model.get_toggled_tags():
-            toggled_tags.add(tag)
-
-        for tag in self.dashboard_view_model.get_tag_list():
-            if tag not in toggled_tags:
-                self.dashboard_view_model.toggle_tag(tag)
-        self.update_data_table_searched_tags()
-        self.refresh_data_table()
-
-    def deselect_all_tags(self):
-        # Clone the toggled tags, as it will mutate
-        toggled_tags = set()
-        for tag in self.dashboard_view_model.get_toggled_tags():
-            toggled_tags.add(tag)
-
-        for tag in self.dashboard_view_model.get_tag_list():
-            if tag in toggled_tags:
-                self.dashboard_view_model.toggle_tag(tag)
-        self.update_data_table_searched_tags()
+    def dashboard_searcher_update(self):
+        # Convert to list to enforce ordering
+        selected_tags = list(self.dashboard_searcher.selected_tags)
+        self.dashboard_view_model.model.request_receiver.set_shown_tags(selected_tags)
+        self.dashboard_view_model.model.receive_updates()
+        self.dashboard_view_model.update_table_entries()
         self.refresh_data_table()
