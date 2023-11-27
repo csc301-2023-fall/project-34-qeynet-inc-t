@@ -124,6 +124,11 @@ class AlarmTagSearcher(TagSearcher):
 class GraphingTagSearcher(TagSearcher):
     def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
         super().__init__(num_rows, frame, dm, watcher)
+        self.tag_description_lookup = dict()
+
+        for tag in self.shown_tags:
+            tag_index = tag.index(':')
+            self.tag_description_lookup[tag[:tag_index]] = tag
 
     def get_label_text(self) -> str:
         return "Select Parameters to Graph"
