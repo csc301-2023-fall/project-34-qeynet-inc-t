@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import NewType
+from typing import Mapping, NewType
 from astra.data.data_manager import DataManager
 from astra.data.parameters import ParameterValue, Tag
 from astra.data.telemetry_data import TelemetryData
 from use_case_handlers import UseCaseHandler
+
+DATETIME_FORMAT = "%d/%m/%Y, %H:%M:%S"
 
 
 @dataclass
@@ -13,16 +15,17 @@ class GraphingData:
     A container for data needed by the fronted to graph the requested tags. For each tag,
     the length of their times and values lists must be the same.
 
-    :param shown_tags: A dictionary where each key is a tag, and each value it a tuple of lists.
-    the first list is a list of times and the second is a list of values at those times for
-    that tag.
-    :param removed_tags: The same as <shown_tags> but for tags that have
-    been removed from the graph. We keep this data so that we can add the tag back
-    to the graph without accessing the database each time.
+    :param shown_tags: A dictionary where each key is a tag, and each value is a tuple of lists.
+    the first list is a list of strings representing times and the second is a list of values at
+    those times for that tag. These lists must be the same length.
+    :param all_tags_values: The same format as shown_tags. However, this dictionary contains
+    contains all possible data for each tag, not just the data that is currently shown on the
+    graph. This is used to update the graph when the user changes the tags that are shown.
     """
 
-    shown_tags: dict[Tag, tuple[list[datetime], list[ParameterValue]]]
-    removed_tags: dict[Tag, tuple[list[datetime], list[ParameterValue]]]
+    # The list of strings is a list of dates, formatted as <DATETIME_FORMAT>
+    shown_tags: dict[Tag, tuple[list[str], list[ParameterValue]]]
+    all_tags_values: dict[Tag, tuple[list[str], list[ParameterValue]]]
 
 
 @dataclass
@@ -104,22 +107,47 @@ class GraphingHandler(UseCaseHandler):
 
             # Loop through each time in the tag and add it to the graphing data, so long as
             # the value exists at that time (it is not None)
-            for time in tag_values:
-                value = tag_values[time]
-                # In the case that a value at a time is None, we do not add it to the graphing data.
-                if value is not None:
-                    curr_tag_times.append(time)
-                    cur_tag_values.append(value)
+            cls._add_tag_values(tag_values, curr_tag_times, cur_tag_values)
+        
+        graphing_data.all_tags_values = graphing_data.shown_tags.copy()
 
         return graphing_data
 
+    def _add_tag_values(tag_values: Mapping[datetime, ParameterValue | None],
+                        curr_tag_times: list[str],
+                        cur_tag_values: list[ParameterValue]) -> None:
+        """
+        add_tag_values is a method that adds the values in <tag_values> to the
+        graphing data, so long as the value exists at that time (it is not None)
+
+        :param tag_values: The values that will be added to the graphing data.
+        :param curr_tag_times: The list of times to append to.
+        :param cur_tag_values: The list of values to append to.
+
+        Note: This method mutates <curr_tag_times> and <cur_tag_values>, and returns with
+        len(curr_tag_times) == len(cur_tag_values).
+
+        PRECONDITION: The keys in <tag_values> are sorted in chronological order.
+        """
+        for time in tag_values:
+            value = tag_values[time]
+            # In the case that a value at a time is None, we do not add it to the graphing data.
+            if value is not None:
+                curr_tag_times.append(time.strftime(DATETIME_FORMAT))
+                cur_tag_values.append(value)
+
     @classmethod
-    def _filter_graphing_data(cls, graphing_data: GraphingData, filter_args: GraphingFilters) -> None:
+    def _filter_graphing_data(cls, graphing_data: GraphingData,
+                              filter_args: GraphingFilters) -> None:
         """
         filter_graphing_data is a method that filters the data in <graphing_data> based on
         <filter_args>. This is done by mutating <graphing_data>.
 
         :param graphing_data: The data that will be filtered by mutating it.
-        :param filter_args: Contains all information on filters to be applied
+        :param filter_args: Contains all information on filters to be applied.
         """
-        pass
+        for tag in GraphingData:
+            
+            
+            # Filter out any times that are not within the start and end times
+            cls._filter_times(graphing_data, filter_args.start_time, filter_args.end_time)
