@@ -12,7 +12,7 @@ from tkinter.ttk import Treeview, Combobox
 
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
-from .GraphingView import GraphingView
+from .graphing_view import GraphingView
 from .tag_searcher import TagSearcher, AlarmTagSearcher, GraphingTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm

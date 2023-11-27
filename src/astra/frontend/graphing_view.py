@@ -1,20 +1,23 @@
 from datetime import datetime
-from tkinter import ttk, Frame, Label, StringVar, Button
+from tkinter import ttk, Frame, Label, StringVar, Button, CENTER
 from tkinter.ttk import Combobox
-
+import matplotlib as mpl
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
 from astra.data.data_manager import DataManager
 from astra.frontend.tag_searcher import GraphingTagSearcher
 from astra.frontend.timerange_input import TimerangeInput, OperationControl
 from astra.usecase.graphing_request_receiver import GraphingRequestReceiver
 
+mpl.use("TkAgg")
+
 
 class GraphingView:
     def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager):
+        self.dm = dm
         self.overall_frame = Frame(frame)
         self.controller = GraphingRequestReceiver()
 
-        for i in range(num_rows):
-            self.overall_frame.grid_rowconfigure(i, weight=1)
         # Ratio determines weighting on tag searcher vs the rest of the tab
         self.overall_frame.grid_columnconfigure(0, weight=1)
         self.overall_frame.grid_columnconfigure(1, weight=10)
@@ -27,15 +30,19 @@ class GraphingView:
         graphing_time_option = Frame(graphing_frame)
         graphing_time_option.grid(sticky="news", row=0, column=0)
 
-        TimerangeInput(
-            graphing_time_option, 'Time range', self.times_update
-        ).grid(row=0, column=0, padx=20, pady=20)
+        time_input = TimerangeInput(graphing_time_option, 'Time range', self.times_update)
+        time_input.grid(row=0, column=0, padx=20, pady=20,)
 
         graphing_region = Frame(graphing_frame)
-        graphing_region.grid(sticky="news", row=1, column=0)
+        graphing_region.grid(row=1, column=0)
+
+        self.figure = Figure(figsize=(4, 4), dpi=100)
+        self.figure_canvas = FigureCanvasTkAgg(self.figure, graphing_region)
+
+        NavigationToolbar2Tk(self.figure_canvas)
 
         y_axis_selection_region = Frame(graphing_frame)
-        y_axis_selection_region.grid(sticky="news", row=2, column=0)
+        y_axis_selection_region.grid(row=2, column=0)
 
         y_axis_label = Label(y_axis_selection_region, text="y-axis labels:")
         y_axis_label.grid(row=0, column=0, padx=5, pady=20)
@@ -47,9 +54,6 @@ class GraphingView:
 
         button_selection_region = Frame(graphing_frame)
         button_selection_region.grid(sticky="nes", row=3, column=0, padx=20, pady=20)
-
-        export_graph_button = Button(button_selection_region, text="Export Graph", command=self.export_graph)
-        export_graph_button.grid(row=0, column=0)
 
         export_data_button = Button(button_selection_region, text="Export Data", command=self.export_data)
         export_data_button.grid(row=0, column=1, padx=20, pady=20)
@@ -80,14 +84,28 @@ class GraphingView:
             self.y_axis_selection_text.set(detailed_tags[0])
 
         self.controller.set_shown_tags(selected_tags)
+        self.create_graph()
 
     def times_update(self, start_time: datetime | None, end_time: datetime | None):
         self.controller.set_start_date(start_time)
         self.controller.set_end_date(end_time)
+        self.create_graph()
         return OperationControl.CONTINUE
-
-    def export_graph(self):
-        pass
 
     def export_data(self):
         pass
+
+    def create_graph(self):
+        self.figure.clear()
+        graph_data = self.controller.create(self.dm)
+        shown_tags = graph_data.shown_tags
+
+        for tag in shown_tags:
+            timestamp_info = graph_data.shown_tags[tag][0]
+            param_info = graph_data.shown_tags[tag][1]
+
+            new_plot = self.figure.add_subplot(111)
+            new_plot.plot(timestamp_info, param_info)
+
+        self.figure_canvas.draw()
+        self.figure_canvas.get_tk_widget().pack()
