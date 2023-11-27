@@ -4,7 +4,7 @@ from typing import NewType
 from astra.data.data_manager import DataManager
 from astra.data.parameters import ParameterValue, Tag
 from astra.data.telemetry_data import TelemetryData
-from use_case_handlers import UseCaseHandler
+from .use_case_handlers import UseCaseHandler
 
 
 @dataclass
