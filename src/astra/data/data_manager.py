@@ -1,15 +1,23 @@
 """This module defines the DataManager, the main data access interface for the use case subteam."""
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Self
 
-from astra.data import config_manager, dict_parsing, export_manager, telemetry_manager
+from astra.data import config_manager, dict_parsing, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
 from astra.data.database import db_manager
 from astra.data.alarm_container import AlarmsContainer
 from astra.data.dict_parsing import ParsingError
 from astra.data.parameters import Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
+
+
+@dataclass(frozen=True)
+class Device:
+    """The relevant metadata for a device."""
+    name: str
+    description: str
 
 
 class DataManager:
@@ -47,15 +55,11 @@ class DataManager:
         db_manager.delete_device(device_name)
 
     @staticmethod
-    def get_device_names() -> Iterable[str]:
-        """
-        Get the names of all devices in the database.
-
-        :return:
-            An iterable of device names (metadata.device in the device configuration file).
-            The name of every device in the database is included exactly once.
-        """
-        return db_manager.get_device_names()
+    def get_devices() -> Mapping[str, Device]:
+        """ :return: A name->metadata mapping for all devices in the database. """
+        return {
+            name: Device(name, description) for name, description in db_manager.get_device_data()
+        }
 
     def __init__(self, device_name: str):
         """

@@ -1,5 +1,5 @@
 """
-This file holds the view class that will be run in main.py
+This file holds the main view class that will run after selecting a device to monitor
 """
 
 import itertools
@@ -16,17 +16,6 @@ from .tag_searcher import TagSearcher, AlarmTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
 
-# config_path = filedialog.askopenfilename(title='Select config file')
-# if not config_path:
-#     sys.exit()
-# try:
-#     config_manager.read_config(config_path)
-# except Exception as e:
-#     messagebox.showerror(title='Cannot read config', message=f'{type(e).__name__}: {e}')
-#     sys.exit(1)
-# device_name = pathlib.Path(config_path).stem
-device_name = 'monad'
-
 
 class View(Tk):
     """
@@ -35,17 +24,20 @@ class View(Tk):
     dashboard_table: Treeview
     _dm: DataManager
 
-    def __init__(self) -> None:
+    def __init__(self, device_name: str) -> None:
         """
-        Init method for the view class
+        Init method for the main view class
         When the view is initialized, all the frames and tables
         are loaded into the view
+
+        :param device_name:
+            The name of the device being monitored.
         """
         self._dm = DataManager.from_device_name(device_name)
 
         # Root frame of tkinter
         super().__init__()
-        self.title("View Prototype")
+        self.title(f'Astra - {device_name}')
         self.dashboard_view_model = DashboardViewModel()
 
         watchers = [
