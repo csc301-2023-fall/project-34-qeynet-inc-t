@@ -26,7 +26,7 @@ class StartupScreen(Tk):
         header_frame.pack(fill=X)
         device_table_frame = Frame(self)
         style = ttk.Style()
-        style.theme_use("clam")
+        style.theme_use('clam')
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
         self.device_table = ttk.Treeview(
             device_table_frame, columns=['name', 'description'], show='headings'
@@ -35,7 +35,7 @@ class StartupScreen(Tk):
         self.device_table.heading('name', text='Name')
         self.device_table.heading('description', text='Description')
         device_table_scrollbar = ttk.Scrollbar(
-            device_table_frame, orient="vertical", command=self.device_table.yview
+            device_table_frame, orient='vertical', command=self.device_table.yview
         )
         self.device_table.configure(yscrollcommand=device_table_scrollbar.set)
         self.device_table.bind('<Double-1>', self.double_click_device_table_row)
@@ -74,16 +74,16 @@ class StartupScreen(Tk):
         """
         cur_item = self.device_table.focus()
 
-        region = self.device_table.identify("region", event.x, event.y)
-        if cur_item and region != "heading":
+        region = self.device_table.identify('region', event.x, event.y)
+        if cur_item and region != 'heading':
             self.open_device_popup(cur_item)
 
     def open_device_popup(self, item: str) -> None:
         """
         Open a popup for a user-selected device.
 
-        :param device_name:
-            The name of the selected device.
+        :param item:
+            The item double-clicked by the user.
         """
         name, description = self.device_table.item(item)['values']
         popup = Toplevel()
@@ -91,12 +91,12 @@ class StartupScreen(Tk):
         popup.geometry('500x200')
         Label(popup, text=f'Device: {name}').pack(anchor='w')
         Label(popup, text=f'Description: {description}').pack(anchor='w')
-        Button(
-            popup, text='Monitor', width=15, height=3, command=lambda: self.monitor(name)
-        ).pack(expand=True)
-        Button(
-            popup, text='Remove', command=lambda: self.remove_device(name, item)
-        ).pack(side=BOTTOM)
+        Button(popup, text='Monitor', width=15, height=3, command=lambda: self.monitor(name)).pack(
+            expand=True
+        )
+        Button(popup, text='Remove', command=lambda: self.remove_device(name, item)).pack(
+            side=BOTTOM
+        )
 
     def monitor(self, device_name: str) -> None:
         """
@@ -117,25 +117,28 @@ class StartupScreen(Tk):
         :param item:
             The corresponding item to remove from the table of devices.
         """
-        if messagebox.askokcancel(title='Remove device?', message=(
+        if messagebox.askokcancel(
+            title='Remove device?',
+            message=(
                 f'Delete device {repr(device_name)} and all of its data? '
                 'This action cannot be undone.'
-        )):
+            ),
+        ):
             entered_device_name = simpledialog.askstring(
                 title=f'Confirm deletion of device {repr(device_name)}',
-                prompt=f'To confirm deletion, please enter the name of the device.'
+                prompt=f'To confirm deletion, please enter the name of the device.',
             )
             if entered_device_name == device_name:
                 DataManager.remove_device(device_name)
                 self.device_table.delete(item)
                 messagebox.showinfo(
                     title='Device removed',
-                    message=f'Successfully removed device {repr(device_name)}.'
+                    message=f'Successfully removed device {repr(device_name)}.',
                 )
             elif entered_device_name is not None:
                 messagebox.showinfo(
                     title='Incorrect device name',
-                    message='Entered name does not match device name. Deletion canceled.'
+                    message='Entered name does not match device name. Deletion canceled.',
                 )
             else:
                 messagebox.showinfo(title='Deletion canceled', message='Deletion canceled.')

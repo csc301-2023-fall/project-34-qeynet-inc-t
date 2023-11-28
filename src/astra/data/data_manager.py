@@ -16,6 +16,7 @@ from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 @dataclass(frozen=True)
 class Device:
     """The relevant metadata for a device."""
+
     name: str
     description: str
 
@@ -56,7 +57,7 @@ class DataManager:
 
     @staticmethod
     def get_devices() -> Mapping[str, Device]:
-        """ :return: A name->metadata mapping for all devices in the database. """
+        """:return: A name->metadata mapping for all devices in the database."""
         return {
             name: Device(name, description) for name, description in db_manager.get_device_data()
         }
@@ -180,7 +181,7 @@ class DataManager:
     add_data_from_file = add_data  # Alias for historical reasons
 
     def get_telemetry_data(
-            self, start_time: datetime | None, end_time: datetime | None, tags: Iterable[Tag]
+        self, start_time: datetime | None, end_time: datetime | None, tags: Iterable[Tag]
     ) -> TelemetryData:
         """
         Give access to a collection of telemetry data for the device of this DataManager.
