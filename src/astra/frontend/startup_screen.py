@@ -126,7 +126,7 @@ class StartupScreen(Tk):
         ):
             entered_device_name = simpledialog.askstring(
                 title=f'Confirm deletion of device {repr(device_name)}',
-                prompt=f'To confirm deletion, please enter the name of the device.',
+                prompt='To confirm deletion, please enter the name of the device.',
             )
             if entered_device_name == device_name:
                 DataManager.remove_device(device_name)
