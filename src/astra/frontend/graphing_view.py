@@ -37,6 +37,10 @@ class GraphingView:
         self.dm = dm
         self.overall_frame = Frame(frame)
         self.controller = GraphingRequestReceiver()
+        self.tag_scaling = {}
+        self.ytick_labels = []
+        self.subfigure = None
+        self.default_ylim = None
 
         # Ratio determines weighting on tag searcher vs the rest of the tab
         self.overall_frame.grid_columnconfigure(0, weight=1)
@@ -75,6 +79,7 @@ class GraphingView:
         self.y_axis_selector = Combobox(y_axis_selection_region,
                                         textvariable=self.y_axis_selection_text)
         self.y_axis_selector.grid(row=0, column=1, padx=5, pady=20)
+        self.y_axis_selector.bind("<<ComboboxSelected>>", self.set_graph_y_axis_label)
 
         # Creating region for export data button
         button_selection_region = Frame(graphing_frame)
@@ -141,13 +146,33 @@ class GraphingView:
         graph_data = self.controller.create(self.dm)
         shown_tags = graph_data.shown_tags
         new_plot = self.figure.add_subplot(111)
+        self.subfigure = new_plot
+        self.tag_scaling = {}
         
-
         for tag in shown_tags:
             timestamp_info = graph_data.shown_tags[tag][0]
             param_info = graph_data.shown_tags[tag][1]
             colour = "#" + hex((hash(tag) % 16777213) + 0xffffff + 1)[3:]
+            # We need to scale the values.
+            min_value = min(param_info)
+            max_value = max(param_info)
+            scale_factor = max_value - min_value
+            if scale_factor == 0:
+                scale_factor == 1 # To avoid dividing by 0
+            detailed_tag = self.searcher.tag_description_lookup[tag]
+            self.tag_scaling[detailed_tag] = (scale_factor, min_value)
+            # For every value, we need to normalize it
+            # Subtract the min value, and divide by the range
+            param_info = [(param - min_value) / scale_factor for param in param_info]
             new_plot.plot(timestamp_info, param_info, color=colour, label=str(tag))
+
+            # We want the self.ytick_labels to represent the original set of ytick_labels
+            # We will copy physical numbers to prevent mutation
+            self.ytick_labels = [
+                float(label.get_text().replace("−", "-"))
+                for label in new_plot.get_yticklabels()
+            ]
+            self.default_ylim = new_plot.get_ylim()
         
         if shown_tags:
             # We only want to display around 10 ticks
@@ -165,6 +190,27 @@ class GraphingView:
             new_plot.set_xticks(xticks_positions)
             new_plot.set_xticklabels(xticks_labels, rotation=0, fontsize=8)
             new_plot.legend()
+            self.set_graph_y_axis_label()
 
         self.figure_canvas.draw()
         self.figure_canvas.get_tk_widget().pack()
+
+    def set_graph_y_axis_label(self, args: any = None) -> None:
+        """
+        Changes the y_axis range for the graph to the selected tag from the dropdown
+        """
+        del args
+        tag = self.y_axis_selection_text.get()
+        scale_factor, min_value = self.tag_scaling[tag]
+        if self.subfigure is not None:
+            ytick_labels = self.subfigure.get_yticklabels()
+            ytick_labels = [
+                round(label * scale_factor + min_value, 5)
+                for label in self.ytick_labels
+            ]
+            self.subfigure.set_yticks(self.subfigure.get_yticks())
+            self.subfigure.set_ylim(self.default_ylim)
+            self.subfigure.set_yticklabels(ytick_labels)
+            
+            self.figure_canvas.draw()
+            self.figure_canvas.get_tk_widget().pack()
