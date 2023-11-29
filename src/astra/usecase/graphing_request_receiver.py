@@ -38,24 +38,24 @@ class GraphingRequestReceiver(RequestReceiver):
         cls.handler.update_data(previous_data, cls.filters, dm)
 
     @classmethod
-    def set_start_date(cls, start_time: datetime) -> None:
+    def set_start_date(cls, start_date: datetime) -> None:
         """
         Sets the start date of the graph by updating the filters.
 
         :param start_time: The new start date of the graph.
         """
 
-        cls.filters.start_time = start_time
+        cls.filters.start_time = start_date
 
     @classmethod
-    def set_end_date(cls, end_time: datetime) -> None:
+    def set_end_date(cls, end_date: datetime) -> None:
         """
         Sets the end date of the graph by updating the filters.
 
         :param end_time: The new end date of the graph.
         """
 
-        cls.filters.end_time = end_time
+        cls.filters.end_time = end_date
 
     @classmethod
     def set_shown_tags(cls, tags: set[str]) -> None:
