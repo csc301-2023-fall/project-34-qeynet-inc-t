@@ -312,8 +312,7 @@ class AlarmsHandler(UseCaseHandler):
         return return_table
 
     @classmethod
-    def update_data(cls, prev_data: TableReturn, filter_args: AlarmsFilters,
-                    dm: DataManager = None) -> None:
+    def update_data(cls, prev_data: TableReturn, filter_args: AlarmsFilters) -> None:
         """
         Updates the previous data returned by get_data to apply any new filters
 

@@ -6,6 +6,7 @@ from typing import Any
 from astra.data.alarms import AlarmPriority, AlarmCriticality
 from astra.data.data_manager import DataManager
 from astra.data.parameters import Tag
+from astra.data.telemetry_data import TelemetryData
 
 
 @dataclass
@@ -29,9 +30,11 @@ class TelemetryTableReturn(TableReturn):
 
     :param frame_quantity: The number of shown frames
     :param timestamp: The timestamp of the currently shown telemetry frame
+    :param td: The telemetry data previously examined
     """
     frame_quantity: int
     timestamp: datetime
+    td: TelemetryData
 
 
 @dataclass
@@ -137,7 +140,7 @@ class UseCaseHandler(ABC):
         pass
 
     @abstractmethod
-    def update_data(self, prev_data: Any, filter_args: Filters, dm: DataManager = None):
+    def update_data(self, prev_data: Any, filter_args: Filters):
         """
         update_data is a method that updates the currently represented information
 

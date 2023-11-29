@@ -57,8 +57,7 @@ class GraphingHandler(UseCaseHandler):
         return graphing_data
 
     @classmethod
-    def update_data(cls, prev_data: GraphingData,
-                    filter_args: GraphingFilters, dm: DataManager = None) -> None:
+    def update_data(cls, prev_data: GraphingData, filter_args: GraphingFilters) -> None:
         """
         update_data is a method that updates the currently represented information,
         by modifying <prev_data> to match the current filters. Note, this method

@@ -244,7 +244,8 @@ class DashboardHandler(UseCaseHandler):
             telemetry_frame)
         frame_quantity = telemetry_data.num_telemetry_frames
 
-        return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp)
+        return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp,
+                                           telemetry_data)
 
         # Next, determine if any sorting was requested
         cls._sort_output(return_data, filter_args.sort)
@@ -252,8 +253,7 @@ class DashboardHandler(UseCaseHandler):
         return return_data
 
     @classmethod
-    def update_data(cls, previous_table: TelemetryTableReturn, filter_args: DashboardFilters,
-                    dm: DataManager = None):
+    def update_data(cls, previous_table: TelemetryTableReturn, filter_args: DashboardFilters):
         """
         An implementation of update_data for the Telemetry Dashboard to update fields
         based on new sorting requests from the user
@@ -290,7 +290,4 @@ class DashboardHandler(UseCaseHandler):
         previous_table.removed = new_removed
         cls._sort_output(previous_table, filter_args.sort)
 
-        if dm is not None:
-            telemetry_data = dm.get_telemetry_data(
-                filter_args.start_time, filter_args.end_time, filter_args.tags)
-            previous_table.frame_quantity = telemetry_data.num_telemetry_frames
+        previous_table.frame_quantity = previous_table.td.num_telemetry_frames
