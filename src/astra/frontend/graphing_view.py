@@ -26,7 +26,7 @@ class GraphingView:
     :param y_axis_selector: Allows user to select a tag to use for y-axis values
     """
 
-    def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager):
+    def __init__(self, frame: ttk.Notebook, num_rows: int, width, dm: DataManager):
         """
         Initializes the view of the tab
 
@@ -41,6 +41,7 @@ class GraphingView:
         self.ytick_labels = []
         self.subfigure = None
         self.default_ylim = None
+        self.num_width = width // 128
 
         # Ratio determines weighting on tag searcher vs the rest of the tab
         self.overall_frame.grid_columnconfigure(0, weight=1)
@@ -63,7 +64,7 @@ class GraphingView:
         graphing_region = Frame(graphing_frame)
         graphing_region.grid(row=1, column=0)
 
-        self.figure = Figure(figsize=(12, 4), dpi=100)
+        self.figure = Figure(figsize=(self.num_width, 4), dpi=100)
         self.figure_canvas = FigureCanvasTkAgg(self.figure, graphing_region)
 
         NavigationToolbar2Tk(self.figure_canvas)
@@ -175,8 +176,8 @@ class GraphingView:
             self.default_ylim = new_plot.get_ylim()
         
         if shown_tags:
-            # We only want to display around 10 ticks
-            tick_spacing = len(new_plot.get_xticks()) // 10
+            # We only want to display around 1 tick per inch
+            tick_spacing = len(new_plot.get_xticks()) // self.num_width
             xticks_positions = new_plot.get_xticks()[::tick_spacing]
             xticks_labels = new_plot.get_xticklabels()
             xticks_labels = [
@@ -188,7 +189,7 @@ class GraphingView:
                 for pos in xticks_positions
             ]
             new_plot.set_xticks(xticks_positions)
-            new_plot.set_xticklabels(xticks_labels, rotation=0, fontsize=8)
+            new_plot.set_xticklabels(xticks_labels, rotation=0, fontsize=7)
             new_plot.legend()
             self.set_graph_y_axis_label()
 

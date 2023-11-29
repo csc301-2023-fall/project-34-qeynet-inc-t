@@ -77,7 +77,7 @@ class View(Tk):
         dashboard_frame = Frame(tab_control)
         alarms_frame = Frame(tab_control)
 
-        self.graphing_tab = GraphingView(tab_control, height // 4, self._dm)
+        self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
         graphing_frame = self.graphing_tab.overall_frame
 
         # Needs testing
