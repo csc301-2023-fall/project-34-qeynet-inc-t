@@ -8,7 +8,7 @@ from astra.data.alarms import (
     AlarmCriticality,
     AlarmPriority,
 )
-from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
+from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn, DashboardFilters
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryFrame
 from astra.data.parameters import ParameterValue, Tag
@@ -24,30 +24,6 @@ CONFIG = 'CONFIG'
 ROUNDING_DECMIALS = 2
 # For now, this choice is somewhat arbitrary
 CACHE_SIZE = 20
-
-
-@dataclass
-class DashboardFilters:
-    """
-    A container for all the filters that can be applied in the telemetry dashboard
-
-    :param index: the telemetry frame to be shown in the dashboard.
-    :param sort: indicates what type of sort should be applied to which column.
-    A tuple in the form (sort_type, sort_column), where sort_type is one
-    of '>' or '<', and sort_column is one of <DATA> or <CONFIG>
-    :param tags: a set of all tags that are shown in the dashboard
-    :param start_time: the first time of telemetry frames to examined. Is less than
-    end_time
-    :param end_time: the last time of telemetry frames to be examined
-
-    All of the above parameters may be None iff they have never been set before
-    """
-
-    sort: tuple[str, str] | None
-    index: int | None
-    tags: set[Tag] | None
-    start_time: datetime | None
-    end_time: datetime | None
 
 
 class DashboardHandler(UseCaseHandler):

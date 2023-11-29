@@ -67,7 +67,7 @@ class GraphingRequestReceiver(RequestReceiver):
 
         # convert <tags> to Tag objects
         tag_tags = {Tag(tag) for tag in tags}
-        cls.filters.shown_tags = tag_tags
+        cls.filters.tags = tag_tags
 
     @classmethod
     def remove_shown_tag(cls, tag: str) -> None:
@@ -77,8 +77,8 @@ class GraphingRequestReceiver(RequestReceiver):
         :param tags: The name of the tag to be removed.
         """
 
-        if tag in cls.filters.shown_tags:
-            cls.filters.shown_tags.remove(Tag(tag))
+        if tag in cls.filters.tags:
+            cls.filters.tags.remove(Tag(tag))
 
     @classmethod
     def add_shown_tag(cls, tag: str) -> None:
@@ -88,7 +88,7 @@ class GraphingRequestReceiver(RequestReceiver):
         :param tags: The name of the tag to be added.
         """
 
-        cls.filters.shown_tags.add(Tag(tag))
+        cls.filters.tags.add(Tag(tag))
 
     @classmethod
     def export_graph_to_file(cls, filter_args: GraphingFilters,

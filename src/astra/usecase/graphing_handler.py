@@ -5,7 +5,7 @@ from typing import Mapping
 from astra.data.data_manager import DataManager
 from astra.data.parameters import ParameterValue, Tag
 from astra.data.telemetry_data import TelemetryData
-from .use_case_handlers import UseCaseHandler
+from .use_case_handlers import UseCaseHandler, GraphingFilters
 
 DATETIME_FORMAT = "%d/%m/%Y, %H:%M:%S"
 
@@ -26,22 +26,6 @@ class GraphingData:
     # The list of strings is a list of dates, formatted as <DATETIME_FORMAT>
     shown_tags: dict[Tag, tuple[list[str], list[ParameterValue | None]]]
     curr_telemetry_data: TelemetryData
-
-
-@dataclass
-class GraphingFilters:
-    """
-    A container for all the data required by the graphing handler.
-
-    :param shown_tags: a set of tags that should be shown on the graph.
-    :param start_time: the earliest time that values for each tag are from.
-    :param end_time: the latest time that values for each tag are from.
-    :param interval: The number of frams between each value in the list of values.
-    """
-
-    shown_tags: set[Tag]
-    start_time: datetime | None
-    end_time: datetime | None
 
 
 class GraphingHandler(UseCaseHandler):
@@ -97,7 +81,7 @@ class GraphingHandler(UseCaseHandler):
         """
         telemetry_data = dm.get_telemetry_data(filter_args.start_time,
                                                filter_args.end_time,
-                                               filter_args.shown_tags)
+                                               filter_args.tags)
 
         interval = 1
 
@@ -172,12 +156,12 @@ class GraphingHandler(UseCaseHandler):
     #     """
     #     for tag in graphing_data.all_tags_values:
 
-    #         # Filter out any tags that are not in <filter_args.shown_tags> but in the graphing data.
-    #         if (tag not in filter_args.shown_tags) and (tag in graphing_data.shown_tags):
+    #         # Filter out any tags that are not in <filter_args.tags> but in the graphing data.
+    #         if (tag not in filter_args.tags) and (tag in graphing_data.shown_tags):
     #             del graphing_data.shown_tags[tag]
 
     #         # Add in any tags that need to be in <graping_data.shown_tags> but are not
-    #         elif (tag in filter_args.shown_tags) and (tag not in graphing_data.shown_tags):
+    #         elif (tag in filter_args.tags) and (tag not in graphing_data.shown_tags):
 
     #             # get the times and values for the tag
     #             curr_tag_dates = graphing_data.all_tags_values[tag][0]
@@ -220,7 +204,7 @@ class GraphingHandler(UseCaseHandler):
             return None
 
         # Loop through the <filter_args> to find which tags we must add to the data.
-        for tag in filter_args.shown_tags:
+        for tag in filter_args.tags:
             # Since the list of times correspond to the values, we can take the same slice of both.
             parameter_values = telemetry_data.get_parameter_values(tag, 1)
             curr_values = list(parameter_values.values())[min_index: max_index+1]
