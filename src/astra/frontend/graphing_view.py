@@ -59,7 +59,7 @@ class GraphingView:
         graphing_region = Frame(graphing_frame)
         graphing_region.grid(row=1, column=0)
 
-        self.figure = Figure(figsize=(4, 4), dpi=100)
+        self.figure = Figure(figsize=(12, 4), dpi=100)
         self.figure_canvas = FigureCanvasTkAgg(self.figure, graphing_region)
 
         NavigationToolbar2Tk(self.figure_canvas)
@@ -140,12 +140,12 @@ class GraphingView:
         self.figure.clear()
         graph_data = self.controller.create(self.dm)
         shown_tags = graph_data.shown_tags
+        new_plot = self.figure.add_subplot(111)
+        
 
         for tag in shown_tags:
             timestamp_info = graph_data.shown_tags[tag][0]
             param_info = graph_data.shown_tags[tag][1]
-
-            new_plot = self.figure.add_subplot(111)
             new_plot.plot(timestamp_info, param_info)
 
         self.figure_canvas.draw()
