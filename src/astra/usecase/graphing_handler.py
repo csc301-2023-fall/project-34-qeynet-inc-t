@@ -24,7 +24,7 @@ class GraphingData:
     """
 
     # The list of strings is a list of dates, formatted as <DATETIME_FORMAT>
-    shown_tags: dict[Tag, tuple[list[str], list[ParameterValue]]]
+    shown_tags: dict[Tag, tuple[list[str], list[ParameterValue | None]]]
     curr_telemetry_data: TelemetryData
 
 
@@ -222,11 +222,11 @@ class GraphingHandler(UseCaseHandler):
         # Loop through the <filter_args> to find which tags we must add to the data.
         for tag in filter_args.shown_tags:
             # Since the list of times correspond to the values, we can take the same slice of both.
-            curr_values = list(
-                graphing_data.curr_telemetry_data.get_parameter_values(tag).values())
+            parameter_values = telemetry_data.get_parameter_values(tag, 1)
+            curr_values = list(parameter_values.values())[min_index: max_index+1]
 
-            graphing_data[tag] = (formatted_times_list,
-                                  curr_values[min_index: max_index+1])
+            graphing_data.shown_tags[tag] = (formatted_times_list,
+                                             curr_values)
 
     # @classmethod
     # def _filter_times(cls, graphing_data: GraphingData,
@@ -263,7 +263,7 @@ class GraphingHandler(UseCaseHandler):
 
     @classmethod
     def _filter_times(cls, times_list: list[datetime],
-                      start_time: datetime, end_time: datetime) -> tuple[int, int]:
+                      start_time: datetime | None, end_time: datetime | None) -> tuple[int, int]:
         """
         This method returns a tuple of ints representing indices that give a slice
         of the <times_list> where all times in it are >= <start_time> and <= <end_time>.
@@ -277,16 +277,19 @@ class GraphingHandler(UseCaseHandler):
         return (cls._find_min_index(times_list, start_time),
                 cls._find_max_index(times_list, end_time))
 
-    def _find_min_index(times_list: list[datetime], start_time: datetime) -> int:
+    @staticmethod
+    def _find_min_index(times_list: list[datetime], start_time: datetime | None) -> int:
         """
         Returns an int representing the first index in <times_list>
-        that is >= <start_time>
+        that is >= <start_time>. If <start_time> is None, then it will return 0. (no minimum time)
 
         :param times_list: A list of times that you want the min_index for
-        :param start_time: The minimum for values after the <min_index>
+        :param start_time: The minimum for values at and after the <min_index>
 
-        Precondition: times_list is sorted chronologically
+        Precondition: times_list is sorted chronologically and there are no duplicate times
         """
+        if start_time is None:
+            return 0
 
         curr_min = 0
         curr_max = len(times_list) - 1
@@ -308,16 +311,20 @@ class GraphingHandler(UseCaseHandler):
         # that is after <start_time>.
         return curr_min
 
-    def _find_max_index(times_list: list[datetime], end_time: datetime) -> int:
+    @staticmethod
+    def _find_max_index(times_list: list[datetime], end_time: datetime | None) -> int:
         """
         Returns an int representing the last index in <times_list>
-        that is <= <_tiendme>
+        that is <= <end_time>. If <end_time> is None, then it
+        will return the last index. (no maximum time)
 
         :param times_list: A list of times that you want the max_index for
-        :param end_time: The maximum for values before the <max_index>
+        :param end_time: The maximum for values at and before the <max_index>
 
-        Precondition: times_list is sorted chronologically
+        Precondition: times_list is sorted chronologically and there are no duplicate times
         """
+        if end_time is None:
+            return len(times_list) - 1
 
         curr_min = 0
         curr_max = len(times_list) - 1
