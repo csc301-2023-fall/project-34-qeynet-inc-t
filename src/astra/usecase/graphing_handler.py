@@ -201,6 +201,7 @@ class GraphingHandler(UseCaseHandler):
         are from.
         :param end_time: The datetime that is the latest time that values for each tag are from.
         """
+        tags_to_delete = set()
         for tag in graphing_data.shown_tags:
             times_list = graphing_data.shown_tags[tag][0]
             values_list = graphing_data.shown_tags[tag][1]
@@ -210,14 +211,16 @@ class GraphingHandler(UseCaseHandler):
 
             # determine if there are atleast some values that are within the start and end times
             if min_index == len(times_list) - 1:
-                del graphing_data.shown_tags[tag]
+                tags_to_delete.add(tag)
             elif max_index == 0:
-                del graphing_data.shown_tags[tag]
+                tags_to_delete.add(tag)
             else:
                 # there are values within the start and end times, so we keep the tag, but slice
                 # the list.
                 graphing_data.shown_tags[tag] = (times_list[min_index:max_index+1],
                                                  values_list[min_index:max_index+1])
+        for tag in tags_to_delete:
+            del graphing_data.shown_tags[tag]
 
     @classmethod
     def _find_min_index(cls, times_list: list[str], start_time: datetime | None) -> int:
