@@ -146,7 +146,25 @@ class GraphingView:
         for tag in shown_tags:
             timestamp_info = graph_data.shown_tags[tag][0]
             param_info = graph_data.shown_tags[tag][1]
-            new_plot.plot(timestamp_info, param_info)
+            colour = "#" + hex((hash(tag) % 16777213) + 0xffffff + 1)[3:]
+            new_plot.plot(timestamp_info, param_info, color=colour, label=str(tag))
+        
+        if shown_tags:
+            # We only want to display around 10 ticks
+            tick_spacing = len(new_plot.get_xticks()) // 10
+            xticks_positions = new_plot.get_xticks()[::tick_spacing]
+            xticks_labels = new_plot.get_xticklabels()
+            xticks_labels = [
+                datetime.strptime(
+                    # Convert the datetime into different format
+                    xticks_labels[int(pos)].get_text(),
+                    "%d/%m/%Y, %H:%M:%S"
+                ).strftime("%Y-%m-%d\n%H:%M:%S")
+                for pos in xticks_positions
+            ]
+            new_plot.set_xticks(xticks_positions)
+            new_plot.set_xticklabels(xticks_labels, rotation=0, fontsize=8)
+            new_plot.legend()
 
         self.figure_canvas.draw()
         self.figure_canvas.get_tk_widget().pack()
