@@ -25,17 +25,17 @@ class GraphingRequestReceiver(RequestReceiver):
 
         :param dm: Contains all data stored by the program to date.
         """
-
-        return cls.handler.get_data(dm, cls.filters)
+        cls.previous_data = cls.handler.get_data(dm, cls.filters)
+        return cls.previous_data
 
     @classmethod
-    def update(cls, previous_data: GraphingData, dm: DataManager = None) -> None:
+    def update(cls) -> None:
         """
         update is a method that updates the currently represented information,
         by mutating the data in <previous_data> to match the current filters.
         """
 
-        cls.handler.update_data(previous_data, cls.filters, dm)
+        cls.handler.update_data(cls.previous_data, cls.filters)
 
     @classmethod
     def set_start_date(cls, start_date: datetime) -> None:

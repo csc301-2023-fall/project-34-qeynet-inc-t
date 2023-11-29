@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Callable
 
-from .use_case_handlers import TableReturn
+from .table_return import TableReturn
 from .alarm_handler import AlarmsHandler, AlarmsFilters
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
@@ -39,6 +39,7 @@ class AlarmsRequestReceiver(RequestReceiver):
     filters = AlarmsFilters(None, None, CRITICALITIES, PRIORITIES, ALL_TYPES, None, None, None,
                             None, False)
     handler = AlarmsHandler()
+    previous_data = None
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
@@ -54,18 +55,19 @@ class AlarmsRequestReceiver(RequestReceiver):
             cls.filters.tags = set(dm.tags)
 
         # Create the initial table.
-        return cls.handler.get_data(dm.alarms.get_alarms(), cls.filters)
+        cls.previous_data = cls.handler.get_data(dm.alarms.get_alarms(), cls.filters)
+        return cls.previous_data
 
     @classmethod
-    def update(cls, previous_data: TableReturn, dm: DataManager = None):
+    def update(cls):
         """
         update is a method that updates the currently represented information
 
         :param previous_data: The previous table that was in the view and we want to update.
         :param dm: Contains all data stored by the program to date.
         """
-        if previous_data is not None:
-            cls.handler.update_data(previous_data, cls.filters)
+        if cls.previous_data is not None:
+            cls.handler.update_data(cls.previous_data, cls.filters)
 
     @classmethod
     def set_shown_tags(cls, tags: set[Tag]):

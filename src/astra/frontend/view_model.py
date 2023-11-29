@@ -10,7 +10,7 @@ from typing import List
 
 from ..data.data_manager import DataManager
 from ..data.parameters import Tag
-from ..usecase.use_case_handlers import TableReturn
+from ..usecase.table_return import TableReturn
 from ..usecase.request_receiver import DashboardRequestReceiver, DataRequestReceiver
 from ..usecase.alarms_request_receiver import AlarmsRequestReceiver
 
@@ -139,7 +139,8 @@ class DashboardViewModel:
         """
         self._data_reciever = DataRequestReceiver
         self._data_reciever.set_filename(file)
-        self._data_reciever.update(dm)
+        self._data_reciever.previous_data = dm
+        self._data_reciever.update()
         self.model.receive_new_data(dm)
 
     def search_tags(self, search: str):
@@ -223,7 +224,8 @@ class AlarmsViewModel:
 
         data_receiver = DataRequestReceiver
         data_receiver.set_filename(file)
-        data_receiver.update(dm)
+        data_receiver.previous_data = dm
+        data_receiver.update()
         self.model.receive_new_data(dm)
 
     def get_table_entries(self) -> List[list]:

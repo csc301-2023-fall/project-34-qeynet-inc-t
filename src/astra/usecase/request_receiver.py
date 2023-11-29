@@ -20,6 +20,7 @@ class RequestReceiver(ABC):
     """
     RequestReceiver is an abstract class that defines the interface for front end data requests.
     """
+    previous_data: Any
 
     @abstractmethod
     def create(self, dm: DataManager):
@@ -29,7 +30,7 @@ class RequestReceiver(ABC):
         pass
 
     @abstractmethod
-    def update(self, previous_data: Any, dm: DataManager = None):
+    def update(self):
         """
         update is a method that updates the currently represented information
         """
@@ -71,14 +72,15 @@ class DashboardRequestReceiver(RequestReceiver):
             cls.filters.index = 0
 
         # Create the initial table.
-        return cls.handler.get_data(dm, cls.filters)
+        cls.previous_data = cls.handler.get_data(dm, cls.filters)
+        return cls.previous_data
 
     @classmethod
-    def update(cls, previous_data: TelemetryTableReturn, dm: DataManager | None = None):
+    def update(cls):
         """
         update is a method that updates the currently represented information
         """
-        cls.handler.update_data(previous_data, cls.filters)
+        cls.handler.update_data(cls.previous_data, cls.filters)
 
     @classmethod
     def change_index(cls, index: int) -> bool:
@@ -224,6 +226,7 @@ class DataRequestReceiver(RequestReceiver):
 
     file = None
     alarms = None
+    previous_data = None
 
     @classmethod
     def set_filename(cls, file):
@@ -242,17 +245,19 @@ class DataRequestReceiver(RequestReceiver):
         :param dm: The interface for getting all data known to the program
         """
         cls.alarms = dict()
-        return dm.from_device_name(cls.file)
+        cls.previous_data = dm.from_device_name(cls.file)
+        return cls.previous_data
 
     @classmethod
-    def update(cls, previous_data: DataManager, dm: DataManager = None) -> None:
+    def update(cls) -> None:
         """
         update is a method that updates the database based on the filename provided.
         """
         if cls.alarms is None:
             cls.alarms = AlarmsContainer()
 
-        earliest_time = previous_data.add_data_from_file(cls.file)
+        if cls.previous_data is not None:
+            earliest_time = cls.previous_data.add_data_from_file(cls.file)
 
-        checking_thread = Thread(target=check_alarms, args=[previous_data, earliest_time])
-        checking_thread.start()
+            checking_thread = Thread(target=check_alarms, args=[cls.previous_data, earliest_time])
+            checking_thread.start()
