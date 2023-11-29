@@ -64,7 +64,7 @@ class GraphingView:
         graphing_region = Frame(graphing_frame)
         graphing_region.grid(row=1, column=0)
 
-        self.figure = Figure(figsize=(self.num_width, 4), dpi=100)
+        self.figure = Figure(figsize=(self.num_width, num_rows // 50), dpi=100)
         self.figure_canvas = FigureCanvasTkAgg(self.figure, graphing_region)
 
         NavigationToolbar2Tk(self.figure_canvas)
