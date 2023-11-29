@@ -164,8 +164,10 @@ class GraphingView:
             self.tag_scaling[detailed_tag] = (scale_factor, min_value)
             # For every value, we need to normalize it
             # Subtract the min value, and divide by the range
-            param_info = [(param - min_value) / scale_factor for param in param_info]
-            new_plot.plot(timestamp_info, param_info, color=colour, label=str(tag))
+            param_info = [(param - min_value) / scale_factor 
+                          for param in param_info]
+            new_plot.plot(timestamp_info, param_info, 
+                          color=colour, label=str(tag))
 
             # We want the self.ytick_labels to represent the original set of ytick_labels
             # We will copy physical numbers to prevent mutation
@@ -177,7 +179,7 @@ class GraphingView:
         
         if shown_tags:
             # We only want to display around 1 tick per inch
-            tick_spacing = len(new_plot.get_xticks()) // self.num_width
+            tick_spacing = len(new_plot.get_xticks()) // self.num_width + 1
             xticks_positions = new_plot.get_xticks()[::tick_spacing]
             xticks_labels = new_plot.get_xticklabels()
             xticks_labels = [
@@ -198,7 +200,8 @@ class GraphingView:
 
     def set_graph_y_axis_label(self, args: any = None) -> None:
         """
-        Changes the y_axis range for the graph to the selected tag from the dropdown
+        Changes the y_axis range for the graph to the selected tag from 
+        the dropdown
         """
         del args
         tag = self.y_axis_selection_text.get()
