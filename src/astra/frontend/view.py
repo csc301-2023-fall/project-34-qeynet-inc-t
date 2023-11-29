@@ -576,6 +576,9 @@ class View(Tk):
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_data_table()
 
+        self.alarms_searcher.update_searched_tags()
+        self.dashboard_searcher.update_searched_tags()
+        self.graphing_tab.searcher.update_searched_tags()
         self.construct_alarms_table()
 
     def update_time(self, associated_vars: list[list[StringVar]]) -> (datetime, datetime):
