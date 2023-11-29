@@ -1,5 +1,5 @@
 from datetime import datetime
-from tkinter import ttk, Frame, Label, StringVar, Button, CENTER
+from tkinter import messagebox, ttk, Frame, Label, StringVar, Button, CENTER
 from tkinter.ttk import Combobox
 import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -131,6 +131,12 @@ class GraphingView:
         :param end_time:  The maximum time to show in the graph
         :return: Whether to proceed with operations
         """
+        if self.dm.get_telemetry_data(start_time, end_time, {}).num_telemetry_frames == 0:
+            messagebox.showinfo(
+                title='No telemetry frames',
+                message='The chosen time range does not have any telemetry frames.'
+            )
+            return OperationControl.CANCEL
         self.controller.set_start_date(start_time)
         self.controller.set_end_date(end_time)
         self.create_graph()
