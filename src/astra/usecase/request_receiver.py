@@ -5,7 +5,7 @@ from queue import Queue
 from threading import Thread
 from typing import Any, Iterable
 from .alarm_checker import check_alarms
-from .use_case_handlers import TelemetryTableReturn, UseCaseHandler
+from .table_return import TelemetryTableReturn
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager, AlarmsContainer
 from ..data.parameters import Tag
@@ -20,8 +20,6 @@ class RequestReceiver(ABC):
     """
     RequestReceiver is an abstract class that defines the interface for front end data requests.
     """
-
-    handler: UseCaseHandler
 
     @abstractmethod
     def create(self, dm: DataManager):

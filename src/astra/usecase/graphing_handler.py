@@ -5,7 +5,7 @@ from typing import Mapping
 from astra.data.data_manager import DataManager
 from astra.data.parameters import ParameterValue, Tag
 from astra.data.telemetry_data import TelemetryData
-from .use_case_handlers import UseCaseHandler, GraphingFilters
+from astra.usecase.filters import GraphingFilters
 
 DATETIME_FORMAT = "%d/%m/%Y, %H:%M:%S"
 
@@ -28,7 +28,7 @@ class GraphingData:
     curr_telemetry_data: TelemetryData
 
 
-class GraphingHandler(UseCaseHandler):
+class GraphingHandler:
     """
     GraphingHandler is a implementation of UseCaseHandler for the graphing tab.
     It takes care of acquiring and formatting data needed by the graphing tab.

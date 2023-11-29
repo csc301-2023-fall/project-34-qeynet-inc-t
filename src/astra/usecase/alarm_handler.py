@@ -7,7 +7,8 @@ from astra.data.alarms import (AlarmPriority, AlarmCriticality, RateOfChangeEven
                                SOEEventBase, AllEventBase, EventBase, AnyEventBase)
 from astra.data.data_manager import DataManager
 from astra.data.parameters import Tag
-from astra.usecase.use_case_handlers import UseCaseHandler, TableReturn, AlarmsFilters
+from astra.usecase.filters import AlarmsFilters
+from astra.usecase.table_return import TableReturn
 
 PRIORITY = 'PRIORITY'
 CRITICALITY = 'CRITICALITY'
@@ -133,7 +134,8 @@ class LimitedSlotAlarms:
             new_q = cls._slots[NEW_QUEUE_KEY]
             new_q.remove(alarm)
 
-class AlarmsHandler(UseCaseHandler):
+
+class AlarmsHandler:
     banner_container = LimitedSlotAlarms()
 
     @staticmethod

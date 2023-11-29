@@ -8,7 +8,8 @@ from astra.data.alarms import (
     AlarmCriticality,
     AlarmPriority,
 )
-from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn, DashboardFilters
+from .filters import DashboardFilters
+from .table_return import TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryFrame
 from astra.data.parameters import ParameterValue, Tag
@@ -26,7 +27,7 @@ ROUNDING_DECMIALS = 2
 CACHE_SIZE = 20
 
 
-class DashboardHandler(UseCaseHandler):
+class DashboardHandler:
     """DashboardHandler is a child class of UseCaseHandler that defines
     data filtering requested by the Telemetry Dashboard
     """
