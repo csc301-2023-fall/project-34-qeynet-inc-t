@@ -159,7 +159,7 @@ class GraphingView:
             max_value = max(param_info)
             scale_factor = max_value - min_value
             if scale_factor == 0:
-                scale_factor == 1 # To avoid dividing by 0
+                scale_factor = 1 # To avoid dividing by 0
             detailed_tag = self.searcher.tag_description_lookup[tag]
             self.tag_scaling[detailed_tag] = (scale_factor, min_value)
             # For every value, we need to normalize it
