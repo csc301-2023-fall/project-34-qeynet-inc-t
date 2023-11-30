@@ -14,6 +14,9 @@ from ..usecase.use_case_handlers import TableReturn
 from ..usecase.request_receiver import DashboardRequestReceiver, DataRequestReceiver
 from ..usecase.alarms_request_receiver import AlarmsRequestReceiver
 
+DASHBOARD_HEADINGS = ['TAG', 'DESCRIPTION']
+ALARM_HEADINGS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+
 
 class DashboardViewModel:
     """
@@ -34,7 +37,7 @@ class DashboardViewModel:
         Initializes the view model
         """
         self.model = Model(DashboardRequestReceiver())
-        self._sorting = [1, 1]
+        self._sorting = [-1, 1]
         self._table_entries = []
         self._time = None
         self._num_frames = 0
@@ -67,7 +70,7 @@ class DashboardViewModel:
     def get_num_frames(self) -> int:
         return self._num_frames
 
-    def toggle_sort(self, heading: str) -> None:
+    def toggle_sort(self, heading: str) -> bool:
         """
         Method for toggling sorting on a specific heading
         The headings include (for now):
@@ -79,13 +82,13 @@ class DashboardViewModel:
         Args:
             heading (str): string representing which heading was toggled
         """
-
-        if heading == "TAG":
-            self._sorting[0] *= -1
-            sort_value = self._sorting[0]
-        else:
-            self._sorting[1] *= -1
-            sort_value = self._sorting[1]
+        for i in range(len(DASHBOARD_HEADINGS)):
+            check_heading = DASHBOARD_HEADINGS[i]
+            if heading == check_heading:
+                self._sorting[i] *= -1
+                sort_value = self._sorting[i]
+            else:
+                self._sorting[i] = 1
 
         if sort_value == 1:
             # ascending
@@ -96,6 +99,7 @@ class DashboardViewModel:
 
         self.model.receive_updates()
         self.update_table_entries()
+        return sort_value == 1
 
     # def toggle_tag(self, tags: Iterable[Tag]) -> None:
     #     self.model.request_receiver.set_shown_tags(tags)
@@ -174,6 +178,7 @@ class AlarmsViewModel:
     """
 
     model: Model
+    _new: bool
     _sorting: List[int]
     _priorities: set[Tag]
     _criticalities: set[Tag]
@@ -181,7 +186,7 @@ class AlarmsViewModel:
     _time: datetime.datetime
     _table_entries: List[list]
 
-    def __init__(self) -> None:
+    def __init__(self, dm: DataManager, watchers: List[callable]) -> None:
         """
         Initializes the view model
         """
@@ -189,13 +194,22 @@ class AlarmsViewModel:
         self._sorting = [1, 1, 1, 1, 1, 1]
         self._priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
         self._criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
-        self._types = {'RATE-OF-CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR'}
+        self._types = {'RATE_OF_CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR'}
         self._table_entries = []
         self._time = None
 
         self.model.request_receiver.set_shown_priorities(self._priorities)
         self.model.request_receiver.set_shown_criticalities(self._criticalities)
         self.model.request_receiver.set_shown_types(self._types)
+        self.model.request_receiver.update_sort(('<', 'ID'))
+        self._new = False
+
+        for watcher in watchers:
+            self.model.request_receiver.install_alarm_watcher(dm, watcher)
+
+    def get_alarm_banners(self) -> list[str]:
+        """ :return: A list of strings to show in the alarm banners. """
+        return AlarmsRequestReceiver.get_alarm_banner()
 
     def load_file(self, dm: DataManager, file: str):
         """
@@ -235,7 +249,8 @@ class AlarmsViewModel:
         table_data: TableReturn
         table_data = self.model.get_data()
 
-        self._table_entries = table_data.table
+        if table_data is not None:
+            self._table_entries = table_data.table
 
     def toggle_all(self) -> None:
         self.model.request_receiver.set_shown_priorities(self._priorities)
@@ -244,7 +259,7 @@ class AlarmsViewModel:
         self.model.receive_updates()
         self.update_table_entries()
 
-    def toggle_sort(self, heading: Tag) -> None:
+    def toggle_sort(self, heading: Tag) -> bool:
         """
         Method for toggling sorting on a specific heading
         The headings include (for now):
@@ -261,32 +276,32 @@ class AlarmsViewModel:
             heading (str): string representing which heading was toggled
         """
 
-        if heading == 'ID':
-            self._sorting[0] *= -1
-            sort_value = self._sorting[0]
-        elif heading == 'PRIORITY':
-            self._sorting[1] *= -1
-            sort_value = self._sorting[1]
-        elif heading == 'CRITICALITY':
-            self._sorting[2] *= -1
-            sort_value = self._sorting[2]
-        elif heading == 'REGISTERED':
-            self._sorting[3] *= -1
-            sort_value = self._sorting[3]
-        elif heading == 'CONFIRMED':
-            self._sorting[4] *= -1
-            sort_value = self._sorting[4]
-        elif heading == 'TYPE':
-            self._sorting[5] *= -1
-            sort_value = self._sorting[5]
+        for i in range(len(ALARM_HEADINGS)):
+            check_heading = ALARM_HEADINGS[i]
+            if check_heading == heading:
+                self._sorting[i] *= -1
+                sort_value = self._sorting[i] * (heading == check_heading)
+            else:
+                self._sorting[i] = 1
 
         if sort_value == 1:
             # ascending
-            self.model.request_receiver.update_sort(('>', heading))
+            self.model.request_receiver.update_sort(('<', heading))
         elif sort_value == -1:
             # descending
-            self.model.request_receiver.update_sort(('<', heading))
+            self.model.request_receiver.update_sort(('>', heading))
 
+        self.model.receive_updates()
+        self.update_table_entries()
+        return sort_value == 1
+
+    def toggle_new(self):
+        """
+        Method for toggling whether alarms should only be shown if they are acknowledged
+        or not
+        """
+        self._new = not self._new
+        self.model.request_receiver.toggle_new_only()
         self.model.receive_updates()
         self.update_table_entries()
 
@@ -338,6 +353,18 @@ class AlarmsViewModel:
         self.model.receive_updates()
         self.update_table_entries()
 
+    def toggle_registered_start_time(self, start: datetime) -> None:
+        self.model.request_receiver.set_registered_start_time(start)
+
+    def toggle_registered_end_time(self, end: datetime) -> None:
+        self.model.request_receiver.set_registered_end_time(end)
+
+    def toggle_confirmed_start_time(self, start: datetime) -> None:
+        self.model.request_receiver.set_confirmed_start_time(start)
+
+    def toggle_confirmed_end_time(self, end: datetime) -> None:
+        self.model.request_receiver.set_confirmed_end_time(end)
+
     def toggle_type(self, tag: Tag):
         """
         Method for toggling filtering of specific criticality
@@ -362,3 +389,15 @@ class AlarmsViewModel:
         self.model.request_receiver.set_shown_types(self._types)
         self.model.receive_updates()
         self.update_table_entries()
+
+    def get_priorities(self):
+        return self._priorities
+
+    def get_criticalities(self):
+        return self._criticalities
+
+    def get_types(self):
+        return self._types
+
+    def get_new(self) -> bool:
+        return self._new

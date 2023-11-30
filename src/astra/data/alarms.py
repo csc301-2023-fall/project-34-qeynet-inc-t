@@ -1,58 +1,87 @@
 import functools
+from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import NewType
+from functools import cached_property
+from typing import ClassVar, NewType, override
 
 from astra.data.parameters import ParameterValue, Tag
 
 
 @dataclass(frozen=True)
-class EventBase:
+class EventBase(ABC):
+    type: ClassVar[str] = ''
     persistence: float | None
     description: str
 
+    @property
+    @abstractmethod
+    def tags(self) -> Iterable[Tag]:
+        raise NotImplementedError
+
 
 @dataclass(frozen=True)
-class RateOfChangeEventBase(EventBase):
+class SimpleEventBase(EventBase):
     tag: Tag
+
+    @override
+    @cached_property
+    def tags(self) -> Iterable[Tag]:
+        return {self.tag}
+
+
+@dataclass(frozen=True)
+class CompoundEventBase(EventBase):
+    event_bases: list[EventBase]
+
+    @override
+    @cached_property
+    def tags(self) -> Iterable[Tag]:
+        return {tag for event_base in self.event_bases for tag in event_base.tags}
+
+
+@dataclass(frozen=True)
+class RateOfChangeEventBase(SimpleEventBase):
+    type: ClassVar[str] = 'Rate of change'
     rate_of_fall_threshold: float | None
     rate_of_rise_threshold: float | None
     time_window: float
 
 
 @dataclass(frozen=True)
-class StaticEventBase(EventBase):
-    tag: Tag
+class StaticEventBase(SimpleEventBase):
+    type: ClassVar[str] = 'Static'
 
 
 @dataclass(frozen=True)
-class ThresholdEventBase(EventBase):
-    tag: Tag
+class ThresholdEventBase(SimpleEventBase):
+    type: ClassVar[str] = 'Threshold'
     lower_threshold: float | None
     upper_threshold: float | None
 
 
 @dataclass(frozen=True)
-class SetpointEventBase(EventBase):
-    tag: Tag
+class SetpointEventBase(SimpleEventBase):
+    type: ClassVar[str] = 'Setpoint'
     setpoint: ParameterValue
 
 
 @dataclass(frozen=True)
-class SOEEventBase(EventBase):
-    event_bases: list[EventBase]
+class SOEEventBase(CompoundEventBase):
+    type: ClassVar[str] = 'SOE'
     intervals: list[tuple[float, float | None]]
 
 
 @dataclass(frozen=True)
-class AllEventBase(EventBase):
-    event_bases: list[EventBase]
+class AllEventBase(CompoundEventBase):
+    type: ClassVar[str] = 'Logical AND'
 
 
 @dataclass(frozen=True)
-class AnyEventBase(EventBase):
-    event_bases: list[EventBase]
+class AnyEventBase(CompoundEventBase):
+    type: ClassVar[str] = 'Logical OR'
 
 
 EventID = NewType('EventID', int)
@@ -66,6 +95,10 @@ class Event:
     confirm_time: datetime
     creation_time: datetime
     description: str
+
+    @property
+    def type(self) -> str:
+        return type(self.base).type
 
 
 @functools.total_ordering
@@ -105,8 +138,15 @@ class AlarmBase:
     criticality: AlarmCriticality
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class Alarm:
     event: Event
     criticality: AlarmCriticality
-    acknowledgement: str
+    priority: AlarmPriority
+    acknowledged: bool
+
+    def __gt__(self, other) -> bool:
+        return self.priority > other.priority
+
+    def __lt__(self, other) -> bool:
+        return self.priority < other.priority

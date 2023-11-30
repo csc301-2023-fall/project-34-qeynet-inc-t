@@ -1,13 +1,15 @@
 from datetime import datetime
-from typing import Iterable
+from typing import Callable
+
 from .use_case_handlers import TableReturn
-from .alarm_handler import AlarmsHandler, AlarmsFilters  # , ReturnType
+from .alarm_handler import AlarmsHandler, AlarmsFilters
 from .request_receiver import RequestReceiver
 from astra.data.data_manager import DataManager
-from ..data.alarms import AlarmCriticality, AlarmPriority
+from ..data.alarms import AlarmCriticality, AlarmPriority, Alarm
+from ..data.parameters import Tag
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
-VALID_SORTING_COLUMNS = ['PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
 RATE_OF_CHANGE = 'RATE_OF_CHANGE'
 STATIC = 'STATIC'
 THRESHOLD = 'THRESHOLD'
@@ -26,16 +28,8 @@ class AlarmsRequestReceiver(RequestReceiver):
     from the sets of them that we are viewing, and updating the sorting filter to be applied.
     """
 
-    filters: AlarmsFilters
-    handler: AlarmsHandler
-
-    @classmethod
-    def __init__(cls):
-        cls.handler = AlarmsHandler()
-        cls.filters = AlarmsFilters(None, None, None, None, None, None, None, None, False)
-        # maybe make this inherit from dashboard filters
-        # Im assuming the alarms filter will have:
-        # (sort, index, priority, criticality, alarm_type, start_time, end_time)
+    filters = AlarmsFilters(None, None, None, None, None, None, None, None, None, False)
+    handler = AlarmsHandler()
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
@@ -47,18 +41,22 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param dm: Contains all data stored by the program to date.
         """
 
-        criticalities = {AlarmCriticality.WARNING, AlarmCriticality.LOW,
-                         AlarmCriticality.MEDIUM, AlarmCriticality.HIGH, AlarmCriticality.CRITICAL}
-        priorities = {AlarmPriority.WARNING, AlarmPriority.LOW,
-                      AlarmPriority.MEDIUM, AlarmPriority.HIGH, AlarmPriority.CRITICAL}
+        criticalities = {AlarmCriticality.WARNING.name, AlarmCriticality.LOW.name,
+                         AlarmCriticality.MEDIUM.name, AlarmCriticality.HIGH.name,
+                         AlarmCriticality.CRITICAL.name}
+        priorities = {AlarmPriority.WARNING.name, AlarmPriority.LOW.name,
+                      AlarmPriority.MEDIUM.name, AlarmPriority.HIGH.name,
+                      AlarmPriority.CRITICAL.name}
         # TODO: Switch these back to use AlarmPriority (also sorting methods)
+
+        cls.filters.tags = set(dm.tags)
 
         # add all priorities and criticalities to the shown priorities and criticalities by default
         cls.filters.criticalities = criticalities
         cls.filters.priorities = priorities
 
         # get all alarm types from dm
-        all_types = [RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR]
+        all_types = {RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR}
 
         # Add all types to the shown types by default.
         cls.filters.types = all_types
@@ -74,10 +72,20 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param previous_data: The previous table that was in the view and we want to update.
         :param dm: Contains all data stored by the program to date.
         """
-        cls.handler.update_data(previous_data, cls.filters)
+        if previous_data is not None:
+            cls.handler.update_data(previous_data, cls.filters)
 
     @classmethod
-    def add_shown_priority(cls, add: AlarmPriority) -> bool:
+    def set_shown_tags(cls, tags: set[Tag]):
+        """
+        Sets the filtered tags to be equivalent to <tags>
+
+        :param tags: The new set of tags to exclusively include in the table
+        """
+        cls.filters.tags = tags
+
+    @classmethod
+    def add_shown_priority(cls, add: str) -> bool:
         """
         add_shown_priority is a method that adds a priority to the set of priorities
         that we are viewing. It returns True if it was successful and False otherwise.
@@ -88,11 +96,11 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of priorities that we are viewing is not None.
         if cls.filters.priorities is None:
-            return False
+            cls.filters.priorities = set()
 
         # Determine if we can add <add> to the set of priorities that we are viewing.
         if add not in cls.filters.priorities:
-            cls.filters.priorities.add(add)
+            cls.filters.priorities.add(AlarmCriticality(add))
             return True
         else:
             # <add> was already in the set of priorities that we are viewing.
@@ -111,7 +119,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of criticalities that we are viewing is not None.
         if cls.filters.criticalities is None:
-            return False
+            cls.filters.criticalities = set()
 
         # Determine if we can add <add> to the set of criticalities that we are viewing.
         if add not in cls.filters.criticalities:
@@ -133,11 +141,11 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of types that we are viewing is not None.
         if cls.filters.types is None:
-            return False
+            cls.filters.types = set()
 
         # Determine if we can add the type to the set of types that we are viewing.
         if add not in cls.filters.types:
-            cls.filters.types.add(add)  # TODO: Iterable type has no append method (switch to set)
+            cls.filters.types.add(add)
             return True
         else:
             # Type was already in the set of types that we are viewing.
@@ -166,7 +174,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         cls.filters.criticalities = criticalities
 
     @classmethod
-    def set_shown_types(cls, types: Iterable[str]):
+    def set_shown_types(cls, types: set[str]):
         """
         Sets <cls.filters.types> to the set of types to be shown
 
@@ -189,7 +197,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of priorities that we are viewing is not None.
         if cls.filters.priorities is None:
-            return False
+            cls.filters.priorities = set()
 
         # Determine if we can remove <remove> from the set of priorities that we are viewing.
         if remove in cls.filters.priorities:
@@ -212,7 +220,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of criticalities that we are viewing is not None.
         if cls.filters.criticalities is None:
-            return False
+            cls.filters.criticalities = set()
 
         # Determine if we can remove <remove> from the set of criticalities that we are viewing.
         if remove in cls.filters.criticalities:
@@ -234,11 +242,11 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Make sure that the set of types that we are viewing is not None.
         if cls.filters.types is None:
-            return False
+            cls.filters.types = set()
 
         # Determine if we can remove <remove> from the set of types that we are viewing.
         if remove in cls.filters.types:
-            cls.filters.types.remove(remove)  # TODO: Iterable has no remove attribute
+            cls.filters.types.remove(remove)
             return True
         else:
             # <remove> was not in the set of types that we are viewing.
@@ -313,3 +321,42 @@ class AlarmsRequestReceiver(RequestReceiver):
         show all alarms.
         """
         cls.filters.new = new
+
+    @classmethod
+    def toggle_new_only(cls) -> None:
+        """
+        Switches the boolean value of <cls.filters.new>
+        """
+        cls.filters.new = not cls.filters.new
+
+    @classmethod
+    def acknowledge_alarm(cls, alarm: Alarm, dm: DataManager) -> None:
+        """
+        Sets the provided <alarm> have its acknowledgment attribute set to ACKNOWLEDGED
+
+        :param alarm: The alarm whose acknowledgment needs to be modified
+        :param dm: Stores all data known to the program
+        """
+        cls.handler.acknowledge_alarm(alarm, dm)
+
+    @classmethod
+    def remove_alarm(cls, alarm: Alarm, dm: DataManager) -> None:
+        """
+        Interfacing method to remove an alarm from <dm>
+
+        :param alarm: The alarm to remove
+        :param dm: The holder of the global alarm container
+        """
+        cls.handler.remove_alarm(alarm, dm)
+
+    @classmethod
+    def get_alarm_banner(cls) -> list[str]:
+        """Returns a list of strings in order to show in the alarm banners"""
+        return cls.handler.get_banner_elems()
+
+    @classmethod
+    def install_alarm_watcher(cls, dm: DataManager, watcher: Callable) -> None:
+        """
+        An interfacing function for the alarm container to install a watcher function
+        """
+        dm.alarms.observer.add_watcher(watcher)
