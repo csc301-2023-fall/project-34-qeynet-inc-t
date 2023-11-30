@@ -3,28 +3,21 @@ This file holds the main view class that will run after selecting a device to mo
 """
 
 import itertools
-from datetime import datetime
-from tkinter import Button, Entry, Frame, Toplevel, Event
-from tkinter import CENTER, BOTTOM, NO, END, BOTH
-from tkinter import StringVar
-from tkinter import filedialog, messagebox, ttk, Tk, Label
-from tkinter.ttk import Treeview
+from tkinter import Frame
+from tkinter import BOTH
+from tkinter import ttk, Tk, Label
 
 from astra.data.data_manager import DataManager
-from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .graphing_view import GraphingView
 from .telemetry_view import TelemetryView
 from .alarm_view import AlarmView
-from .tag_searcher import TagSearcher, AlarmTagSearcher
-from .view_model import DashboardViewModel, AlarmsViewModel
-from ..data.alarms import Alarm
+from .view_model import AlarmsViewModel
 
 
 class View(Tk):
     """
     View class
     """
-    dashboard_table: Treeview
     _dm: DataManager
 
     def __init__(self, device_name: str) -> None:
@@ -73,7 +66,7 @@ class View(Tk):
         # This is required for the alarms banner
         self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
 
-        self.geometry("%dx%d" % (width, height))
+        self.geometry('%dx%d' % (width, height))
         self.state('zoomed')
 
         # alarm banners
@@ -86,11 +79,14 @@ class View(Tk):
         # adding the tabs to the tab control
         tab_control.add(telemetry_frame, text='Telemetry')
         tab_control.add(alarm_frame, text='Alarm')
-        tab_control.add(graphing_frame, text="Graphing")
+        tab_control.add(graphing_frame, text='Graphing')
         # packing tab control to make tabs visible
-        tab_control.pack(expand=1, fill="both")
+        tab_control.pack(expand=1, fill='both')
 
     def update_alarm_banners(self):
+        """
+        Method to update the alarms in the alarms banner
+        """
         for alarm_banner, text in itertools.zip_longest(
                 self.alarm_banners, self.alarms_view_model.get_alarm_banners()
         ):

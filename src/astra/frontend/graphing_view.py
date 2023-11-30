@@ -1,3 +1,7 @@
+"""
+This file holds the view that is used for the graphing tab
+"""
+
 from datetime import datetime
 from tkinter import messagebox, ttk, Frame, Label, StringVar, Button, filedialog
 from tkinter.ttk import Combobox
@@ -9,7 +13,7 @@ from astra.frontend.tag_searcher import GraphingTagSearcher
 from astra.frontend.timerange_input import TimerangeInput, OperationControl
 from astra.usecase.graphing_request_receiver import GraphingRequestReceiver
 
-mpl.use("TkAgg")
+mpl.use('TkAgg')
 
 
 class GraphingView:
@@ -51,11 +55,11 @@ class GraphingView:
 
         # Creating the region for all UI options excluding tag searcher
         graphing_frame = Frame(self.overall_frame)
-        graphing_frame.grid(sticky="news", row=0, column=1)
+        graphing_frame.grid(sticky='news', row=0, column=1)
 
         # Creating time selection UI
         graphing_time_option = Frame(graphing_frame)
-        graphing_time_option.grid(sticky="news", row=0, column=0)
+        graphing_time_option.grid(sticky='news', row=0, column=0)
 
         time_input = TimerangeInput(graphing_time_option, 'Time range', self.times_update)
         time_input.grid(row=0, column=0, padx=20, pady=20, )
@@ -73,20 +77,20 @@ class GraphingView:
         y_axis_selection_region = Frame(graphing_frame)
         y_axis_selection_region.grid(row=2, column=0)
 
-        y_axis_label = Label(y_axis_selection_region, text="y-axis labels:")
+        y_axis_label = Label(y_axis_selection_region, text='y-axis labels:')
         y_axis_label.grid(row=0, column=0, padx=5, pady=20)
 
         self.y_axis_selection_text = StringVar()
         self.y_axis_selector = Combobox(y_axis_selection_region,
                                         textvariable=self.y_axis_selection_text)
         self.y_axis_selector.grid(row=0, column=1, padx=5, pady=20)
-        self.y_axis_selector.bind("<<ComboboxSelected>>", self.set_graph_y_axis_label)
+        self.y_axis_selector.bind('<<ComboboxSelected>>', self.set_graph_y_axis_label)
 
         # Creating region for export data button
         button_selection_region = Frame(graphing_frame)
-        button_selection_region.grid(sticky="nes", row=3, column=0, padx=20, pady=20)
+        button_selection_region.grid(sticky='nes', row=3, column=0, padx=20, pady=20)
 
-        export_data_button = Button(button_selection_region, text="Export Data",
+        export_data_button = Button(button_selection_region, text='Export Data',
                                     command=self.export_data)
         export_data_button.grid(row=0, column=1, padx=20, pady=20)
 
@@ -144,7 +148,7 @@ class GraphingView:
 
     def export_data(self) -> None:
         config_path = filedialog.asksaveasfilename(title='Save file as', defaultextension='.csv',
-                                                   filetypes=[("csv file", ".csv")])
+                                                   filetypes=[('csv file', '.csv')])
         try:
             self.controller.export_data_to_file(config_path)
         except Exception as e:
@@ -164,7 +168,7 @@ class GraphingView:
         for tag in shown_tags:
             timestamp_info = graph_data.shown_tags[tag][0]
             param_info = graph_data.shown_tags[tag][1]
-            colour = "#" + hex((hash(tag) % 16777213) + 0xffffff + 1)[3:]
+            colour = '#' + hex((hash(tag) % 16777213) + 0xffffff + 1)[3:]
             # We need to scale the values.
             not_none_params = {param for param in param_info if param is not None}
             if len(not_none_params) == 0:
@@ -187,7 +191,7 @@ class GraphingView:
             # We want the self.ytick_labels to represent the original set of ytick_labels
             # We will copy physical numbers to prevent mutation
             self.ytick_labels = [
-                float(label.get_text().replace("−", "-"))
+                float(label.get_text().replace('−', '-'))
                 for label in new_plot.get_yticklabels()
             ]
             self.default_ylim = new_plot.get_ylim()
@@ -201,8 +205,8 @@ class GraphingView:
                 datetime.strptime(
                     # Convert the datetime into different format
                     xticks_labels[int(pos)].get_text(),
-                    "%d/%m/%Y, %H:%M:%S"
-                ).strftime("%Y-%m-%d\n%H:%M:%S")
+                    '%d/%m/%Y, %H:%M:%S'
+                ).strftime('%Y-%m-%d\n%H:%M:%S')
                 for pos in xticks_positions
             ]
             new_plot.set_xticks(xticks_positions)

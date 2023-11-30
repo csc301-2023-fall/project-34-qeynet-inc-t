@@ -1,28 +1,21 @@
-import itertools
+"""
+This file holds the view that is used for the telemetry tab
+"""
+
 from datetime import datetime
-from tkinter import Button, Entry, Frame, Toplevel, Event
-from tkinter import CENTER, BOTTOM, NO, END, BOTH
+from tkinter import Button, Frame, Toplevel, Event
+from tkinter import CENTER, NO, END
 from tkinter import StringVar
-from tkinter import filedialog, messagebox, ttk, Tk, Label
-from tkinter.ttk import Treeview
+from tkinter import filedialog, messagebox, ttk, Label
 
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
-from .graphing_view import GraphingView
-from .tag_searcher import TagSearcher, AlarmTagSearcher
-from .view_model import DashboardViewModel, AlarmsViewModel
-from ..data.alarms import Alarm
+from .tag_searcher import TagSearcher
+from .view_model import DashboardViewModel
 
 
 class TelemetryView:
     def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager):
-        """_summary_
-
-        Args:
-            frame (ttk.Notebook): _description_
-            num_rows (int): _description_
-            dm (DataManager): _description_
-        """
         self.dm = dm
         self.overall_frame = Frame(frame)
         self.dashboard_view_model = DashboardViewModel()
@@ -36,7 +29,7 @@ class TelemetryView:
         self.dashboard_searcher = TagSearcher(num_rows, self.overall_frame, self.dm,
                                               self.dashboard_searcher_update)
 
-        add_data_button = Button(self.overall_frame, text="Add data...", command=self.open_file)
+        add_data_button = Button(self.overall_frame, text='Add data...', command=self.open_file)
         add_data_button.grid(sticky='W', row=0, column=1)
 
         TimerangeInput(
@@ -63,30 +56,30 @@ class TelemetryView:
 
         # dashboard table
         style = ttk.Style()
-        style.theme_use("clam")
+        style.theme_use('clam')
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
         dashboard_table = ttk.Treeview(self.overall_frame, height=10, padding=3)
-        dashboard_table_scroll = ttk.Scrollbar(self.overall_frame, orient="vertical",
+        dashboard_table_scroll = ttk.Scrollbar(self.overall_frame, orient='vertical',
                                                command=dashboard_table.yview)
         dashboard_table.configure(yscrollcommand=dashboard_table_scroll.set)
         dashboard_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 5)
         self.dashboard_table = dashboard_table
-        dashboard_table['columns'] = ("tag", "description", "value", "setpoint", 'units', 'alarm')
+        dashboard_table['columns'] = ('tag', 'description', 'value', 'setpoint', 'units', 'alarm')
         dashboard_table.grid(sticky='NSEW', row=4, column=1, rowspan=num_rows - 5)
-        dashboard_table.column("#0", width=0, stretch=NO)
-        dashboard_table.column("tag", anchor=CENTER, width=80)
-        dashboard_table.column("description", anchor=CENTER, width=100)
-        dashboard_table.column("value", anchor=CENTER, width=80)
-        dashboard_table.column("setpoint", anchor=CENTER, width=80)
-        dashboard_table.column("units", anchor=CENTER, width=80)
-        dashboard_table.column("alarm", anchor=CENTER, width=80)
-        dashboard_table.heading("tag", text="Tag ▲", anchor=CENTER, command=self.toggle_tag)
-        dashboard_table.heading("description", text="Description ●", anchor=CENTER,
+        dashboard_table.column('#0', width=0, stretch=NO)
+        dashboard_table.column('tag', anchor=CENTER, width=80)
+        dashboard_table.column('description', anchor=CENTER, width=100)
+        dashboard_table.column('value', anchor=CENTER, width=80)
+        dashboard_table.column('setpoint', anchor=CENTER, width=80)
+        dashboard_table.column('units', anchor=CENTER, width=80)
+        dashboard_table.column('alarm', anchor=CENTER, width=80)
+        dashboard_table.heading('tag', text='Tag ▲', anchor=CENTER, command=self.toggle_tag)
+        dashboard_table.heading('description', text='Description ●', anchor=CENTER,
                                 command=self.toggle_description)
-        dashboard_table.heading("value", text="Value", anchor=CENTER)
-        dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
-        dashboard_table.heading("units", text="Units", anchor=CENTER)
-        dashboard_table.heading("alarm", text="Alarm", anchor=CENTER)
+        dashboard_table.heading('value', text='Value', anchor=CENTER)
+        dashboard_table.heading('setpoint', text='Setpoint', anchor=CENTER)
+        dashboard_table.heading('units', text='Units', anchor=CENTER)
+        dashboard_table.heading('alarm', text='Alarm', anchor=CENTER)
         dashboard_table.bind('<Double-1>', self.double_click_dashboard_table_row)
 
         dashboard_table.bind('<Up>', self.move_row_up)
@@ -108,7 +101,7 @@ class TelemetryView:
         in the dashboard table
         """
         if self.dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            ascending = self.dashboard_view_model.toggle_sort("TAG")
+            ascending = self.dashboard_view_model.toggle_sort('TAG')
             if ascending:
                 self.dashboard_table.heading('tag', text='Tag ▲')
                 self.dashboard_table.heading('description', text='Description ●')
@@ -123,7 +116,7 @@ class TelemetryView:
         in the dashboard table
         """
         if self.dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            ascending = self.dashboard_view_model.toggle_sort("DESCRIPTION")
+            ascending = self.dashboard_view_model.toggle_sort('DESCRIPTION')
             if ascending:
                 self.dashboard_table.heading('description', text='Description ▲')
                 self.dashboard_table.heading('tag', text='Tag ●')
@@ -139,8 +132,8 @@ class TelemetryView:
         """
         cur_item = self.dashboard_table.focus()
 
-        region = self.dashboard_table.identify("region", event.x, event.y)
-        if cur_item and region != "heading":
+        region = self.dashboard_table.identify('region', event.x, event.y)
+        if cur_item and region != 'heading':
             self.open_telemetry_popup(self.dashboard_table.item(cur_item)['values'])
 
     def refresh_data_table(self) -> None:
@@ -152,7 +145,7 @@ class TelemetryView:
         for item in self.dashboard_table.get_children():
             self.dashboard_table.delete(item)
         for item in self.dashboard_view_model.get_table_entries():
-            self.dashboard_table.insert("", END, values=tuple(item))
+            self.dashboard_table.insert('', END, values=tuple(item))
 
     def construct_dashboard_table(self):
         self.dashboard_view_model.model.receive_new_data(self.dm)
@@ -168,8 +161,8 @@ class TelemetryView:
                 new window
         """
         new_window = Toplevel(self.overall_frame)
-        new_window.title("Telemetry information")
-        new_window.geometry("200x200")
+        new_window.title('Telemetry information')
+        new_window.geometry('200x200')
         for column in values:
             Label(new_window, text=column).pack()
 
@@ -250,8 +243,8 @@ class TelemetryView:
     def move_row_up(self, event: Event):
         focus_item = self.dashboard_table.focus()
 
-        region = self.dashboard_table.identify("region", event.x, event.y)
-        if focus_item and region != "heading":
+        region = self.dashboard_table.identify('region', event.x, event.y)
+        if focus_item and region != 'heading':
             focus_row = self.dashboard_table.selection()
             index = self.dashboard_table.index(focus_item)
 
@@ -267,8 +260,8 @@ class TelemetryView:
     def move_row_down(self, event: Event):
         focus_item = self.dashboard_table.focus()
 
-        region = self.dashboard_table.identify("region", event.x, event.y)
-        if focus_item and region != "heading":
+        region = self.dashboard_table.identify('region', event.x, event.y)
+        if focus_item and region != 'heading':
             focus_row = self.dashboard_table.selection()
             index = self.dashboard_table.index(focus_item)
 
@@ -286,7 +279,7 @@ class TelemetryView:
         total = self.dashboard_view_model.get_num_frames()
         time = self.dashboard_view_model.get_time()
         self.navigation_text.set(
-            f"Frame {curr}/{total} at {time}"
+            f'Frame {curr}/{total} at {time}'
         )
 
     def dashboard_searcher_update(self):
