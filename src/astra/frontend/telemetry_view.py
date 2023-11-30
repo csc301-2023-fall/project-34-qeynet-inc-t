@@ -87,6 +87,8 @@ class TelemetryView:
         dashboard_table.bind('<Down>', self.move_row_down)
 
         self.data_controller.set_data_manager(self.dm)
+        self.toggle_tag()
+        self.dashboard_searcher.update_searched_tags()
 
         if self.data_controller.data_exists():
             self.controller.create(self.dm)
@@ -96,7 +98,6 @@ class TelemetryView:
             self.controller.create(self.dm)
             self.refresh_data_table()
 
-            self.dashboard_searcher.update_searched_tags()
             self.dashboard_searcher.select_all_tags()
 
     def toggle_tag(self) -> None:
@@ -104,32 +105,30 @@ class TelemetryView:
         This method is the toggle action for the tag header
         in the dashboard table
         """
-        if self.data_controller.data_exists():
-            ascending = self.controller.toggle_sort('TAG')
-            if ascending:
-                self.dashboard_table.heading('tag', text='Tag ▲')
-                self.dashboard_table.heading('description', text='Description ●')
-            else:
-                self.dashboard_table.heading('tag', text='Tag ▼')
-                self.dashboard_table.heading('description', text='Description ●')
-            self.controller.update()
-            self.refresh_data_table()
+        ascending = self.controller.toggle_sort('TAG')
+        if ascending:
+            self.dashboard_table.heading('tag', text='Tag ▲')
+            self.dashboard_table.heading('description', text='Description ●')
+        else:
+            self.dashboard_table.heading('tag', text='Tag ▼')
+            self.dashboard_table.heading('description', text='Description ●')
+        self.controller.update()
+        self.refresh_data_table()
 
     def toggle_description(self) -> None:
         """
         This method is the toggle action for the description header
         in the dashboard table
         """
-        if self.data_controller.data_exists():
-            ascending = self.controller.toggle_sort('DESCRIPTION')
-            if ascending:
-                self.dashboard_table.heading('description', text='Description ▲')
-                self.dashboard_table.heading('tag', text='Tag ●')
-            else:
-                self.dashboard_table.heading('description', text='Description ▼')
-                self.dashboard_table.heading('tag', text='Tag ●')
-            self.controller.update()
-            self.refresh_data_table()
+        ascending = self.controller.toggle_sort('DESCRIPTION')
+        if ascending:
+            self.dashboard_table.heading('description', text='Description ▲')
+            self.dashboard_table.heading('tag', text='Tag ●')
+        else:
+            self.dashboard_table.heading('description', text='Description ▼')
+            self.dashboard_table.heading('tag', text='Tag ●')
+        self.controller.update()
+        self.refresh_data_table()
 
     def double_click_dashboard_table_row(self, event) -> None:
         """
@@ -147,11 +146,12 @@ class TelemetryView:
         This method wipes the data from the dashboard table and re-inserts
         the new values
         """
-        self.change_frame_navigation_text()
-        for item in self.dashboard_table.get_children():
-            self.dashboard_table.delete(item)
-        for item in self.controller.get_table_entries():
-            self.dashboard_table.insert('', END, values=tuple(item))
+        if self.controller.get_table_entries():
+            self.change_frame_navigation_text()
+            for item in self.dashboard_table.get_children():
+                self.dashboard_table.delete(item)
+            for item in self.controller.get_table_entries():
+                self.dashboard_table.insert('', END, values=tuple(item))
 
     def construct_dashboard_table(self):
         self.controller.create(self.dm)
@@ -296,5 +296,7 @@ class TelemetryView:
         # Convert to list to enforce ordering
         selected_tags = list(self.dashboard_searcher.selected_tags)
         self.controller.set_shown_tags(selected_tags)
-        self.controller.update()
-        self.refresh_data_table()
+        if self.controller.get_num_frames() > 0:
+
+            self.controller.update()
+            self.refresh_data_table()

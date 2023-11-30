@@ -161,6 +161,11 @@ class GraphingView:
         self.figure.clear()
         graph_data = self.controller.create(self.dm)
         shown_tags = graph_data.shown_tags
+
+        for tag in shown_tags:
+            if shown_tags[tag] == ([], []):
+                return None
+
         new_plot = self.figure.add_subplot(111)
         self.subfigure = new_plot
         self.tag_scaling = {}

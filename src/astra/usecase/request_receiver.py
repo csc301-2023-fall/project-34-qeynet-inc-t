@@ -151,7 +151,8 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         update is a method that updates the currently represented information
         """
-        cls.handler.update_data(cls.previous_data, cls.filters)
+        if cls.previous_data is not None:
+            cls.handler.update_data(cls.previous_data, cls.filters)
 
     @classmethod
     def change_index(cls, index: int) -> bool:
