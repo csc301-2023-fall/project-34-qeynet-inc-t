@@ -1,5 +1,5 @@
 from datetime import datetime
-from tkinter import messagebox, ttk, Frame, Label, StringVar, Button, CENTER
+from tkinter import messagebox, ttk, Frame, Label, StringVar, Button, CENTER, filedialog
 from tkinter.ttk import Combobox
 import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -58,7 +58,7 @@ class GraphingView:
         graphing_time_option.grid(sticky="news", row=0, column=0)
 
         time_input = TimerangeInput(graphing_time_option, 'Time range', self.times_update)
-        time_input.grid(row=0, column=0, padx=20, pady=20,)
+        time_input.grid(row=0, column=0, padx=20, pady=20, )
 
         # Creating graphing region UI
         graphing_region = Frame(graphing_frame)
@@ -143,7 +143,12 @@ class GraphingView:
         return OperationControl.CONTINUE
 
     def export_data(self) -> None:
-        pass
+        config_path = filedialog.asksaveasfilename(title='Save file as', defaultextension='.csv',
+                                                   filetypes=[("csv file", ".csv")])
+        try:
+            self.controller.export_data_to_file(config_path)
+        except Exception as e:
+            messagebox.showerror(title='Could not save data', message=f'{type(e).__name__}: {e}')
 
     def create_graph(self) -> None:
         """
@@ -155,7 +160,7 @@ class GraphingView:
         new_plot = self.figure.add_subplot(111)
         self.subfigure = new_plot
         self.tag_scaling = {}
-        
+
         for tag in shown_tags:
             timestamp_info = graph_data.shown_tags[tag][0]
             param_info = graph_data.shown_tags[tag][1]
@@ -168,7 +173,7 @@ class GraphingView:
             max_value = max(not_none_params)
             scale_factor = max_value - min_value
             if scale_factor == 0:
-                scale_factor = 1 # To avoid dividing by 0
+                scale_factor = 1  # To avoid dividing by 0
             detailed_tag = self.searcher.tag_description_lookup[tag]
             self.tag_scaling[detailed_tag] = (scale_factor, min_value)
             # For every value, we need to normalize it
@@ -176,7 +181,7 @@ class GraphingView:
             param_info = [(param - min_value) / scale_factor
                           if param is not None else param
                           for param in param_info]
-            new_plot.plot(timestamp_info, param_info, 
+            new_plot.plot(timestamp_info, param_info,
                           color=colour, label=str(tag))
 
             # We want the self.ytick_labels to represent the original set of ytick_labels
@@ -186,7 +191,7 @@ class GraphingView:
                 for label in new_plot.get_yticklabels()
             ]
             self.default_ylim = new_plot.get_ylim()
-        
+
         if shown_tags:
             # We only want to display around 1 tick per inch
             tick_spacing = len(new_plot.get_xticks()) // self.num_width + 1
@@ -225,6 +230,6 @@ class GraphingView:
             self.subfigure.set_yticks(self.subfigure.get_yticks())
             self.subfigure.set_ylim(self.default_ylim)
             self.subfigure.set_yticklabels(ytick_labels)
-            
+
             self.figure_canvas.draw()
             self.figure_canvas.get_tk_widget().pack()
