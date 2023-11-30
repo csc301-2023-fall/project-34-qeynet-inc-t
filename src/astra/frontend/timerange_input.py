@@ -100,8 +100,8 @@ class SetTimerangePopup(tkinter.Toplevel):
         self.timerange_input = timerange_input
         self.start_time_vars = []
         self.end_time_vars = []
-        Label(self, text='From: ').grid(row=0, column=0, sticky='W')
-        Label(self, text='To: ').grid(row=1, column=0, sticky='W')
+        Label(self, text='Start time: ').grid(row=0, column=0, sticky='W')
+        Label(self, text='End time: ').grid(row=1, column=0, sticky='W')
         time_entries: list[tuple[Entry, StringVar, int]] = []
         for row, time_vars in enumerate([self.start_time_vars, self.end_time_vars]):
             time_display_frame = Frame(self)
@@ -233,7 +233,8 @@ class SetTimerangePopup(tkinter.Toplevel):
             self.destroy()
             self.timerange_input.update_timerange(start_time, end_time)
 
-    def switch_entry(self, entry: Entry, next_entry: Entry, entry_len: int):
+    @staticmethod
+    def switch_entry(entry: Entry, next_entry: Entry, entry_len: int):
         """Switch focus from entry to next_entry as long as entry has entry_length characters."""
         if len(entry.get()) == entry_len:
             next_entry.focus_set()
