@@ -157,7 +157,8 @@ class TagSearcher:
         # Clone the toggled tags, as it will mutate
         for tag_info in self.shown_tags:
             tag_index = tag_info.index(':')
-            self.selected_tags.remove(tag_info[:tag_index])
+            if tag_info[:tag_index] in self.selected_tags:
+                self.selected_tags.remove(tag_info[:tag_index])
         self.update_searched_tags()
         self.watcher()
 

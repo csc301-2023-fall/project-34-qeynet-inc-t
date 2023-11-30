@@ -29,7 +29,7 @@ class AlarmView:
 
         self.alarms_searcher = AlarmTagSearcher(num_rows, self.overall_frame, self.dm,
                                                 self.alarms_searcher_update)
-        
+
         # alarms filters (for the table)
         alarms_tag_table = Frame(self.overall_frame)
         style = ttk.Style()
