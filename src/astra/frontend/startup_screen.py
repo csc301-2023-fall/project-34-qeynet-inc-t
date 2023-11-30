@@ -3,9 +3,8 @@
 from tkinter import Button, Frame, Label, Tk, Toplevel
 from tkinter import filedialog, font, messagebox, simpledialog, ttk, Event
 from tkinter import BOTTOM, LEFT, X, Y
-
-from astra.data.data_manager import DataManager
 from astra.frontend.view import View
+from astra.usecase.request_receiver import DataRequestReceiver
 
 
 class StartupScreen(Tk):
@@ -16,6 +15,7 @@ class StartupScreen(Tk):
         super().__init__()
         self.title('Astra')
         self.state('zoomed')
+        self.controller = DataRequestReceiver()
 
         large_font = font.nametofont('TkDefaultFont').copy()
         large_font.configure(size=large_font['size'] * 3)
@@ -39,7 +39,7 @@ class StartupScreen(Tk):
         )
         self.device_table.configure(yscrollcommand=device_table_scrollbar.set)
         self.device_table.bind('<Double-1>', self.double_click_device_table_row)
-        for device in DataManager.get_devices().values():
+        for device in self.controller.get_devices().values():
             self.device_table.insert('', 'end', values=[device.name, device.description])
         self.device_table.pack(side=LEFT, fill=X, expand=True)
         device_table_scrollbar.pack(side=LEFT, fill=Y)
@@ -50,13 +50,13 @@ class StartupScreen(Tk):
         config_path = filedialog.askopenfilename(title='Select new device config file')
         if not config_path:
             return
-        devices_before = set(DataManager.get_devices().values())
+        devices_before = set(self.controller.get_devices().values())
         try:
-            DataManager.add_device(config_path)
+            self.controller.add_device(config_path)
         except Exception as e:
             messagebox.showerror(title='Cannot read config', message=f'{type(e).__name__}: {e}')
             return
-        devices_after = set(DataManager.get_devices().values())
+        devices_after = set(self.controller.get_devices().values())
         if devices_before == devices_after:  # Guard against adding an already-added device
             return
         [new_device] = devices_after - devices_before
@@ -94,7 +94,7 @@ class StartupScreen(Tk):
         Button(popup, text='Monitor', width=15, height=3, command=lambda: self.monitor(name)).pack(
             expand=True
         )
-        Button(popup, text='Remove', command=lambda: self.remove_device(name, item)).pack(
+        Button(popup, text='Remove', command=lambda: self.remove_device(name, item, popup)).pack(
             side=BOTTOM
         )
 
@@ -108,7 +108,7 @@ class StartupScreen(Tk):
         self.destroy()
         View(device_name).mainloop()
 
-    def remove_device(self, device_name: str, item: str) -> None:
+    def remove_device(self, device_name: str, item: str, popup: Toplevel) -> None:
         """
         Let the user remove a device, and update the table of devices accordingly.
 
@@ -116,6 +116,8 @@ class StartupScreen(Tk):
             The name of the device to remove.
         :param item:
             The corresponding item to remove from the table of devices.
+        :param popup:
+            The popup to return focus to and/or destroy after the user responds to prompts.
         """
         if messagebox.askokcancel(
             title='Remove device?',
@@ -129,16 +131,20 @@ class StartupScreen(Tk):
                 prompt='To confirm deletion, please enter the name of the device.',
             )
             if entered_device_name == device_name:
-                DataManager.remove_device(device_name)
+                self.controller.remove_device(device_name)
                 self.device_table.delete(item)
                 messagebox.showinfo(
                     title='Device removed',
                     message=f'Successfully removed device {repr(device_name)}.',
                 )
-            elif entered_device_name is not None:
-                messagebox.showinfo(
-                    title='Incorrect device name',
-                    message='Entered name does not match device name. Deletion canceled.',
-                )
+                popup.destroy()
             else:
-                messagebox.showinfo(title='Deletion canceled', message='Deletion canceled.')
+                if entered_device_name is not None:
+                    messagebox.showinfo(
+                        title='Incorrect device name',
+                        message='Entered name does not match device name. Deletion canceled.',
+                    )
+                else:
+                    messagebox.showinfo(title='Deletion canceled', message='Deletion canceled.')
+                popup.grab_set()
+                popup.focus_set()
