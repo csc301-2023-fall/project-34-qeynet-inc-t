@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from datetime import datetime
 from queue import Queue
@@ -13,6 +12,7 @@ VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = {'TAG', 'DESCRIPTION'}
 DATA = 'DATA'
 CONFIG = 'CONFIG'
+DASHBOARD_HEADINGS = ['TAG', 'DESCRIPTION']
 
 
 class RequestReceiver(ABC):
@@ -36,6 +36,76 @@ class RequestReceiver(ABC):
         pass
 
 
+class DataRequestReceiver(RequestReceiver):
+    """
+    Receives new data files and updates our programs database accordingly.
+    """
+
+    file = None
+    previous_data = None
+
+    @classmethod
+    def set_filename(cls, file):
+        cls.file = file
+
+    @classmethod
+    def create(cls, dm: DataManager) -> DataManager:
+        """
+        create is a method that creates a new data table and returns it based
+        on the filename provided.
+
+        :param dm: The interface for getting all data known to the program
+        """
+        cls.previous_data = dm.from_device_name(cls.file)
+        return cls.previous_data
+
+    @classmethod
+    def update(cls) -> None:
+        """
+        update is a method that updates the database based on the filename provided.
+        """
+
+        if cls.previous_data is not None:
+            earliest_time = cls.previous_data.add_data_from_file(cls.file)
+
+            checking_thread = Thread(target=check_alarms, args=[cls.previous_data, earliest_time])
+            checking_thread.start()
+
+    @classmethod
+    def data_exists(cls) -> bool:
+        return cls.previous_data.get_telemetry_data(None, None, {}).num_telemetry_frames > 0
+
+    @classmethod
+    def set_data_manager(cls, dm: DataManager) -> None:
+        cls.previous_data = dm
+
+    @staticmethod
+    def add_device(config_path: str) -> None:
+        """
+        Interfacing method for adding devices to the data manager
+
+        :param config_path: The path to the config file to construct a device from
+        """
+        DataManager.add_device(config_path)
+
+    @staticmethod
+    def get_devices() -> Mapping[str, Device]:
+        """
+        Interfacing method for getting the name of all devices from the
+        data manager
+        """
+        return DataManager.get_devices()
+
+    @staticmethod
+    def remove_device(device_name: str) -> None:
+        """
+        Interfacing method for remove devices from the data manager
+
+        :param device_name: The device to remove from the data manager
+        """
+        DataManager.remove_device(device_name)
+
+
 class DashboardRequestReceiver(RequestReceiver):
     """
     DashboardRequestReceiver is a class that implements the RequestReceiver interface.
@@ -49,6 +119,8 @@ class DashboardRequestReceiver(RequestReceiver):
     handler = DashboardHandler()
     search_cache = dict()
     search_eviction = Queue()
+    _sorting = [-1, 1]
+    previous_data = None
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
@@ -156,6 +228,36 @@ class DashboardRequestReceiver(RequestReceiver):
             return False  # Tag was not in the set of tags that we are viewing.
 
     @classmethod
+    def toggle_sort(cls, heading: str) -> bool:
+        """
+        Method for toggling sorting on a specific heading
+        The headings include (for now):
+        - TAG
+        - DESCRIPTION
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+        sort_value = -1
+        for i in range(len(DASHBOARD_HEADINGS)):
+            check_heading = DASHBOARD_HEADINGS[i]
+            if heading == check_heading:
+                cls._sorting[i] *= -1
+                sort_value = cls._sorting[i]
+            else:
+                cls._sorting[i] = 1
+
+        if sort_value == 1:
+            # ascending
+            cls.update_sort(('>', heading))
+        elif sort_value == -1:
+            # descending
+            cls.update_sort(('<', heading))
+        return sort_value == 1
+
+    @classmethod
     def update_sort(cls, sort: tuple[str, str]) -> bool:
         """
         Updates the sorting filter to be applied.
@@ -217,64 +319,44 @@ class DashboardRequestReceiver(RequestReceiver):
 
         return cls.handler.search_tags(search, cls.search_cache, cls.search_eviction)
 
-
-class DataRequestReceiver(RequestReceiver):
-    """
-    Receives new data files and updates our programs database accordingly.
-    """
-
-    file = None
-    previous_data = None
-
     @classmethod
-    def set_filename(cls, file):
-        cls.file = file
-
-    @classmethod
-    def create(cls, dm: DataManager) -> DataManager:
+    def get_num_frames(cls) -> int:
         """
-        create is a method that creates a new data table and returns it based
-        on the filename provided.
+        Returns the number of frames from the last call to <cls.create> or <cls.update>
 
-        :param dm: The interface for getting all data known to the program
+        :return: The number of telemetry frames in consideration
         """
-        cls.previous_data = dm.from_device_name(cls.file)
-        return cls.previous_data
-
-    @classmethod
-    def update(cls) -> None:
-        """
-        update is a method that updates the database based on the filename provided.
-        """
-
         if cls.previous_data is not None:
-            earliest_time = cls.previous_data.add_data_from_file(cls.file)
+            return cls.previous_data.frame_quantity
+        else:
+            return 0
 
-            checking_thread = Thread(target=check_alarms, args=[cls.previous_data, earliest_time])
-            checking_thread.start()
+    @classmethod
+    def get_time(cls) -> datetime:
+        """
+        Returns the time of the currently examined frame
 
-    @staticmethod
-    def add_device(config_path: str) -> None:
+        :return: The time of the currently examined frame
         """
-        Interfacing method for adding devices to the data manager
+        return cls.previous_data.timestamp
 
-        :param config_path: The path to the config file to construct a device from
+    @classmethod
+    def load_file(cls, file: str, dm: DataManager) -> None:
         """
-        DataManager.add_device(config_path)
+        Adds a telemetry file to the database
 
-    @staticmethod
-    def get_devices() -> Mapping[str, Device]:
+        :param dm: Stores all data known to the program
+        :param file: The file storing data to add
         """
-        Interfacing method for getting the name of all devices from the
-        data manager
-        """
-        return DataManager.get_devices()
 
-    @staticmethod
-    def remove_device(device_name: str) -> None:
+    @classmethod
+    def get_table_entries(cls) -> list[list]:
         """
-        Interfacing method for remove devices from the data manager
+        Returns the table entries from the previous call to <create> or <update>
 
-        :param device_name: The device to remove from the data manager
+        :return: the table entries from the previous call to <create> or <update>
         """
-        DataManager.remove_device(device_name)
+        if cls.previous_data is None:
+            return []
+        else:
+            return cls.previous_data.table

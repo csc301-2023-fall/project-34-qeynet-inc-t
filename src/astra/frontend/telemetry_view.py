@@ -11,14 +11,15 @@ from tkinter import filedialog, messagebox, ttk, Label
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .tag_searcher import TagSearcher
-from .view_model import DashboardViewModel
+from ..usecase.request_receiver import DashboardRequestReceiver, DataRequestReceiver
 
 
 class TelemetryView:
     def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager):
         self.dm = dm
         self.overall_frame = Frame(frame)
-        self.dashboard_view_model = DashboardViewModel()
+        self.controller = DashboardRequestReceiver()
+        self.data_controller = DataRequestReceiver()
 
         for i in range(num_rows):
             self.overall_frame.grid_rowconfigure(i, weight=1)
@@ -85,11 +86,14 @@ class TelemetryView:
         dashboard_table.bind('<Up>', self.move_row_up)
         dashboard_table.bind('<Down>', self.move_row_down)
 
-        if self.dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            self.dashboard_view_model.toggle_start_time(None)
-            self.dashboard_view_model.toggle_end_time(None)
-            self.dashboard_view_model.choose_frame(self.dm, 0)
-            self.dashboard_view_model.toggle_sort('TAG')
+        self.data_controller.set_data_manager(self.dm)
+
+        if self.data_controller.data_exists():
+            self.controller.create(self.dm)
+
+            self.controller.change_index(0)
+            self.controller.toggle_sort('TAG')
+            self.controller.create(self.dm)
             self.refresh_data_table()
 
             self.dashboard_searcher.update_searched_tags()
@@ -100,14 +104,15 @@ class TelemetryView:
         This method is the toggle action for the tag header
         in the dashboard table
         """
-        if self.dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            ascending = self.dashboard_view_model.toggle_sort('TAG')
+        if self.data_controller.data_exists():
+            ascending = self.controller.toggle_sort('TAG')
             if ascending:
                 self.dashboard_table.heading('tag', text='Tag ▲')
                 self.dashboard_table.heading('description', text='Description ●')
             else:
                 self.dashboard_table.heading('tag', text='Tag ▼')
                 self.dashboard_table.heading('description', text='Description ●')
+            self.controller.update()
             self.refresh_data_table()
 
     def toggle_description(self) -> None:
@@ -115,14 +120,15 @@ class TelemetryView:
         This method is the toggle action for the description header
         in the dashboard table
         """
-        if self.dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            ascending = self.dashboard_view_model.toggle_sort('DESCRIPTION')
+        if self.data_controller.data_exists():
+            ascending = self.controller.toggle_sort('DESCRIPTION')
             if ascending:
                 self.dashboard_table.heading('description', text='Description ▲')
                 self.dashboard_table.heading('tag', text='Tag ●')
             else:
                 self.dashboard_table.heading('description', text='Description ▼')
                 self.dashboard_table.heading('tag', text='Tag ●')
+            self.controller.update()
             self.refresh_data_table()
 
     def double_click_dashboard_table_row(self, event) -> None:
@@ -144,12 +150,11 @@ class TelemetryView:
         self.change_frame_navigation_text()
         for item in self.dashboard_table.get_children():
             self.dashboard_table.delete(item)
-        for item in self.dashboard_view_model.get_table_entries():
+        for item in self.controller.get_table_entries():
             self.dashboard_table.insert('', END, values=tuple(item))
 
     def construct_dashboard_table(self):
-        self.dashboard_view_model.model.receive_new_data(self.dm)
-        self.dashboard_view_model.update_table_entries()
+        self.controller.create(self.dm)
         self.refresh_data_table()
 
     def open_telemetry_popup(self, values: list[str]) -> None:
@@ -177,15 +182,13 @@ class TelemetryView:
             return
 
         try:
-            self.dashboard_view_model.load_file(self.dm, file)
+            self.data_controller.set_filename(file)
+            self.data_controller.update()
+            self.controller.create(self.dm)
         except Exception as e:
             messagebox.showerror(title='Cannot read telemetry', message=f'{type(e).__name__}: {e}')
             return
-        self.refresh_data_table()
 
-        self.dashboard_view_model.toggle_start_time(None)
-        self.dashboard_view_model.toggle_end_time(None)
-        self.dashboard_view_model.choose_frame(self.dm, 0)
         self.refresh_data_table()
 
         self.dashboard_searcher.update_searched_tags()
@@ -199,45 +202,52 @@ class TelemetryView:
                 message='The chosen time range does not have any telemetry frames.'
             )
             return OperationControl.CANCEL
-        self.dashboard_view_model.toggle_start_time(start_time)
-        self.dashboard_view_model.toggle_end_time(end_time)
+        self.controller.set_start_time(start_time)
+        self.controller.set_end_time(end_time)
         self.dashboard_current_frame_number = 0
-        self.dashboard_view_model.choose_frame(self.dm, 0)
+        self.controller.change_index(0)
+        self.controller.create(self.dm)
+        self.change_frame_navigation_text()
+
         self.refresh_data_table()
         return OperationControl.CONTINUE
 
     def first_frame(self):
-        if self.dashboard_view_model.get_num_frames() == 0:
+        if self.controller.get_num_frames() == 0:
             return
         self.dashboard_current_frame_number = 0
-        self.dashboard_view_model.choose_frame(self.dm, 0)
+        self.controller.change_index(0)
+        self.controller.create(self.dm)
         self.refresh_data_table()
 
     def last_frame(self):
-        if self.dashboard_view_model.get_num_frames() == 0:
+        if self.controller.get_num_frames() == 0:
             return
-        last = self.dashboard_view_model.get_num_frames() - 1
+        last = self.controller.get_num_frames() - 1
         self.dashboard_current_frame_number = last
-        self.dashboard_view_model.choose_frame(self.dm, last)
+        self.controller.change_index(last)
+        self.controller.create(self.dm)
         self.refresh_data_table()
 
     def decrement_frame(self):
-        if self.dashboard_view_model.get_num_frames() == 0:
+        if self.controller.get_num_frames() == 0:
             return
         if self.dashboard_current_frame_number > 0:
             self.dashboard_current_frame_number -= 1
         index = self.dashboard_current_frame_number
-        self.dashboard_view_model.choose_frame(self.dm, index)
+        self.controller.change_index(index)
+        self.controller.create(self.dm)
         self.refresh_data_table()
 
     def increment_frame(self):
-        if self.dashboard_view_model.get_num_frames() == 0:
+        if self.controller.get_num_frames() == 0:
             return
-        last = self.dashboard_view_model.get_num_frames() - 1
+        last = self.controller.get_num_frames() - 1
         if self.dashboard_current_frame_number < last:
             self.dashboard_current_frame_number += 1
         index = self.dashboard_current_frame_number
-        self.dashboard_view_model.choose_frame(self.dm, index)
+        self.controller.change_index(index)
+        self.controller.create(self.dm)
         self.refresh_data_table()
 
     def move_row_up(self, event: Event):
@@ -276,8 +286,8 @@ class TelemetryView:
 
     def change_frame_navigation_text(self):
         curr = self.dashboard_current_frame_number + 1
-        total = self.dashboard_view_model.get_num_frames()
-        time = self.dashboard_view_model.get_time()
+        total = self.controller.get_num_frames()
+        time = self.controller.get_time()
         self.navigation_text.set(
             f'Frame {curr}/{total} at {time}'
         )
@@ -285,7 +295,6 @@ class TelemetryView:
     def dashboard_searcher_update(self):
         # Convert to list to enforce ordering
         selected_tags = list(self.dashboard_searcher.selected_tags)
-        self.dashboard_view_model.model.request_receiver.set_shown_tags(selected_tags)
-        self.dashboard_view_model.model.receive_updates()
-        self.dashboard_view_model.update_table_entries()
+        self.controller.set_shown_tags(selected_tags)
+        self.controller.update()
         self.refresh_data_table()
