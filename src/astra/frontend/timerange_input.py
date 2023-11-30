@@ -1,5 +1,5 @@
 """This module provides a "widget" for selecting datetime ranges."""
-
+import itertools
 import string
 import tkinter
 from collections.abc import Callable
@@ -99,7 +99,7 @@ class SetTimerangePopup(tkinter.Toplevel):
         self.end_time_vars = []
         Label(self, text='From: ').grid(row=0, column=0, sticky='W')
         Label(self, text='To: ').grid(row=1, column=0, sticky='W')
-        time_entries = []
+        time_entries: list[tuple[Entry, StringVar, int]] = []
         for row, time_vars in enumerate([self.start_time_vars, self.end_time_vars]):
             time_display_frame = Frame(self)
             for element in [4, '-', 2, '-', 2, ' ', 2, ':', 2, ':', 2, ' ']:
@@ -111,16 +111,16 @@ class SetTimerangePopup(tkinter.Toplevel):
                         lambda s, max_length=element: _is_short_digit_string(s, max_length)
                     ), '%P'))
                     time_entry.pack(side=LEFT)
-                    time_entries.append((time_entry, element))
+                    time_entries.append((time_entry, time_var, element))
                 else:
                     Label(time_display_frame, text=element).pack(side=LEFT)
             time_display_frame.grid(row=row, column=1)
-        for index, entry_tup in enumerate(time_entries[:-1]):
-            entry, length = entry_tup
-            next_entry = time_entries[index + 1][0]
-            entry.bind("<KeyRelease>", lambda event, entry=entry,
-                       next_entry=next_entry,
-                       length=length: self.switch_entry(event, entry, next_entry, length))
+        for (entry, time_var, length), (next_entry, _, _) in itertools.pairwise(time_entries):
+            print((entry, time_var, length), (next_entry, None, None))
+            time_var.trace_add('write', (
+                lambda *_, entry_=entry, next_entry_=next_entry, length_=length:
+                    self.switch_entry(entry_, next_entry_, length_)
+            ))
 
         self.set_entries_by_time(self.start_time_vars, self.timerange_input.start_time)
         self.set_entries_by_time(self.end_time_vars, self.timerange_input.end_time)
@@ -198,7 +198,7 @@ class SetTimerangePopup(tkinter.Toplevel):
             self.destroy()
             self.timerange_input.update_timerange(start_time, end_time)
 
-    def switch_entry(self, event, entry, next_entry, entry_len):
-        del event
+    def switch_entry(self, entry: Entry, next_entry: Entry, entry_len: int):
+        """Switch focus from entry to next_entry as long as entry has entry_length characters."""
         if len(entry.get()) == entry_len:
             next_entry.focus_set()
