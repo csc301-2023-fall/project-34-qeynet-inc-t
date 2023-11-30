@@ -351,13 +351,13 @@ class DashboardRequestReceiver(RequestReceiver):
         """
 
     @classmethod
-    def get_table_entries(cls) -> list[list]:
+    def get_table_entries(cls) -> list[list] | None:
         """
         Returns the table entries from the previous call to <create> or <update>
 
         :return: the table entries from the previous call to <create> or <update>
         """
         if cls.previous_data is None:
-            return []
+            return None
         else:
             return cls.previous_data.table

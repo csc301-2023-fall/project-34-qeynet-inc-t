@@ -145,7 +145,7 @@ class TelemetryView:
         This method wipes the data from the dashboard table and re-inserts
         the new values
         """
-        if self.controller.get_table_entries():
+        if self.controller.get_table_entries() is not None:
             self.change_frame_navigation_text()
             for item in self.dashboard_table.get_children():
                 self.dashboard_table.delete(item)
