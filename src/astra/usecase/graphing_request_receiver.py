@@ -91,14 +91,13 @@ class GraphingRequestReceiver(RequestReceiver):
         cls.filters.tags.add(Tag(tag))
 
     @classmethod
-    def export_graph_to_file(cls, filter_args: GraphingFilters,
-                             dm: DataManager, filename: str) -> None:
+    def export_data_to_file(cls, filter_args: GraphingFilters, filename: str) -> None:
         """
-        Exports the graph to a file.
+        Exports the current telemetry data to a file.
 
         :param filename: The path to save to. The export format is
         determined based on the file extension.
         :param data: The data to be exported.
         """
 
-        cls.handler.export_graph_to_file(filter_args, dm, filename)
+        cls.handler.export_data_to_file(filter_args, filename, cls.previous_data)

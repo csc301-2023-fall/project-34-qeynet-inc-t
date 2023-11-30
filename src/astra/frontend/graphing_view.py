@@ -161,8 +161,11 @@ class GraphingView:
             param_info = graph_data.shown_tags[tag][1]
             colour = "#" + hex((hash(tag) % 16777213) + 0xffffff + 1)[3:]
             # We need to scale the values.
-            min_value = min(param_info)
-            max_value = max(param_info)
+            not_none_params = {param for param in param_info if param is not None}
+            if len(not_none_params) == 0:
+                not_none_params = {0}
+            min_value = min(not_none_params)
+            max_value = max(not_none_params)
             scale_factor = max_value - min_value
             if scale_factor == 0:
                 scale_factor = 1 # To avoid dividing by 0
@@ -170,7 +173,8 @@ class GraphingView:
             self.tag_scaling[detailed_tag] = (scale_factor, min_value)
             # For every value, we need to normalize it
             # Subtract the min value, and divide by the range
-            param_info = [(param - min_value) / scale_factor 
+            param_info = [(param - min_value) / scale_factor
+                          if param is not None else param
                           for param in param_info]
             new_plot.plot(timestamp_info, param_info, 
                           color=colour, label=str(tag))
