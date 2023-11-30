@@ -122,7 +122,7 @@ class DashboardViewModel:
         """
         self._table_entries = []
         table_data: TableReturn
-        table_data = self.model.get_data()
+        table_data = self.model.request_receiver.previous_data
 
         self._time = table_data.timestamp
         self._num_frames = table_data.frame_quantity

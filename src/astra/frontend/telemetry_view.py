@@ -33,7 +33,6 @@ class TelemetryView:
         self.overall_frame.grid_columnconfigure(0, weight=1)
         self.overall_frame.grid_columnconfigure(1, weight=2)
 
-
         self.dashboard_searcher = TagSearcher(num_rows, self.overall_frame, self.dm,
                                               self.dashboard_searcher_update)
 
@@ -92,6 +91,16 @@ class TelemetryView:
 
         dashboard_table.bind('<Up>', self.move_row_up)
         dashboard_table.bind('<Down>', self.move_row_down)
+
+        if self.dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
+            self.dashboard_view_model.toggle_start_time(None)
+            self.dashboard_view_model.toggle_end_time(None)
+            self.dashboard_view_model.choose_frame(self.dm, 0)
+            self.dashboard_view_model.toggle_sort('TAG')
+            self.refresh_data_table()
+
+            self.dashboard_searcher.update_searched_tags()
+            self.dashboard_searcher.select_all_tags()
 
     def toggle_tag(self) -> None:
         """

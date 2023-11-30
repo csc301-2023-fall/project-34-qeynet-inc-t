@@ -42,16 +42,23 @@ class View(Tk):
         self.title(f'Astra - {device_name}')
         self.dashboard_view_model = DashboardViewModel()
 
-        watchers = [
-            self.construct_alarms_table,
-            self.construct_dashboard_table,
-            self.update_alarm_banners,
-        ]
-        self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
+        # tab widget
+        tab_control = ttk.Notebook(self)
 
         # Get the screen size information, and fullscreen the app
         width = self.winfo_screenwidth()
         height = self.winfo_screenheight()
+
+        self.telemetry_tab = TelemetryView(tab_control, height // 4, self._dm)
+
+        watchers = [
+            self.construct_alarms_table,
+            self.telemetry_tab.construct_dashboard_table,
+            self.update_alarm_banners,
+        ]
+        self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
+
+
         self.geometry("%dx%d" % (width, height))
         self.state('zoomed')
 
@@ -62,16 +69,13 @@ class View(Tk):
             alarm_banner.pack(fill=BOTH)
         alarm_banners_container.pack(fill=BOTH)
 
-        # tab widget
-        tab_control = ttk.Notebook(self)
+
 
         # frames corresponding to each tab
         dashboard_frame = Frame(tab_control)
         alarms_frame = Frame(tab_control)
 
-        self.telemetry_tab = TelemetryView(tab_control, height // 4, self._dm)
         telemetry_frame = self.telemetry_tab.overall_frame
-        watchers.append(self.telemetry_tab.construct_dashboard_table)
 
         self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
         graphing_frame = self.graphing_tab.overall_frame
