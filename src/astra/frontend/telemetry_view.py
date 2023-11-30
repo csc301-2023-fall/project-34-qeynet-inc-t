@@ -74,7 +74,7 @@ class TelemetryView:
         dashboard_table.column('setpoint', anchor=CENTER, width=80)
         dashboard_table.column('units', anchor=CENTER, width=80)
         dashboard_table.column('alarm', anchor=CENTER, width=80)
-        dashboard_table.heading('tag', text='Tag ▲', anchor=CENTER, command=self.toggle_tag)
+        dashboard_table.heading('tag', text='Tag ▼', anchor=CENTER, command=self.toggle_tag)
         dashboard_table.heading('description', text='Description ●', anchor=CENTER,
                                 command=self.toggle_description)
         dashboard_table.heading('value', text='Value', anchor=CENTER)
@@ -94,7 +94,6 @@ class TelemetryView:
             self.controller.create(self.dm)
 
             self.controller.change_index(0)
-            self.controller.toggle_sort('TAG')
             self.controller.create(self.dm)
             self.refresh_data_table()
 
