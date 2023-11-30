@@ -50,6 +50,10 @@ class View(Tk):
         height = self.winfo_screenheight()
 
         self.telemetry_tab = TelemetryView(tab_control, height // 4, self._dm)
+        telemetry_frame = self.telemetry_tab.overall_frame
+
+        self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
+        graphing_frame = self.graphing_tab.overall_frame
 
         watchers = [
             self.construct_alarms_table,
@@ -69,16 +73,8 @@ class View(Tk):
             alarm_banner.pack(fill=BOTH)
         alarm_banners_container.pack(fill=BOTH)
 
-
-
         # frames corresponding to each tab
-        dashboard_frame = Frame(tab_control)
         alarms_frame = Frame(tab_control)
-
-        telemetry_frame = self.telemetry_tab.overall_frame
-
-        self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
-        graphing_frame = self.graphing_tab.overall_frame
 
         # Needs testing
         # I do not know of a clever way of doing this. To ensure even
@@ -86,82 +82,18 @@ class View(Tk):
         # so the number of rows should change according to the window height
         num_rows = height // 4
         for i in range(num_rows):
-            dashboard_frame.grid_rowconfigure(i, weight=1)
             alarms_frame.grid_rowconfigure(i, weight=1)
-        dashboard_frame.grid_columnconfigure(0, weight=1)
-        dashboard_frame.grid_columnconfigure(1, weight=2)
 
         alarms_frame.grid_columnconfigure(0, weight=0)
         alarms_frame.grid_columnconfigure(1, weight=1)
 
         # adding the tabs to the tab control
-        tab_control.add(dashboard_frame, text='Dashboard')
+        tab_control.add(telemetry_frame, text='Telemetry')
         tab_control.add(alarms_frame, text='Alarms')
         tab_control.add(graphing_frame, text="Graphing")
-        tab_control.add(telemetry_frame, text='Telemetry')
 
         # packing tab control to make tabs visible
-        tab_control.pack(expand=1, fill="both")
-
-        # elements of dashboard_frame
-        self.dashboard_searcher = TagSearcher(num_rows, dashboard_frame, self._dm,
-                                              self.dashboard_searcher_update)
-
-        add_data_button = Button(dashboard_frame, text="Add data...", command=self.open_file)
-        add_data_button.grid(sticky='W', row=0, column=1)
-
-        TimerangeInput(
-            dashboard_frame, 'Time range', self.update_dashboard_times
-        ).grid(sticky='W', row=1, column=1)
-
-        self.dashboard_current_frame_number = 0
-        self.dashboard_frame_navigation_text = StringVar(value='Frame --- at ---')
-
-        dashboard_frame_navigation_row_outside = Frame(dashboard_frame)
-        dashboard_frame_navigation_row_outside.grid(sticky='ew', row=2, column=1, pady=(10, 0))
-        dashboard_frame_navigation_row = Frame(dashboard_frame_navigation_row_outside)
-        dashboard_frame_navigation_row.pack(expand=False)
-        Button(dashboard_frame_navigation_row, text='|<',
-               command=self.first_frame).grid(sticky='w', row=0, column=0)
-        Button(dashboard_frame_navigation_row, text='<',
-               command=self.decrement_frame).grid(sticky='w', row=0, column=1)
-        (Label(dashboard_frame_navigation_row, textvariable=self.dashboard_frame_navigation_text)
-         .grid(sticky='ew', row=0, column=2))
-        Button(dashboard_frame_navigation_row, text='>',
-               command=self.increment_frame).grid(sticky='e', row=0, column=3)
-        Button(dashboard_frame_navigation_row, text='>|',
-               command=self.last_frame).grid(sticky='e', row=0, column=4)
-
-        # dashboard table
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
-        dashboard_table = ttk.Treeview(dashboard_frame, height=10, padding=3)
-        dashboard_table_scroll = ttk.Scrollbar(dashboard_frame, orient="vertical",
-                                               command=dashboard_table.yview)
-        dashboard_table.configure(yscrollcommand=dashboard_table_scroll.set)
-        dashboard_table_scroll.grid(sticky='NS', row=4, column=2, rowspan=num_rows - 5)
-        self.dashboard_table = dashboard_table
-        dashboard_table['columns'] = ("tag", "description", "value", "setpoint", 'units', 'alarm')
-        dashboard_table.grid(sticky='NSEW', row=4, column=1, rowspan=num_rows - 5)
-        dashboard_table.column("#0", width=0, stretch=NO)
-        dashboard_table.column("tag", anchor=CENTER, width=80)
-        dashboard_table.column("description", anchor=CENTER, width=100)
-        dashboard_table.column("value", anchor=CENTER, width=80)
-        dashboard_table.column("setpoint", anchor=CENTER, width=80)
-        dashboard_table.column("units", anchor=CENTER, width=80)
-        dashboard_table.column("alarm", anchor=CENTER, width=80)
-        dashboard_table.heading("tag", text="Tag ▲", anchor=CENTER, command=self.toggle_tag)
-        dashboard_table.heading("description", text="Description ●", anchor=CENTER,
-                                command=self.toggle_description)
-        dashboard_table.heading("value", text="Value", anchor=CENTER)
-        dashboard_table.heading("setpoint", text="Setpoint", anchor=CENTER)
-        dashboard_table.heading("units", text="Units", anchor=CENTER)
-        dashboard_table.heading("alarm", text="Alarm", anchor=CENTER)
-        dashboard_table.bind('<Double-1>', self.double_click_dashboard_table_row)
-
-        dashboard_table.bind('<Up>', self.move_row_up)
-        dashboard_table.bind('<Down>', self.move_row_down)
+        tab_control.pack(expand=1, fill="both")        
 
         # elements of alarms_frame
 
@@ -271,43 +203,15 @@ class View(Tk):
             self.dashboard_view_model.toggle_end_time(None)
             self.dashboard_view_model.choose_frame(self._dm, 0)
             self.dashboard_view_model.toggle_sort('TAG')
-            self.refresh_data_table()
 
             # self.alarms_view_model.model.receive_new_data(self._dm)
             # self.alarms_view_model.update_table_entries()
             self.refresh_alarms_table()
-            self.dashboard_searcher.update_searched_tags()
-            self.dashboard_searcher.select_all_tags()
 
             self.alarms_searcher.update_searched_tags()
             self.alarms_searcher.select_all_tags()
 
         # self.sort_alarms('ID')
-
-    def create_time_entry_field(self, frame: Frame, entry_variables: list[list[StringVar]]) -> None:
-        """
-        Creates a series of entries within <frame> designated for inputting times
-
-        :param frame: The frame to insert the entry fields into
-        :param entry_variables: A 2D list of string variables, each corresponding to entry field
-        """
-        for i in range(len(entry_variables)):
-            for j in range(len(entry_variables[i])):
-                width = 3 + (j == 0) * 2
-                if j < 2:
-                    text = "-"
-                elif j == 2:
-                    text = " "
-                elif j < 5:
-                    text = ":"
-                else:
-                    text = ""
-
-                Entry(frame, width=width,
-                      textvariable=entry_variables[i][j]).pack(side="left")
-                Label(frame, text=text).pack(side="left")
-            if i == 0:
-                Label(frame, text='   to   ').pack(side="left")
 
     def update_alarm_banners(self):
         for alarm_banner, text in itertools.zip_longest(
@@ -391,47 +295,6 @@ class View(Tk):
         self.alarms_view_model.toggle_type(tag)
         self.refresh_alarms_table()
 
-    def toggle_tag(self) -> None:
-        """
-        This method is the toggle action for the tag header
-        in the dashboard table
-        """
-        if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            ascending = self.dashboard_view_model.toggle_sort("TAG")
-            if ascending:
-                self.dashboard_table.heading('tag', text='Tag ▲')
-                self.dashboard_table.heading('description', text='Description ●')
-            else:
-                self.dashboard_table.heading('tag', text='Tag ▼')
-                self.dashboard_table.heading('description', text='Description ●')
-            self.refresh_data_table()
-
-    def toggle_description(self) -> None:
-        """
-        This method is the toggle action for the description header
-        in the dashboard table
-        """
-        if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-            ascending = self.dashboard_view_model.toggle_sort("DESCRIPTION")
-            if ascending:
-                self.dashboard_table.heading('description', text='Description ▲')
-                self.dashboard_table.heading('tag', text='Tag ●')
-            else:
-                self.dashboard_table.heading('description', text='Description ▼')
-                self.dashboard_table.heading('tag', text='Tag ●')
-            self.refresh_data_table()
-
-    def double_click_dashboard_table_row(self, event) -> None:
-        """
-        This method specifies what happens if a double click were to happen
-        in the dashboard table
-        """
-        cur_item = self.dashboard_table.focus()
-
-        region = self.dashboard_table.identify("region", event.x, event.y)
-        if cur_item and region != "heading":
-            self.open_telemetry_popup(self.dashboard_table.item(cur_item)['values'])
-
     def double_click_alarms_table_row(self, event) -> None:
         """
         This method specifies what happens if a double click were to happen
@@ -445,26 +308,10 @@ class View(Tk):
             alarm = self.alarms_view_model.get_table_entries()[index][-1]
             self.open_alarm_popup(alarm)
 
-    def refresh_data_table(self) -> None:
-        """
-        This method wipes the data from the dashboard table and re-inserts
-        the new values
-        """
-        self.change_frame_navigation_text()
-        for item in self.dashboard_table.get_children():
-            self.dashboard_table.delete(item)
-        for item in self.dashboard_view_model.get_table_entries():
-            self.dashboard_table.insert("", END, values=tuple(item))
-
     def construct_alarms_table(self, event: Event = None):
         self.alarms_view_model.model.receive_new_data(self._dm)
         self.alarms_view_model.toggle_all()
         self.refresh_alarms_table()
-
-    def construct_dashboard_table(self):
-        self.dashboard_view_model.model.receive_new_data(self._dm)
-        self.dashboard_view_model.update_table_entries()
-        self.refresh_data_table()
 
     def refresh_alarms_table(self) -> None:
         """
@@ -475,20 +322,6 @@ class View(Tk):
             self.alarms_table.delete(item)
         for item in self.alarms_view_model.get_table_entries():
             self.alarms_table.insert("", END, values=tuple(item))
-
-    def open_telemetry_popup(self, values: list[str]) -> None:
-        """
-        This method opens a new window to display one row of telemetry data
-
-        Args:
-            values (list[str]): the values to be displayed in the
-                new window
-        """
-        new_window = Toplevel(self)
-        new_window.title("Telemetry information")
-        new_window.geometry("200x200")
-        for column in values:
-            Label(new_window, text=column).pack()
 
     def open_alarm_popup(self, alarm: Alarm) -> None:
         """
@@ -554,185 +387,6 @@ class View(Tk):
         if messagebox.askokcancel(title='Remove alarm', message=f'Remove alarm #{alarm.event.id}?'):
             self.alarms_view_model.model.request_receiver.remove_alarm(alarm, self._dm)
             popup.destroy()
-
-    def open_file(self):
-        """
-        This method specifies what happens when the add data button
-        is clicked
-        """
-        file = filedialog.askopenfilename(title='Select telemetry file')
-
-        if not file:
-            return
-
-        try:
-            self.dashboard_view_model.load_file(self._dm, file)
-        except Exception as e:
-            messagebox.showerror(title='Cannot read telemetry', message=f'{type(e).__name__}: {e}')
-            return
-        self.refresh_data_table()
-
-        self.dashboard_view_model.toggle_start_time(None)
-        self.dashboard_view_model.toggle_end_time(None)
-        self.dashboard_view_model.choose_frame(self._dm, 0)
-        self.refresh_data_table()
-
-        self.alarms_searcher.update_searched_tags()
-        self.dashboard_searcher.update_searched_tags()
-        self.graphing_tab.searcher.update_searched_tags()
-        self.construct_alarms_table()
-
-    def update_time(self, associated_vars: list[list[StringVar]]) -> (datetime, datetime):
-        input_times = ["", ""]
-        for j in range(len(associated_vars)):
-            for i in range(len(associated_vars[j])):
-                input_times[j] += associated_vars[j][i].get()
-                if i < 2:
-                    input_times[j] += '-'
-                elif i == 2:
-                    input_times[j] += ' '
-                elif i < 5:
-                    input_times[j] += ':'
-
-        input_start_time = input_times[0]
-        input_end_time = input_times[1]
-        if input_start_time != '-- ::':
-            try:
-                start_time = datetime.strptime(input_start_time, '%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                messagebox.showwarning(
-                    title='Invalid start time',
-                    message=(
-                        'Start time must either be empty or a valid datetime in the format '
-                        'YYYY-MM-DD hh:mm:ss.'
-                    )
-                )
-                return
-        else:
-            start_time = None
-        if input_end_time != '-- ::':
-            try:
-                end_time = datetime.strptime(input_end_time, '%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                messagebox.showwarning(
-                    title='Invalid end time',
-                    message=(
-                        'End time must either be empty or a valid datetime in the format '
-                        'YYYY-MM-DD hh:mm:ss.'
-                    )
-                )
-                return
-        else:
-            end_time = None
-        if self._dm.get_telemetry_data(start_time, end_time, {}).num_telemetry_frames == 0:
-            messagebox.showinfo(
-                title='No telemetry frames',
-                message='The chosen time range does not have any telemetry frames.'
-            )
-            return
-
-        return start_time, end_time
-
-    def update_dashboard_times(
-            self, start_time: datetime | None, end_time: datetime | None
-    ) -> OperationControl:
-        if self._dm.get_telemetry_data(start_time, end_time, {}).num_telemetry_frames == 0:
-            messagebox.showinfo(
-                title='No telemetry frames',
-                message='The chosen time range does not have any telemetry frames.'
-            )
-            return OperationControl.CANCEL
-        self.dashboard_view_model.toggle_start_time(start_time)
-        self.dashboard_view_model.toggle_end_time(end_time)
-        self.dashboard_current_frame_number = 0
-        self.dashboard_view_model.choose_frame(self._dm, 0)
-        self.refresh_data_table()
-        return OperationControl.CONTINUE
-
-    def first_frame(self):
-        if self.dashboard_view_model.get_num_frames() == 0:
-            return
-        self.dashboard_current_frame_number = 0
-        self.dashboard_view_model.choose_frame(self._dm, 0)
-        self.refresh_data_table()
-
-    def last_frame(self):
-        if self.dashboard_view_model.get_num_frames() == 0:
-            return
-        last = self.dashboard_view_model.get_num_frames() - 1
-        self.dashboard_current_frame_number = last
-        self.dashboard_view_model.choose_frame(self._dm, last)
-        self.refresh_data_table()
-
-    def decrement_frame(self):
-        if self.dashboard_view_model.get_num_frames() == 0:
-            return
-        if self.dashboard_current_frame_number > 0:
-            self.dashboard_current_frame_number -= 1
-        index = self.dashboard_current_frame_number
-        self.dashboard_view_model.choose_frame(self._dm, index)
-        self.refresh_data_table()
-
-    def move_row_up(self, event: Event):
-        focus_item = self.dashboard_table.focus()
-
-        region = self.dashboard_table.identify("region", event.x, event.y)
-        if focus_item and region != "heading":
-            focus_row = self.dashboard_table.selection()
-            index = self.dashboard_table.index(focus_item)
-
-            if len(focus_row) == 1 and index > 0:
-                self.dashboard_table.move(focus_row[0],
-                                          self.dashboard_table.parent(focus_row[0]), index - 1)
-
-                # Workaround for selection skipping where we previously were
-                prev_row = self.dashboard_table.get_children()[index]
-                self.dashboard_table.focus(prev_row)
-                self.dashboard_table.selection_set(prev_row)
-
-    def move_row_down(self, event: Event):
-        focus_item = self.dashboard_table.focus()
-
-        region = self.dashboard_table.identify("region", event.x, event.y)
-        if focus_item and region != "heading":
-            focus_row = self.dashboard_table.selection()
-            index = self.dashboard_table.index(focus_item)
-
-            if len(focus_row) == 1 and index < len(self.dashboard_table.get_children()):
-                self.dashboard_table.move(focus_row[0],
-                                          self.dashboard_table.parent(focus_row[0]), index + 1)
-
-                # Workaround for selection skipping where we previously were
-                prev_row = self.dashboard_table.get_children()[index]
-                self.dashboard_table.focus(prev_row)
-                self.dashboard_table.selection_set(prev_row)
-
-    def increment_frame(self):
-        if self.dashboard_view_model.get_num_frames() == 0:
-            return
-        last = self.dashboard_view_model.get_num_frames() - 1
-        if self.dashboard_current_frame_number < last:
-            self.dashboard_current_frame_number += 1
-        index = self.dashboard_current_frame_number
-        self.dashboard_view_model.choose_frame(self._dm, index)
-        self.refresh_data_table()
-
-    def change_frame_navigation_text(self):
-        curr = self.dashboard_current_frame_number + 1
-        total = self.dashboard_view_model.get_num_frames()
-        time = self.dashboard_view_model.get_time()
-        self.dashboard_frame_navigation_text.set(
-            f"Frame {curr}/{total} at {time}"
-        )
-
-    def dashboard_searcher_update(self):
-        # Convert to list to enforce ordering
-        selected_tags = list(self.dashboard_searcher.selected_tags)
-        self.dashboard_view_model.model.request_receiver.set_shown_tags(selected_tags)
-        self.dashboard_view_model.model.receive_updates()
-        self.dashboard_view_model.update_table_entries()
-        print(self.dashboard_view_model.get_table_entries())
-        self.refresh_data_table()
 
     def alarms_searcher_update(self):
         # Convert to list to enforce ordering

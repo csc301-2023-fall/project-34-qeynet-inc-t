@@ -295,5 +295,4 @@ class TelemetryView:
         self.dashboard_view_model.model.request_receiver.set_shown_tags(selected_tags)
         self.dashboard_view_model.model.receive_updates()
         self.dashboard_view_model.update_table_entries()
-        print(self.dashboard_view_model.get_table_entries())
         self.refresh_data_table()
