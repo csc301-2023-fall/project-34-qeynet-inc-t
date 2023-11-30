@@ -1,6 +1,4 @@
 import queue
-from dataclasses import dataclass
-from datetime import datetime
 from typing import Iterable
 
 from astra.data.alarms import (
@@ -8,7 +6,8 @@ from astra.data.alarms import (
     AlarmCriticality,
     AlarmPriority,
 )
-from .use_case_handlers import UseCaseHandler, TableReturn, TelemetryTableReturn
+from .filters import DashboardFilters
+from .table_return import TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
 from astra.data.telemetry_data import TelemetryFrame
 from astra.data.parameters import ParameterValue, Tag
@@ -26,31 +25,7 @@ ROUNDING_DECMIALS = 2
 CACHE_SIZE = 20
 
 
-@dataclass
-class DashboardFilters:
-    """
-    A container for all the filters that can be applied in the telemetry dashboard
-
-    :param index: the telemetry frame to be shown in the dashboard.
-    :param sort: indicates what type of sort should be applied to which column.
-    A tuple in the form (sort_type, sort_column), where sort_type is one
-    of '>' or '<', and sort_column is one of <DATA> or <CONFIG>
-    :param tags: a set of all tags that are shown in the dashboard
-    :param start_time: the first time of telemetry frames to examined. Is less than
-    end_time
-    :param end_time: the last time of telemetry frames to be examined
-
-    All of the above parameters may be None iff they have never been set before
-    """
-
-    sort: tuple[str, str] | None
-    index: int | None
-    tags: set[Tag] | None
-    start_time: datetime | None
-    end_time: datetime | None
-
-
-class DashboardHandler(UseCaseHandler):
+class DashboardHandler:
     """DashboardHandler is a child class of UseCaseHandler that defines
     data filtering requested by the Telemetry Dashboard
     """
@@ -268,7 +243,8 @@ class DashboardHandler(UseCaseHandler):
             telemetry_frame)
         frame_quantity = telemetry_data.num_telemetry_frames
 
-        return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp)
+        return_data = TelemetryTableReturn(include, remove, frame_quantity, timestamp,
+                                           telemetry_data)
 
         # Next, determine if any sorting was requested
         cls._sort_output(return_data, filter_args.sort)
@@ -276,8 +252,7 @@ class DashboardHandler(UseCaseHandler):
         return return_data
 
     @classmethod
-    def update_data(cls, previous_table: TelemetryTableReturn, filter_args: DashboardFilters,
-                    dm: DataManager = None):
+    def update_data(cls, previous_table: TelemetryTableReturn, filter_args: DashboardFilters):
         """
         An implementation of update_data for the Telemetry Dashboard to update fields
         based on new sorting requests from the user
@@ -314,7 +289,4 @@ class DashboardHandler(UseCaseHandler):
         previous_table.removed = new_removed
         cls._sort_output(previous_table, filter_args.sort)
 
-        if dm is not None:
-            telemetry_data = dm.get_telemetry_data(
-                filter_args.start_time, filter_args.end_time, filter_args.tags)
-            previous_table.frame_quantity = telemetry_data.num_telemetry_frames
+        previous_table.frame_quantity = previous_table.td.num_telemetry_frames

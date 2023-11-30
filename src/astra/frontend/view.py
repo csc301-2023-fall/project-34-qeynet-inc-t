@@ -12,6 +12,7 @@ from tkinter.ttk import Treeview
 
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
+from .graphing_view import GraphingView
 from .tag_searcher import TagSearcher, AlarmTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
@@ -67,6 +68,9 @@ class View(Tk):
         dashboard_frame = Frame(tab_control)
         alarms_frame = Frame(tab_control)
 
+        self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
+        graphing_frame = self.graphing_tab.overall_frame
+
         # Needs testing
         # I do not know of a clever way of doing this. To ensure even
         # spacing, I want each row to be always the same number of pixels
@@ -84,6 +88,7 @@ class View(Tk):
         # adding the tabs to the tab control
         tab_control.add(dashboard_frame, text='Dashboard')
         tab_control.add(alarms_frame, text='Alarms')
+        tab_control.add(graphing_frame, text="Graphing")
 
         # packing tab control to make tabs visible
         tab_control.pack(expand=1, fill="both")
@@ -562,6 +567,9 @@ class View(Tk):
         self.dashboard_view_model.choose_frame(self._dm, 0)
         self.refresh_data_table()
 
+        self.alarms_searcher.update_searched_tags()
+        self.dashboard_searcher.update_searched_tags()
+        self.graphing_tab.searcher.update_searched_tags()
         self.construct_alarms_table()
 
     def update_time(self, associated_vars: list[list[StringVar]]) -> (datetime, datetime):

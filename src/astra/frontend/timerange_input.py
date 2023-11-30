@@ -99,6 +99,7 @@ class SetTimerangePopup(tkinter.Toplevel):
         self.end_time_vars = []
         Label(self, text='From: ').grid(row=0, column=0, sticky='W')
         Label(self, text='To: ').grid(row=1, column=0, sticky='W')
+        time_entries = []
         for row, time_vars in enumerate([self.start_time_vars, self.end_time_vars]):
             time_display_frame = Frame(self)
             for element in [4, '-', 2, '-', 2, ' ', 2, ':', 2, ':', 2, ' ']:
@@ -110,9 +111,17 @@ class SetTimerangePopup(tkinter.Toplevel):
                         lambda s, max_length=element: _is_short_digit_string(s, max_length)
                     ), '%P'))
                     time_entry.pack(side=LEFT)
+                    time_entries.append((time_entry, element))
                 else:
                     Label(time_display_frame, text=element).pack(side=LEFT)
             time_display_frame.grid(row=row, column=1)
+        for index, entry_tup in enumerate(time_entries[:-1]):
+            entry, length = entry_tup
+            next_entry = time_entries[index + 1][0]
+            entry.bind("<KeyRelease>", lambda event, entry=entry,
+                       next_entry=next_entry,
+                       length=length: self.switch_entry(event, entry, next_entry, length))
+
         self.set_entries_by_time(self.start_time_vars, self.timerange_input.start_time)
         self.set_entries_by_time(self.end_time_vars, self.timerange_input.end_time)
         Button(
@@ -188,3 +197,8 @@ class SetTimerangePopup(tkinter.Toplevel):
         if self.timerange_input.onchange(start_time, end_time) is OperationControl.CONTINUE:
             self.destroy()
             self.timerange_input.update_timerange(start_time, end_time)
+
+    def switch_entry(self, event, entry, next_entry, entry_len):
+        del event
+        if len(entry.get()) == entry_len:
+            next_entry.focus_set()

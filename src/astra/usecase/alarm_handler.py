@@ -1,13 +1,12 @@
-from dataclasses import dataclass
-from datetime import datetime
 from queue import Queue
 
-from astra.data.alarms import (AlarmPriority, AlarmCriticality, RateOfChangeEventBase, Alarm,
+from astra.data.alarms import (AlarmPriority, RateOfChangeEventBase, Alarm,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
                                SOEEventBase, AllEventBase, EventBase, AnyEventBase)
 from astra.data.data_manager import DataManager
 from astra.data.parameters import Tag
-from astra.usecase.use_case_handlers import UseCaseHandler, TableReturn
+from astra.usecase.filters import AlarmsFilters
+from astra.usecase.table_return import TableReturn
 
 PRIORITY = 'PRIORITY'
 CRITICALITY = 'CRITICALITY'
@@ -134,43 +133,7 @@ class LimitedSlotAlarms:
             new_q.remove(alarm)
 
 
-@dataclass
-class AlarmsFilters:
-    """
-    A container for all the filters that can be applied in the alarm dashboard.
-
-    :param tags: Indicates which tags alarms should have to be shown
-    :param sort: indicates what type of sort should be applied to which column.
-    A tuple in the form (sort_type, sort_column), where sort_type is one
-    of '>' or '<', and
-    sort_column is one of: {PRIORITY, CRITICALITY, TYPE, REGISTERED_DATE, CONFIRMED_DATE}
-    :param priorities: A set of all priorities to be shown in the table.
-    :param criticalities: A set of all criticalities to be shown in the table.
-    :param types: A set of all types to be shown in the table.
-    :param registered_start_time: the first time of alarms being registered. Is less than
-    end_time
-    :param registered_end_time: the last time of alarms being registered to be examined
-    :param confirmed_start_time: the first time of alarms being confirmed. Is less than
-    end_time
-    :param confirmed_end_time: the last time of alarms being confirmed to be examined
-    :param new: whether only unacknowledged alarms should solely be seen
-
-    All of the above parameters may be None iff they have never been set before
-    """
-
-    tags: set[Tag] | None
-    sort: tuple[str, str] | None
-    priorities: set[AlarmPriority] | None
-    criticalities: set[AlarmCriticality] | None
-    types: set[str] | None
-    registered_start_time: datetime | None
-    registered_end_time: datetime | None
-    confirmed_start_time: datetime | None
-    confirmed_end_time: datetime | None
-    new: bool
-
-
-class AlarmsHandler(UseCaseHandler):
+class AlarmsHandler:
     banner_container = LimitedSlotAlarms()
 
     @staticmethod
@@ -349,8 +312,7 @@ class AlarmsHandler(UseCaseHandler):
         return return_table
 
     @classmethod
-    def update_data(cls, prev_data: TableReturn, filter_args: AlarmsFilters,
-                    dm: DataManager = None) -> None:
+    def update_data(cls, prev_data: TableReturn, filter_args: AlarmsFilters) -> None:
         """
         Updates the previous data returned by get_data to apply any new filters
 

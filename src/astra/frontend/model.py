@@ -30,7 +30,7 @@ class Model:
         A method that simulates the functionality of the backend
         Since our data is fixed, we sort by hand each input case
         """
-        self.request_receiver.update(self.data)
+        self.request_receiver.update()
 
     def get_data(self) -> Any:
         """
