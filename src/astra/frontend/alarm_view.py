@@ -1,7 +1,3 @@
-"""
-This file holds the main view class that will run after selecting a device to monitor
-"""
-
 import itertools
 from datetime import datetime
 from tkinter import Button, Entry, Frame, Toplevel, Event
@@ -14,106 +10,35 @@ from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .graphing_view import GraphingView
 from .telemetry_view import TelemetryView
-from .alarm_view import AlarmView
 from .tag_searcher import TagSearcher, AlarmTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
 
 
-class View(Tk):
-    """
-    View class
-    """
-    dashboard_table: Treeview
-    _dm: DataManager
+class AlarmView:
+    def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager, watchers: list):
+        """_summary_
 
-    def __init__(self, device_name: str) -> None:
+        Args:
+            frame (ttk.Notebook): _description_
+            num_rows (int): _description_
+            dm (DataManager): _description_
         """
-        Init method for the main view class
-        When the view is initialized, all the frames and tables
-        are loaded into the view
+        self.dm = dm
+        self.overall_frame = Frame(frame)
+        self.alarms_view_model = AlarmsViewModel(self.dm, watchers)
 
-        :param device_name:
-            The name of the device being monitored.
-        """
-        self._dm = DataManager.from_device_name(device_name)
-
-        # Root frame of tkinter
-        super().__init__()
-        self.title(f'Astra - {device_name}')
-
-        # tab widget
-        tab_control = ttk.Notebook(self)
-
-        # Get the screen size information, and fullscreen the app
-        width = self.winfo_screenwidth()
-        height = self.winfo_screenheight()
-
-        alarm_watchers = []
-
-        self.telemetry_tab = TelemetryView(tab_control, height // 4, self._dm)
-        telemetry_frame = self.telemetry_tab.overall_frame
-
-        self.alarm_tab = AlarmView(tab_control, height // 4, self._dm, alarm_watchers)
-        alarm_frame = self.alarm_tab.overall_frame
-
-        self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
-        graphing_frame = self.graphing_tab.overall_frame
-
-        watchers = [
-            self.alarm_tab.construct_alarms_table,
-            self.telemetry_tab.construct_dashboard_table,
-            self.update_alarm_banners,
-        ]
-
-        # Mutate the alarms watcher so it can notify the telemetry tab
-        for watcher in watchers:
-            alarm_watchers.append(watcher)
-
-        self.geometry("%dx%d" % (width, height))
-        self.state('zoomed')
-
-        # alarm banners
-        alarm_banners_container = Frame(self)
-        self.alarm_banners = [Label(alarm_banners_container, anchor='w') for i in range(6)]
-        for alarm_banner in self.alarm_banners:
-            alarm_banner.pack(fill=BOTH)
-        alarm_banners_container.pack(fill=BOTH)
-
-        # frames corresponding to each tab
-        alarms_frame = Frame(tab_control)
-
-        # Needs testing
-        # I do not know of a clever way of doing this. To ensure even
-        # spacing, I want each row to be always the same number of pixels
-        # so the number of rows should change according to the window height
-        num_rows = height // 4
         for i in range(num_rows):
-            alarms_frame.grid_rowconfigure(i, weight=1)
+            self.overall_frame.grid_rowconfigure(i, weight=1)
 
-        alarms_frame.grid_columnconfigure(0, weight=0)
-        alarms_frame.grid_columnconfigure(1, weight=1)
+        self.overall_frame.grid_columnconfigure(0, weight=0)
+        self.overall_frame.grid_columnconfigure(1, weight=1)
 
-        # adding the tabs to the tab control
-        tab_control.add(telemetry_frame, text='Telemetry')
-        tab_control.add(alarms_frame, text='Alarms')
-        tab_control.add(graphing_frame, text="Graphing")
-        tab_control.add(alarm_frame, text='Alarm')
-
-        # packing tab control to make tabs visible
-        tab_control.pack(expand=1, fill="both")        
-
-        # elements of alarms_frame
-
-        self.alarms_searcher = AlarmTagSearcher(num_rows, alarms_frame, self._dm,
+        self.alarms_searcher = AlarmTagSearcher(num_rows, self.overall_frame, self.dm,
                                                 self.alarms_searcher_update)
-        # alarms notifications
-        # alarms_notifications = Frame(alarms_frame)
-        # alarms_notifications.config(background='#fff')
-        # alarms_notifications.grid(sticky='NSEW', row=0, column=0, rowspan=20)
-
+        
         # alarms filters (for the table)
-        alarms_tag_table = Frame(alarms_frame)
+        alarms_tag_table = Frame(self.overall_frame)
         style = ttk.Style()
         style.theme_use("clam")
         style.configure('Treeview.Heading', background='#ddd', font=('TkDefaultFont', 10, 'bold'))
@@ -165,7 +90,7 @@ class View(Tk):
             self.alarms_buttons_type.append(button)
 
         # alarms table
-        alarms_table_frame = Frame(alarms_frame)
+        alarms_table_frame = Frame(self.overall_frame)
         alarms_table_frame.grid(sticky='NSEW', row=2, column=1, rowspan=num_rows - 3)
         style = ttk.Style()
         style.theme_use("clam")
@@ -206,22 +131,11 @@ class View(Tk):
         alarms_table.heading("Description", text="Description", anchor=CENTER)
         alarms_table.bind('<Double-1>', self.double_click_alarms_table_row)
 
-        if self._dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
-
-            # self.alarms_view_model.model.receive_new_data(self._dm)
-            # self.alarms_view_model.update_table_entries()
+        if self.dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
             self.refresh_alarms_table()
 
             self.alarms_searcher.update_searched_tags()
             self.alarms_searcher.select_all_tags()
-
-        # self.sort_alarms('ID')
-
-    def update_alarm_banners(self):
-        for alarm_banner, text in itertools.zip_longest(
-                self.alarm_banners, self.alarms_view_model.get_alarm_banners()
-        ):
-            alarm_banner['text'] = text if text is not None else ''
 
     def sort_alarms(self, tag: str):
         headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed', 'Type']
@@ -313,7 +227,7 @@ class View(Tk):
             self.open_alarm_popup(alarm)
 
     def construct_alarms_table(self, event: Event = None):
-        self.alarms_view_model.model.receive_new_data(self._dm)
+        self.alarms_view_model.model.receive_new_data(self.dm)
         self.alarms_view_model.toggle_all()
         self.refresh_alarms_table()
 
@@ -326,7 +240,6 @@ class View(Tk):
             self.alarms_table.delete(item)
         for item in self.alarms_view_model.get_table_entries():
             self.alarms_table.insert("", END, values=tuple(item))
-        print(2)
 
     def open_alarm_popup(self, alarm: Alarm) -> None:
         """
@@ -335,7 +248,7 @@ class View(Tk):
         Args:
             alarm (Alarm): the alarm the popup pertains to
         """
-        new_window = Toplevel(self)
+        new_window = Toplevel(self.overall_frame)
         new_window.grab_set()
         event = alarm.event
         new_window.title(f"{'[NEW] ' if not alarm.acknowledged else ''}Alarm #{event.id}")
@@ -353,7 +266,7 @@ class View(Tk):
         Label(new_window, text='Parameters:', anchor='w').pack(fill=BOTH)
         for tag in event.base.tags:
             Label(
-                new_window, text=f'- {tag}: {self._dm.parameters[tag].description}', anchor='w'
+                new_window, text=f'- {tag}: {self.dm.parameters[tag].description}', anchor='w'
             ).pack(fill=BOTH)
         Label(new_window).pack()
         Label(new_window, text=f'Description: {event.description}', anchor='w').pack(fill=BOTH)
@@ -377,7 +290,7 @@ class View(Tk):
             popup (Toplevel): the popup that the alarm acknowledgement happens from,
                 closed upon alarm acknowledgement
         """
-        self.alarms_view_model.model.request_receiver.acknowledge_alarm(alarm, self._dm)
+        self.alarms_view_model.model.request_receiver.acknowledge_alarm(alarm, self.dm)
         popup.destroy()
 
     def remove_alarm(self, alarm: Alarm, popup: Toplevel) -> None:
@@ -390,7 +303,7 @@ class View(Tk):
                 closed upon alarm removal
         """
         if messagebox.askokcancel(title='Remove alarm', message=f'Remove alarm #{alarm.event.id}?'):
-            self.alarms_view_model.model.request_receiver.remove_alarm(alarm, self._dm)
+            self.alarms_view_model.model.request_receiver.remove_alarm(alarm, self.dm)
             popup.destroy()
 
     def alarms_searcher_update(self):

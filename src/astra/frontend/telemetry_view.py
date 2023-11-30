@@ -167,7 +167,7 @@ class TelemetryView:
             values (list[str]): the values to be displayed in the
                 new window
         """
-        new_window = Toplevel(self)
+        new_window = Toplevel(self.overall_frame)
         new_window.title("Telemetry information")
         new_window.geometry("200x200")
         for column in values:
