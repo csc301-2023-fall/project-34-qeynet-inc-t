@@ -450,15 +450,15 @@ def get_telemetry_data_by_tag(
             raise ValueError("Device does not exist in database")
 
 
-def get_device_names() -> list[str]:
+def get_device_data() -> list[tuple[str, str]]:
     """
-        Return all the device names in the database
+        Return all the names and descriptions of devices in the database
     Returns:
-        list[str]: a list of device names
+        list[tuple[str, str]]: a list of (device name, device description) tuples
     """
     with Session.begin() as session:
-        select_stmt = select(Device.device_name)
-        return [device_name for device_name, in session.execute(select_stmt)]
+        select_stmt = select(Device.device_name, Device.device_description)
+        return [(name, description) for name, description in session.execute(select_stmt)]
 
 
 def delete_device(device_name: str) -> None:
