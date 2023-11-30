@@ -1,3 +1,4 @@
+import math
 from itertools import pairwise
 from math import inf
 from threading import Condition
@@ -739,6 +740,22 @@ def backtracking_search(events: list[tuple[int, datetime] | list[tuple[int, date
             return backtracking_search(new_events, new_end_events, time_window)
 
 
+def pad_alarm_indexes(inner_alarms: list[list[bool]], max_size) -> list[list[bool]]:
+    """
+    Pads the start of each nested list of <inner_alarms> with False so that all lists have
+    the same length
+
+    :param inner_alarms: A list of all inner alarm indices to pad
+    :param max_size: The size of the longest inner alarm
+    :return: A recreation of <inner_alarms> where each nested list has the same length
+    """
+    new_inner_alarms = []
+    for inner_alarm in inner_alarms:
+        length = len(inner_alarm)
+        new_inner_alarms.append([False] * (max_size - length) + inner_alarm)
+    return new_inner_alarms
+
+
 def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
                              criticality: AlarmCriticality, earliest_time: datetime,
                              compound: bool, cv: Condition) -> list[bool]:
@@ -756,20 +773,17 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
-    first_time, sequence = find_first_time(alarm_base, earliest_time)
+    # first_time, sequence = find_first_time(alarm_base, earliest_time)
     possible_events = alarm_base.event_bases
-    telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
+    telemetry_data = dm.get_telemetry_data(None, None, dm.tags)
 
     # iterate through each of the eventbases and get their list indicating where alarm conditions
     # where met
     first_indexes = []
     last_indexes = []
 
-    all_tags = dm.tags
-    for tag in all_tags:
-        any_tag = tag
-        break
-    times = list(telemetry_data.get_parameter_values(any_tag).keys())
+    times = telemetry_data.timestamps()
+
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
         inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True,
@@ -778,7 +792,7 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         if not inner_alarm_indexes:
             with cv:
                 cv.notify()
-                return [False] * len(times)
+                return [False] * len(inner_alarm_indexes)
 
         # Cleansing the data to find all the first alarm indices and their associated timestamp
         inner_first_indexes = []
@@ -841,9 +855,9 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     :return: A list of all alarms that should be newly raised, and a list of bools
     where each index i represents that the associated telemetry frame has an alarm active
     """
-    first_time, sequence = find_first_time(alarm_base, earliest_time)
+    # first_time, sequence = find_first_time(alarm_base, earliest_time)
     possible_events = alarm_base.event_bases
-    telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
+    telemetry_data = dm.get_telemetry_data(None, None, dm.tags)
 
     # iterate through each of the eventbases and get their list indicating where alarm conditions
     # where met
@@ -852,17 +866,20 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     taken_indices = set()
     alarm_data = set()
 
-    all_tags = dm.tags
-    for tag in all_tags:
-        any_tag = tag
-        break
-    times = list(telemetry_data.get_parameter_values(any_tag).keys())
+    times = telemetry_data.timestamps()
 
+    inner_alarms = []
+    max_len = -math.inf
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
         inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True,
                                        Condition())
+        inner_alarms.append(inner_alarm_indexes)
+        max_len = max(max_len, len(inner_alarm_indexes))
 
+    inner_alarms = pad_alarm_indexes(inner_alarms, max_len)
+
+    for inner_alarm_indexes in inner_alarms:
         if not alarm_indexes:
             alarm_indexes = inner_alarm_indexes
         # Check through returned indices to find where alarms should exist
@@ -889,7 +906,7 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
 
     alarms = []
     for alarm in alarm_data:
-        new_alarm = create_alarm(alarm, times, alarm_base, criticality)
+        new_alarm = create_alarm(alarm, times[len(times) - max_len:], alarm_base, criticality)
         alarms.append(new_alarm)
 
     if not compound:
@@ -919,19 +936,17 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
     where each index i represents that the associated telemetry frame has an alarm active
     """
 
-    first_time, sequence = find_first_time(alarm_base, earliest_time)
+    # first_time, sequence = find_first_time(alarm_base, earliest_time)
     possible_events = alarm_base.event_bases
-    telemetry_data = dm.get_telemetry_data(first_time, None, dm.tags)
+    telemetry_data = dm.get_telemetry_data(None, None, dm.tags)
 
-    all_tags = dm.tags
-    for tag in all_tags:
-        any_tag = tag
-        break
-    times = list(telemetry_data.get_parameter_values(any_tag).keys())
+    times = telemetry_data.timestamps()
 
     alarm_indexes = []
     taken_indices = set()
     alarm_data = set()
+    inner_alarms = []
+    max_len = -math.inf
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
         inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True,
@@ -939,7 +954,11 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
 
         if not alarm_indexes:
             alarm_indexes = inner_alarm_indexes
+        inner_alarms.append(inner_alarm_indexes)
+        max_len = max(max_len, len(inner_alarm_indexes))
 
+    inner_alarms = pad_alarm_indexes(inner_alarms, max_len)
+    for inner_alarm_indexes in inner_alarms:
         # Check through returned indices to find where alarms should exist
         active_alarm = False
         for i in range(len(inner_alarm_indexes)):
@@ -961,7 +980,7 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
 
     alarms = []
     for alarm in alarm_data:
-        new_alarm = create_alarm(alarm, times, alarm_base, criticality)
+        new_alarm = create_alarm(alarm, times[len(times) - max_len:], alarm_base, criticality)
         alarms.append(new_alarm)
 
     if not compound:
