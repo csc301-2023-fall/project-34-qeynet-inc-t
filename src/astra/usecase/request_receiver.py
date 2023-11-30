@@ -5,7 +5,7 @@ from threading import Thread
 from typing import Any, Iterable, Mapping
 from .alarm_checker import check_alarms
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
-from astra.data.data_manager import DataManager, AlarmsContainer, Device
+from astra.data.data_manager import DataManager, Device
 from ..data.parameters import Tag
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
