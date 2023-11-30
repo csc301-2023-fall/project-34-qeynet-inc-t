@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from queue import Queue
 from threading import Thread
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 from .alarm_checker import check_alarms
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
-from astra.data.data_manager import DataManager, AlarmsContainer
+from astra.data.data_manager import DataManager, AlarmsContainer, Device
 from ..data.parameters import Tag
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
@@ -224,16 +224,11 @@ class DataRequestReceiver(RequestReceiver):
     """
 
     file = None
-    alarms = None
     previous_data = None
 
     @classmethod
     def set_filename(cls, file):
         cls.file = file
-
-    @classmethod
-    def get_alarms(cls) -> AlarmsContainer:
-        return cls.alarms
 
     @classmethod
     def create(cls, dm: DataManager) -> DataManager:
@@ -243,7 +238,6 @@ class DataRequestReceiver(RequestReceiver):
 
         :param dm: The interface for getting all data known to the program
         """
-        cls.alarms = dict()
         cls.previous_data = dm.from_device_name(cls.file)
         return cls.previous_data
 
@@ -252,11 +246,35 @@ class DataRequestReceiver(RequestReceiver):
         """
         update is a method that updates the database based on the filename provided.
         """
-        if cls.alarms is None:
-            cls.alarms = AlarmsContainer()
 
         if cls.previous_data is not None:
             earliest_time = cls.previous_data.add_data_from_file(cls.file)
 
             checking_thread = Thread(target=check_alarms, args=[cls.previous_data, earliest_time])
             checking_thread.start()
+
+    @staticmethod
+    def add_device(config_path: str) -> None:
+        """
+        Interfacing method for adding devices to the data manager
+
+        :param config_path: The path to the config file to construct a device from
+        """
+        DataManager.add_device(config_path)
+
+    @staticmethod
+    def get_devices() -> Mapping[str, Device]:
+        """
+        Interfacing method for getting the name of all devices from the
+        data manager
+        """
+        return DataManager.get_devices()
+
+    @staticmethod
+    def remove_device(device_name: str) -> None:
+        """
+        Interfacing method for remove devices from the data manager
+
+        :param device_name: The device to remove from the data manager
+        """
+        DataManager.remove_device(device_name)
