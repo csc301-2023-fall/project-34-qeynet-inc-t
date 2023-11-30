@@ -118,11 +118,10 @@ class SetTimerangePopup(tkinter.Toplevel):
         for index, entry_tup in enumerate(time_entries[:-1]):
             entry, length = entry_tup
             next_entry = time_entries[index + 1][0]
-            entry.bind("<KeyRelease>", lambda event, entry=entry, next_entry=next_entry,
-                                              length=length: self.switch_entry(event,
-                                                                               entry,
-                                                                               next_entry,
-                                                                               length))
+            entry.bind("<KeyRelease>", lambda event, entry=entry,
+                       next_entry=next_entry,
+                       length=length: self.switch_entry(event, entry, next_entry, length))
+
         self.set_entries_by_time(self.start_time_vars, self.timerange_input.start_time)
         self.set_entries_by_time(self.end_time_vars, self.timerange_input.end_time)
         Button(
