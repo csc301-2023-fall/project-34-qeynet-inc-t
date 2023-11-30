@@ -68,6 +68,19 @@ class GraphingHandler:
         cls._filter_graphing_data(prev_data, filter_args)
 
     @classmethod
+    def export_data_to_file(cls, prev_data: GraphingData, file_name: str) -> None:
+        """
+        export_data_to_file is a method that exports the graph to a file.
+
+        :param prev_data: The representation of the current state of displayed data
+        :param file_name: The name of the file to export the graph to.
+        """
+
+        interval = 1
+
+        prev_data.curr_telemetry_data.save_to_file(file_name, interval)
+
+    @classmethod
     def _filter_graphing_data(cls, graphing_data: GraphingData,
                               filter_args: GraphingFilters) -> None:
         """

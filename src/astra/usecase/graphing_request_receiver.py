@@ -100,4 +100,4 @@ class GraphingRequestReceiver(RequestReceiver):
         :param data: The data to be exported.
         """
 
-        cls.handler.export_data_to_file(filter_args, filename, cls.previous_data)
+        cls.handler.export_data_to_file(cls.previous_data, filename)
