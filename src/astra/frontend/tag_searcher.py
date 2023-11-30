@@ -107,7 +107,6 @@ class TagSearcher:
             if tag[:tag_index] in self.selected_tags:
                 check = "x"
             self.tag_table.insert("", END, value=(f"[{check}] {tag}",))
-        self.watcher()
 
     def toggle_tag_table_row(self, event) -> None:
         """
@@ -137,23 +136,30 @@ class TagSearcher:
         # Indicating tag is now selected
             self.selected_tags.add(tag)
         self.update_searched_tags()
+        self.watcher()
 
     def select_all_tags(self) -> None:
         """
         Force selects every single tag, not just shown ones
         """
 
-        # Clone the toggled tags, as it will mutate
-        self.selected_tags = set(self.dm.tags)
+        # Iterate through all shown tags and force choose them
+        for tag_info in self.shown_tags:
+            tag_index = tag_info.index(':')
+            self.selected_tags.add(tag_info[:tag_index])
         self.update_searched_tags()
+        self.watcher()
 
     def deselect_all_tags(self) -> None:
         """
         Force de-selects all tags, not just shown ones
         """
         # Clone the toggled tags, as it will mutate
-        self.selected_tags = set()
+        for tag_info in self.shown_tags:
+            tag_index = tag_info.index(':')
+            self.selected_tags.remove(tag_info[:tag_index])
         self.update_searched_tags()
+        self.watcher()
 
 
 class AlarmTagSearcher(TagSearcher):
