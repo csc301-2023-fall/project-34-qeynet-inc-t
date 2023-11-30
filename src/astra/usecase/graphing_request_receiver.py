@@ -91,7 +91,7 @@ class GraphingRequestReceiver(RequestReceiver):
         cls.filters.tags.add(Tag(tag))
 
     @classmethod
-    def export_data_to_file(cls, filter_args: GraphingFilters, filename: str) -> None:
+    def export_data_to_file(cls, filename: str) -> None:
         """
         Exports the current telemetry data to a file.
 
