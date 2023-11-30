@@ -125,7 +125,6 @@ class SetTimerangePopup(tkinter.Toplevel):
                     Label(time_display_frame, text=element).pack(side=LEFT)
             time_display_frame.grid(row=row, column=1)
         for (entry, time_var, length), (next_entry, _, _) in itertools.pairwise(time_entries):
-            print((entry, time_var, length), (next_entry, None, None))
             time_var.trace_add(
                 'write',
                 (
