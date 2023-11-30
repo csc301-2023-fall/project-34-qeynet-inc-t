@@ -94,7 +94,7 @@ class StartupScreen(Tk):
         Button(popup, text='Monitor', width=15, height=3, command=lambda: self.monitor(name)).pack(
             expand=True
         )
-        Button(popup, text='Remove', command=lambda: self.remove_device(name, item)).pack(
+        Button(popup, text='Remove', command=lambda: self.remove_device(name, item, popup)).pack(
             side=BOTTOM
         )
 
@@ -108,7 +108,7 @@ class StartupScreen(Tk):
         self.destroy()
         View(device_name).mainloop()
 
-    def remove_device(self, device_name: str, item: str) -> None:
+    def remove_device(self, device_name: str, item: str, popup: Toplevel) -> None:
         """
         Let the user remove a device, and update the table of devices accordingly.
 
@@ -116,6 +116,8 @@ class StartupScreen(Tk):
             The name of the device to remove.
         :param item:
             The corresponding item to remove from the table of devices.
+        :param popup:
+            The popup to return focus to and/or destroy after the user responds to prompts.
         """
         if messagebox.askokcancel(
             title='Remove device?',
@@ -135,10 +137,14 @@ class StartupScreen(Tk):
                     title='Device removed',
                     message=f'Successfully removed device {repr(device_name)}.',
                 )
-            elif entered_device_name is not None:
-                messagebox.showinfo(
-                    title='Incorrect device name',
-                    message='Entered name does not match device name. Deletion canceled.',
-                )
+                popup.destroy()
             else:
-                messagebox.showinfo(title='Deletion canceled', message='Deletion canceled.')
+                if entered_device_name is not None:
+                    messagebox.showinfo(
+                        title='Incorrect device name',
+                        message='Entered name does not match device name. Deletion canceled.',
+                    )
+                else:
+                    messagebox.showinfo(title='Deletion canceled', message='Deletion canceled.')
+                popup.grab_set()
+                popup.focus_set()
