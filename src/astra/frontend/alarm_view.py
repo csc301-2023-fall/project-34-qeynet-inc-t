@@ -15,16 +15,14 @@ from ..usecase.alarms_request_receiver import AlarmsRequestReceiver
 
 class AlarmView:
 
-    def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager, watchers: list):
+    def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager):
         self.dm = dm
         self.overall_frame = Frame(frame)
 
         self.controller = AlarmsRequestReceiver()
-        for watcher in watchers:
-            self.controller.install_alarm_watcher(self.dm, watcher)
 
         for i in range(num_rows):
-            self.overall_frame.grid_rowconfigure(i, weight=1)\
+            self.overall_frame.grid_rowconfigure(i, weight=1)
 
         self.overall_frame.grid_columnconfigure(0, weight=0)
         self.overall_frame.grid_columnconfigure(1, weight=1)

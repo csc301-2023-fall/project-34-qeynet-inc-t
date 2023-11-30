@@ -41,12 +41,10 @@ class View(Tk):
         width = self.winfo_screenwidth()
         height = self.winfo_screenheight()
 
-        alarm_watchers = []
-
         self.telemetry_tab = TelemetryView(tab_control, height // 4, self._dm)
         telemetry_frame = self.telemetry_tab.overall_frame
 
-        self.alarm_tab = AlarmView(tab_control, height // 4, self._dm, alarm_watchers)
+        self.alarm_tab = AlarmView(tab_control, height // 4, self._dm)
         alarm_frame = self.alarm_tab.overall_frame
 
         self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
@@ -59,13 +57,6 @@ class View(Tk):
         ]
         for watcher in watchers:
             self.alarm_tab.controller.install_alarm_watcher(self._dm, watcher)
-
-        # Mutate the alarms watcher so it can notify the telemetry tab
-        for watcher in watchers:
-            alarm_watchers.append(watcher)
-
-        # This is required for the alarms banner
-        # self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
 
         self.geometry('%dx%d' % (width, height))
         self.state('zoomed')
