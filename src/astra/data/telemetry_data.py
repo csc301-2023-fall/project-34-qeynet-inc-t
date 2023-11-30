@@ -76,7 +76,7 @@ class TelemetryData:
             self._data_manager.device_name, self._start_time, self._end_time
         )
 
-    def timestamps(self, step: int = 1) -> Iterable[datetime]:
+    def timestamps(self, step: int = 1) -> list[datetime]:
         """
         Get all the timestamps for this TelemetryData.
 
