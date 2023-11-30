@@ -6,12 +6,11 @@ from datetime import datetime
 from tkinter import Button, Frame, Toplevel, Event
 from tkinter import CENTER, BOTTOM, NO, END, BOTH
 from tkinter import messagebox, ttk, Label
-
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .tag_searcher import AlarmTagSearcher
-from .view_model import AlarmsViewModel
 from ..data.alarms import Alarm
+from ..usecase.alarms_request_receiver import AlarmsRequestReceiver
 
 
 class AlarmView:
@@ -19,10 +18,13 @@ class AlarmView:
     def __init__(self, frame: ttk.Notebook, num_rows: int, dm: DataManager, watchers: list):
         self.dm = dm
         self.overall_frame = Frame(frame)
-        self.alarms_view_model = AlarmsViewModel(self.dm, watchers)
+
+        self.controller = AlarmsRequestReceiver()
+        for watcher in watchers:
+            self.controller.install_alarm_watcher(self.dm, watcher)
 
         for i in range(num_rows):
-            self.overall_frame.grid_rowconfigure(i, weight=1)
+            self.overall_frame.grid_rowconfigure(i, weight=1)\
 
         self.overall_frame.grid_columnconfigure(0, weight=0)
         self.overall_frame.grid_columnconfigure(1, weight=1)
@@ -123,6 +125,8 @@ class AlarmView:
         alarms_table.heading('Parameter(s)', text='Parameter(s)', anchor=CENTER)
         alarms_table.heading('Description', text='Description', anchor=CENTER)
         alarms_table.bind('<Double-1>', self.double_click_alarms_table_row)
+        self.controller.toggle_sort('ID')
+        self.alarms_searcher.update_searched_tags()
 
         if self.dm.get_telemetry_data(None, None, {}).num_telemetry_frames > 0:
             self.refresh_alarms_table()
@@ -132,7 +136,7 @@ class AlarmView:
 
     def sort_alarms(self, tag: str):
         headers = ['ID', 'Priority', 'Criticality', 'Registered', 'Confirmed', 'Type']
-        ascending = self.alarms_view_model.toggle_sort(heading=tag)
+        ascending = self.controller.toggle_sort(heading=tag)
 
         if tag != 'ID':
             header_name = tag[0] + tag[1:].lower()
@@ -148,62 +152,62 @@ class AlarmView:
             for header in headers:
                 if header != header_name:
                     self.alarms_table.heading(header, text=header + ' ●')
-
+        self.controller.update()
         self.refresh_alarms_table()
 
     def flick_new(self):
-        if self.alarms_view_model.get_new():
+        if self.controller.get_new():
             self.alarms_button_new.config(relief='raised')
         else:
             self.alarms_button_new.config(relief='sunken')
-        self.alarms_view_model.toggle_new()
+        self.controller.toggle_new_only()
+        self.controller.update()
         self.refresh_alarms_table()
 
     def flick_priority(self, index: int):
         tag = self.dangers[index]
-        if tag in self.alarms_view_model.get_priorities():
+        if tag in self.controller.get_priorities():
             self.alarms_buttons_priority[index].config(relief='raised')
         else:
             self.alarms_buttons_priority[index].config(relief='sunken')
-        self.alarms_view_model.toggle_priority(tag)
+        self.controller.toggle_priority(tag)
         self.refresh_alarms_table()
 
     def flick_criticality(self, index: int):
         tag = self.dangers[index]
-        if tag in self.alarms_view_model.get_criticalities():
+        if tag in self.controller.get_criticalities():
             self.alarms_buttons_criticality[index].config(relief='raised')
         else:
             self.alarms_buttons_criticality[index].config(relief='sunken')
-        self.alarms_view_model.toggle_criticality(tag)
+        self.controller.toggle_criticality(tag)
         self.refresh_alarms_table()
 
     def update_alarm_registered_times(
             self, start_time: datetime | None, end_time: datetime | None
     ) -> OperationControl:
-        self.alarms_view_model.toggle_registered_start_time(start_time)
-        self.alarms_view_model.toggle_registered_end_time(end_time)
-        self.alarms_view_model.model.receive_updates()
-        self.alarms_view_model.update_table_entries()
+        self.controller.set_registered_start_time(start_time)
+        self.controller.set_registered_end_time(end_time)
+        self.controller.update()
         self.refresh_alarms_table()
         return OperationControl.CONTINUE
 
     def update_alarm_confirmed_times(
             self, start_time: datetime | None, end_time: datetime | None
     ) -> OperationControl:
-        self.alarms_view_model.toggle_confirmed_start_time(start_time)
-        self.alarms_view_model.toggle_confirmed_end_time(end_time)
-        self.alarms_view_model.model.receive_updates()
-        self.alarms_view_model.update_table_entries()
+        self.controller.set_confirmed_start_time(start_time)
+        self.controller.set_confirmed_end_time(end_time)
+        self.controller.update()
+        self.refresh_alarms_table()
         self.refresh_alarms_table()
         return OperationControl.CONTINUE
 
     def flick_type(self, index: int):
         tag = self.types[index]
-        if tag in self.alarms_view_model.get_types():
+        if tag in self.controller.get_types():
             self.alarms_buttons_type[index].config(relief='raised')
         else:
             self.alarms_buttons_type[index].config(relief='sunken')
-        self.alarms_view_model.toggle_type(tag)
+        self.controller.toggle_type(tag)
         self.refresh_alarms_table()
 
     def double_click_alarms_table_row(self, event) -> None:
@@ -216,12 +220,13 @@ class AlarmView:
         region = self.alarms_table.identify('region', event.x, event.y)
         if cur_item and region != 'heading':
             index = self.alarms_table.index(cur_item)
-            alarm = self.alarms_view_model.get_table_entries()[index][-1]
+
+            alarm = self.controller.get_table_entries()[index][-1]
             self.open_alarm_popup(alarm)
 
     def construct_alarms_table(self, event: Event = None):
-        self.alarms_view_model.model.receive_new_data(self.dm)
-        self.alarms_view_model.toggle_all()
+        self.controller.toggle_all()
+        self.controller.create(self.dm)
         self.refresh_alarms_table()
 
     def refresh_alarms_table(self) -> None:
@@ -231,7 +236,7 @@ class AlarmView:
         """
         for item in self.alarms_table.get_children():
             self.alarms_table.delete(item)
-        for item in self.alarms_view_model.get_table_entries():
+        for item in self.controller.get_table_entries():
             self.alarms_table.insert('', END, values=tuple(item))
 
     def open_alarm_popup(self, alarm: Alarm) -> None:
@@ -283,7 +288,7 @@ class AlarmView:
             popup (Toplevel): the popup that the alarm acknowledgement happens from,
                 closed upon alarm acknowledgement
         """
-        self.alarms_view_model.model.request_receiver.acknowledge_alarm(alarm, self.dm)
+        self.controller.acknowledge_alarm(alarm, self.dm)
         popup.destroy()
 
     def remove_alarm(self, alarm: Alarm, popup: Toplevel) -> None:
@@ -296,13 +301,12 @@ class AlarmView:
                 closed upon alarm removal
         """
         if messagebox.askokcancel(title='Remove alarm', message=f'Remove alarm #{alarm.event.id}?'):
-            self.alarms_view_model.model.request_receiver.remove_alarm(alarm, self.dm)
+            self.controller.remove_alarm(alarm, self.dm)
             popup.destroy()
 
     def alarms_searcher_update(self):
         # Convert to list to enforce ordering
-        selected_tags = list(self.alarms_searcher.selected_tags)
-        self.alarms_view_model.model.request_receiver.set_shown_tags(selected_tags)
-        self.alarms_view_model.model.receive_updates()
-        self.alarms_view_model.update_table_entries()
+        selected_tags = self.alarms_searcher.selected_tags
+        self.controller.set_shown_tags(selected_tags)
+        self.controller.update()
         self.refresh_alarms_table()

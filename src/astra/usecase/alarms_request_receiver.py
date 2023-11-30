@@ -10,6 +10,7 @@ from ..data.parameters import Tag
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
+ALARM_HEADINGS = ['ID', 'PRIORITY', 'CRITICALITY', 'REGISTERED', 'CONFIRMED', 'TYPE']
 RATE_OF_CHANGE = 'RATE_OF_CHANGE'
 STATIC = 'STATIC'
 THRESHOLD = 'THRESHOLD'
@@ -40,6 +41,11 @@ class AlarmsRequestReceiver(RequestReceiver):
                             None, False)
     handler = AlarmsHandler()
     previous_data = None
+    _sorting = [-1, 1, 1, 1, 1, 1]
+    _new = False
+    _priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
+    _criticalities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
+    _types = {'RATE_OF_CHANGE', 'STATIC', 'THRESHOLD', 'SETPOINT', 'SOE', 'L_AND', 'L_OR'}
 
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
@@ -354,3 +360,139 @@ class AlarmsRequestReceiver(RequestReceiver):
         An interfacing function for the alarm container to install a watcher function
         """
         dm.alarms.observer.add_watcher(watcher)
+
+    @classmethod
+    def get_table_entries(cls) -> list[list]:
+        if cls.previous_data is not None:
+            return cls.previous_data.table
+        return []
+
+    @classmethod
+    def get_new(cls) -> bool:
+        return cls.filters.new
+
+    @classmethod
+    def get_priorities(cls):
+        return cls._priorities
+
+    @classmethod
+    def get_criticalities(cls):
+        return cls._criticalities
+
+    @classmethod
+    def get_types(cls):
+        return cls._types
+
+    @classmethod
+    def toggle_sort(cls, heading: str) -> bool:
+        """
+        Method for toggling sorting on a specific heading
+        The headings include (for now):
+        - TAG
+        - PRIORITY
+        - CRITICALITY
+        - REGISTERED
+        - CONFIRMED
+        - TYPE
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+        sort_value = 1
+        for i in range(len(ALARM_HEADINGS)):
+            check_heading = ALARM_HEADINGS[i]
+            if check_heading == heading:
+                cls._sorting[i] *= -1
+                sort_value = cls._sorting[i] * (heading == check_heading)
+            else:
+                cls._sorting[i] = 1
+
+        if sort_value == 1:
+            # ascending
+            cls.update_sort(('<', heading))
+        elif sort_value == -1:
+            # descending
+            cls.update_sort(('>', heading))
+
+        return sort_value == 1
+
+    @classmethod
+    def toggle_priority(cls, tag: Tag):
+        """
+        Method for toggling filtering of specific priority
+        The headings include (for now):
+        - WARNING
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+        if tag not in cls._priorities:
+            cls._priorities.add(tag)
+        else:
+            cls._priorities.remove(tag)
+
+        cls.set_shown_priorities(cls._priorities)
+        cls.update()
+
+    def toggle_criticality(cls, tag: Tag):
+        """
+        Method for toggling filtering of specific criticality
+        The headings include (for now):
+        - WARNING
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+        if tag not in cls._criticalities:
+            cls._criticalities.add(tag)
+        else:
+            cls._criticalities.remove(tag)
+
+        cls.set_shown_criticalities(cls._criticalities)
+        cls.update()
+
+    @classmethod
+    def toggle_type(cls, tag: Tag):
+        """
+        Method for toggling filtering of specific criticality
+        The headings include (for now):
+        - RATE-OF-CHANGE
+        - STATIC
+        - THRESHOLD
+        - SETPOINT
+        - SOE
+        - LOGICAL
+        This method will ask the model to sort the data
+        according to which heading was toggled
+
+        Args:
+            heading (str): string representing which heading was toggled
+        """
+        if tag not in cls._types:
+            cls._types.add(tag)
+        else:
+            cls._types.remove(tag)
+
+        cls.set_shown_types(cls._types)
+        cls.update()
+
+    @classmethod
+    def toggle_all(cls) -> None:
+        cls.set_new_alarms(False)
+        cls.set_shown_priorities(cls._priorities)
+        cls.set_shown_criticalities(cls._criticalities)
+        cls.set_shown_types(cls._types)
