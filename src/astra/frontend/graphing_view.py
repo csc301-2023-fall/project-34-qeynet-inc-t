@@ -1,5 +1,5 @@
 from datetime import datetime
-from tkinter import messagebox, ttk, Frame, Label, StringVar, Button, CENTER, filedialog
+from tkinter import messagebox, ttk, Frame, Label, StringVar, Button, filedialog
 from tkinter.ttk import Combobox
 import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -215,7 +215,7 @@ class GraphingView:
 
     def set_graph_y_axis_label(self, args: any = None) -> None:
         """
-        Changes the y_axis range for the graph to the selected tag from 
+        Changes the y_axis range for the graph to the selected tag from
         the dropdown
         """
         del args

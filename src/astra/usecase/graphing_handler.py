@@ -99,7 +99,7 @@ class GraphingHandler:
 
         # Format the times to strings. Within the indices give by _filter_times.
         formatted_times_list = [time.strftime(DATETIME_FORMAT)
-                                for time in times_list[min_index: max_index+1]]
+                                for time in times_list[min_index: max_index + 1]]
 
         # Remove all tags before looking through the filter to get only the required tags
         graphing_data.shown_tags.clear()
@@ -114,7 +114,7 @@ class GraphingHandler:
         for tag in filter_args.tags:
             # Since the list of times correspond to the values, we can take the same slice of both.
             parameter_values = telemetry_data.get_parameter_values(tag, 1)
-            curr_values = list(parameter_values.values())[min_index: max_index+1]
+            curr_values = list(parameter_values.values())[min_index: max_index + 1]
 
             graphing_data.shown_tags[tag] = (formatted_times_list,
                                              curr_values)
@@ -154,7 +154,7 @@ class GraphingHandler:
 
         while curr_max >= curr_min:
 
-            index = (curr_max + curr_min)//2
+            index = (curr_max + curr_min) // 2
 
             if times_list[index] == start_time:
                 return index
@@ -189,7 +189,7 @@ class GraphingHandler:
 
         while curr_max >= curr_min:
 
-            index = (curr_max + curr_min)//2
+            index = (curr_max + curr_min) // 2
 
             if times_list[index] == end_time:
                 return index

@@ -1,8 +1,6 @@
-from dataclasses import dataclass
-from datetime import datetime
 from queue import Queue
 
-from astra.data.alarms import (AlarmPriority, AlarmCriticality, RateOfChangeEventBase, Alarm,
+from astra.data.alarms import (AlarmPriority, RateOfChangeEventBase, Alarm,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
                                SOEEventBase, AllEventBase, EventBase, AnyEventBase)
 from astra.data.data_manager import DataManager

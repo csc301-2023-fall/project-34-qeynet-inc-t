@@ -118,8 +118,11 @@ class SetTimerangePopup(tkinter.Toplevel):
         for index, entry_tup in enumerate(time_entries[:-1]):
             entry, length = entry_tup
             next_entry = time_entries[index + 1][0]
-            entry.bind("<KeyRelease>", lambda event, entry=entry, next_entry=next_entry, length=length: 
-                       self.switch_entry(event, entry, next_entry, length))
+            entry.bind("<KeyRelease>", lambda event, entry=entry, next_entry=next_entry,
+                                              length=length: self.switch_entry(event,
+                                                                               entry,
+                                                                               next_entry,
+                                                                               length))
         self.set_entries_by_time(self.start_time_vars, self.timerange_input.start_time)
         self.set_entries_by_time(self.end_time_vars, self.timerange_input.end_time)
         Button(
@@ -195,7 +198,7 @@ class SetTimerangePopup(tkinter.Toplevel):
         if self.timerange_input.onchange(start_time, end_time) is OperationControl.CONTINUE:
             self.destroy()
             self.timerange_input.update_timerange(start_time, end_time)
-    
+
     def switch_entry(self, event, entry, next_entry, entry_len):
         del event
         if len(entry.get()) == entry_len:

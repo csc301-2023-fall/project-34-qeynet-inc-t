@@ -5,7 +5,6 @@ from queue import Queue
 from threading import Thread
 from typing import Any, Iterable
 from .alarm_checker import check_alarms
-from .table_return import TelemetryTableReturn
 from .dashboard_handler import DashboardHandler, TableReturn, DashboardFilters
 from astra.data.data_manager import DataManager, AlarmsContainer
 from ..data.parameters import Tag

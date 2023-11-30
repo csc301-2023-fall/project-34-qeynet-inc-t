@@ -133,7 +133,7 @@ class TagSearcher:
         if tag in self.selected_tags:
             self.selected_tags.remove(tag)
         else:
-        # Indicating tag is now selected
+            # Indicating tag is now selected
             self.selected_tags.add(tag)
         self.update_searched_tags()
         self.watcher()
@@ -166,6 +166,7 @@ class AlarmTagSearcher(TagSearcher):
     """
     A child class of TagSearcher helping distinguish certain shown text
     """
+
     def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
         super().__init__(num_rows, frame, dm, watcher)
 
@@ -177,6 +178,7 @@ class GraphingTagSearcher(TagSearcher):
     """
     A child class of TagSearcher helping distinguish certain shown text
     """
+
     def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
         super().__init__(num_rows, frame, dm, watcher)
         self.tag_description_lookup = dict()

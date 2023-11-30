@@ -4,19 +4,18 @@ This file holds the main view class that will run after selecting a device to mo
 
 import itertools
 from datetime import datetime
-from tkinter import Button, Entry, Frame, Toplevel, Event, Listbox
+from tkinter import Button, Entry, Frame, Toplevel, Event
 from tkinter import CENTER, BOTTOM, NO, END, BOTH
 from tkinter import StringVar
 from tkinter import filedialog, messagebox, ttk, Tk, Label
-from tkinter.ttk import Treeview, Combobox
+from tkinter.ttk import Treeview
 
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .graphing_view import GraphingView
-from .tag_searcher import TagSearcher, AlarmTagSearcher, GraphingTagSearcher
+from .tag_searcher import TagSearcher, AlarmTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
-from ..usecase.graphing_request_receiver import GraphingRequestReceiver
 
 
 class View(Tk):
