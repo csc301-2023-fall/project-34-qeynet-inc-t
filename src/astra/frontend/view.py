@@ -13,6 +13,7 @@ from tkinter.ttk import Treeview
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .graphing_view import GraphingView
+from .telemetry_view import TelemetryView
 from .tag_searcher import TagSearcher, AlarmTagSearcher
 from .view_model import DashboardViewModel, AlarmsViewModel
 from ..data.alarms import Alarm
@@ -68,6 +69,10 @@ class View(Tk):
         dashboard_frame = Frame(tab_control)
         alarms_frame = Frame(tab_control)
 
+        self.telemetry_tab = TelemetryView(tab_control, height // 4, self._dm)
+        telemetry_frame = self.telemetry_tab.overall_frame
+        watchers.append(self.telemetry_tab.construct_dashboard_table)
+
         self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
         graphing_frame = self.graphing_tab.overall_frame
 
@@ -89,6 +94,7 @@ class View(Tk):
         tab_control.add(dashboard_frame, text='Dashboard')
         tab_control.add(alarms_frame, text='Alarms')
         tab_control.add(graphing_frame, text="Graphing")
+        tab_control.add(telemetry_frame, text='Telemetry')
 
         # packing tab control to make tabs visible
         tab_control.pack(expand=1, fill="both")
@@ -721,6 +727,7 @@ class View(Tk):
         self.dashboard_view_model.model.request_receiver.set_shown_tags(selected_tags)
         self.dashboard_view_model.model.receive_updates()
         self.dashboard_view_model.update_table_entries()
+        print(self.dashboard_view_model.get_table_entries())
         self.refresh_data_table()
 
     def alarms_searcher_update(self):
