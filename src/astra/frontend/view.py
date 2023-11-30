@@ -11,7 +11,6 @@ from astra.data.data_manager import DataManager
 from .graphing_view import GraphingView
 from .telemetry_view import TelemetryView
 from .alarm_view import AlarmView
-from .view_model import AlarmsViewModel
 
 
 class View(Tk):
@@ -58,13 +57,15 @@ class View(Tk):
             self.alarm_tab.construct_alarms_table,
             self.update_alarm_banners,
         ]
+        for watcher in watchers:
+            self.alarm_tab.controller.install_alarm_watcher(self._dm, watcher)
 
         # Mutate the alarms watcher so it can notify the telemetry tab
         for watcher in watchers:
             alarm_watchers.append(watcher)
 
         # This is required for the alarms banner
-        self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
+        # self.alarms_view_model = AlarmsViewModel(self._dm, watchers)
 
         self.geometry('%dx%d' % (width, height))
         self.state('zoomed')
@@ -88,6 +89,6 @@ class View(Tk):
         Method to update the alarms in the alarms banner
         """
         for alarm_banner, text in itertools.zip_longest(
-                self.alarm_banners, self.alarms_view_model.get_alarm_banners()
+                self.alarm_banners, self.alarm_tab.controller.get_alarm_banner()
         ):
             alarm_banner['text'] = text if text is not None else ''
