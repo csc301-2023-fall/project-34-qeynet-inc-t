@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from copy import deepcopy
-from typing import Mapping
 from astra.data.data_manager import DataManager
 from astra.data.parameters import ParameterValue, Tag
 from astra.data.telemetry_data import TelemetryData
