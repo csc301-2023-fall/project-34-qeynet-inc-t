@@ -2,8 +2,7 @@
 Run this file
 """
 
-from astra.frontend.view import View
+from astra.frontend.startup_screen import StartupScreen
 
-if __name__ == "__main__":
-    view = View()
-    view.mainloop()
+if __name__ == '__main__':
+    StartupScreen().mainloop()

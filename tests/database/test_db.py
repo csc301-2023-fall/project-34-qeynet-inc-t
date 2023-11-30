@@ -13,7 +13,7 @@ from astra.data.database.db_manager import (
     num_telemetry_frames,
     get_telemetry_data_by_index,
     get_telemetry_data_by_tag,
-    get_device_names,
+    get_device_data,
     delete_device,
 )
 from astra.data.telemetry_manager import read_telemetry
@@ -255,10 +255,10 @@ class TestClass(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    def test_get_device_names(self):
-        """tests if get_device_names returns the correct device names"""
-        actual = get_device_names()
-        expected = ["test_config1", "test_config2"]
+    def test_get_device_data(self):
+        """tests if get_device_data returns the correct device data"""
+        actual = get_device_data()
+        expected = [("test_config1", "Device V1."), ("test_config2", "Device V2.")]
 
         self.assertEqual(expected, actual)
 
