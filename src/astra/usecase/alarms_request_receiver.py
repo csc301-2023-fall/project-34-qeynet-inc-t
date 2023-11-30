@@ -50,7 +50,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param model: The model of currently shown data
         :param dm: Contains all data stored by the program to date.
         """
-        if len(cls.filters.tags) == 0:
+        if cls.filters.tags is None:
             # Since this needs to be supplied externally, we make a special case for it
             cls.filters.tags = set(dm.tags)
 

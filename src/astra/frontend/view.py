@@ -54,8 +54,8 @@ class View(Tk):
         graphing_frame = self.graphing_tab.overall_frame
 
         watchers = [
-            self.alarm_tab.construct_alarms_table,
             self.telemetry_tab.construct_dashboard_table,
+            self.alarm_tab.construct_alarms_table,
             self.update_alarm_banners,
         ]
 
