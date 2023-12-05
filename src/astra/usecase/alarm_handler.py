@@ -199,12 +199,10 @@ class AlarmsHandler:
         # First, checking if it satisfies priority requirements
 
         show: bool = True
-        if filter_args.priorities is not None:
-            show = alarm.priority.name in filter_args.priorities
+        show = alarm.priority.name in filter_args.priorities
 
         # Next, checking if it satisfies criticality arguments
-        if filter_args.criticalities is not None:
-            show = show and alarm.criticality.name in filter_args.criticalities
+        show = show and alarm.criticality.name in filter_args.criticalities
 
         # Checking if the alarm type matches
         if filter_args.types is not None:
@@ -218,21 +216,18 @@ class AlarmsHandler:
         # Now we need to make sure the alarm fits in the time parameters
         alarm_confirm_time = alarm.event.confirm_time
         alarm_register_time = alarm.event.confirm_time
-        if filter_args.confirmed_start_time is not None:
-            compare_time = filter_args.confirmed_start_time
-            show = show and alarm_confirm_time >= compare_time
 
-        if filter_args.confirmed_end_time is not None:
-            compare_time = filter_args.confirmed_end_time
-            show = show and alarm_confirm_time <= compare_time
+        compare_time = filter_args.confirmed_start_time
+        show = show and alarm_confirm_time >= compare_time
 
-        if filter_args.registered_start_time is not None:
-            register_time = filter_args.registered_start_time
-            show = show and alarm_register_time >= register_time
+        compare_time = filter_args.confirmed_end_time
+        show = show and alarm_confirm_time <= compare_time
 
-        if filter_args.registered_end_time is not None:
-            register_time = filter_args.registered_end_time
-            show = show and alarm_register_time <= register_time
+        register_time = filter_args.registered_start_time
+        show = show and alarm_register_time >= register_time
+
+        register_time = filter_args.registered_end_time
+        show = show and alarm_register_time <= register_time
 
         # Finally, checking if we only show unacknowledged alarms
         if filter_args.new:
