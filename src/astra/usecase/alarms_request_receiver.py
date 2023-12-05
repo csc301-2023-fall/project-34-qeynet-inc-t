@@ -37,8 +37,8 @@ class AlarmsRequestReceiver(RequestReceiver):
     from the sets of them that we are viewing, and updating the sorting filter to be applied.
     """
 
-    filters = AlarmsFilters(None, None, CRITICALITIES, PRIORITIES, ALL_TYPES, None, None, None,
-                            None, False)
+    filters = AlarmsFilters(None, None, CRITICALITIES, PRIORITIES, ALL_TYPES, datetime.min,
+                            datetime.max, datetime.min, datetime.max, False)
     handler = AlarmsHandler()
     previous_data = None
     _sorting = [-1, 1, 1, 1, 1, 1]

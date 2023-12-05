@@ -32,9 +32,9 @@ class DashboardFilters(Filters):
     """
 
     sort: tuple[str, str] | None
-    index: int | None
-    start_time: datetime | None
-    end_time: datetime | None
+    index: int
+    start_time: datetime
+    end_time: datetime
 
 
 @dataclass
@@ -61,13 +61,13 @@ class AlarmsFilters(Filters):
     """
 
     sort: tuple[str, str] | None
-    priorities: set[AlarmPriority] | None
-    criticalities: set[AlarmCriticality] | None
-    types: set[str] | None
-    registered_start_time: datetime | None
-    registered_end_time: datetime | None
-    confirmed_start_time: datetime | None
-    confirmed_end_time: datetime | None
+    priorities: set[str]
+    criticalities: set[str]
+    types: set[str]
+    registered_start_time: datetime
+    registered_end_time: datetime
+    confirmed_start_time: datetime
+    confirmed_end_time: datetime
     new: bool
 
 
@@ -78,8 +78,7 @@ class GraphingFilters(Filters):
 
     :param start_time: the earliest time that values for each tag are from.
     :param end_time: the latest time that values for each tag are from.
-    :param interval: The number of frams between each value in the list of values.
     """
 
-    start_time: datetime | None
-    end_time: datetime | None
+    start_time: datetime
+    end_time: datetime

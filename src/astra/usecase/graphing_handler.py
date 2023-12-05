@@ -63,7 +63,6 @@ class GraphingHandler:
 
         :param prev_data: The representation of the current state of displayed data
         :param filter_args: Contains all information on filters to be applied
-        :param dm: Contains all data stored by the program to date
         """
         cls._filter_graphing_data(prev_data, filter_args)
 
@@ -126,7 +125,7 @@ class GraphingHandler:
         This method returns a tuple of ints representing indices that give a slice
         of the <times_list> where all times in it are >= <start_time> and <= <end_time>.
 
-        :param imtes_list: The list of times in chronological order that we need the slice of, which
+        :param times_list: The list of times in chronological order that we need the slice of, which
         is between the <start_time> and <end_time>.
         :param start_time: The datetime that is the earliest time that values for each tag
         are from.

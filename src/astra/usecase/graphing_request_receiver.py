@@ -16,7 +16,7 @@ class GraphingRequestReceiver(RequestReceiver):
     """
 
     handler = GraphingHandler()
-    filters = GraphingFilters(set(), None, None)
+    filters = GraphingFilters(set(), datetime.min, datetime.max)
 
     @classmethod
     def create(cls, dm: DataManager) -> GraphingData:
@@ -42,7 +42,7 @@ class GraphingRequestReceiver(RequestReceiver):
         """
         Sets the start date of the graph by updating the filters.
 
-        :param start_time: The new start date of the graph.
+        :param start_date: The new start date of the graph.
         """
 
         cls.filters.start_time = start_date
@@ -52,7 +52,7 @@ class GraphingRequestReceiver(RequestReceiver):
         """
         Sets the end date of the graph by updating the filters.
 
-        :param end_time: The new end date of the graph.
+        :param end_date: The new end date of the graph.
         """
 
         cls.filters.end_time = end_date
@@ -74,7 +74,7 @@ class GraphingRequestReceiver(RequestReceiver):
         """
         Removes a tag from the set of shown tags by updating the filters.
 
-        :param tags: The name of the tag to be removed.
+        :param tag: The name of the tag to be removed.
         """
 
         if tag in cls.filters.tags:
@@ -85,7 +85,7 @@ class GraphingRequestReceiver(RequestReceiver):
         """
         Adds a tag to the set of shown tags by updating the filters.
 
-        :param tags: The name of the tag to be added.
+        :param tag: The name of the tag to be added.
         """
 
         cls.filters.tags.add(Tag(tag))
@@ -97,7 +97,6 @@ class GraphingRequestReceiver(RequestReceiver):
 
         :param filename: The path to save to. The export format is
         determined based on the file extension.
-        :param data: The data to be exported.
         """
 
         cls.handler.export_data_to_file(cls.previous_data, filename)
