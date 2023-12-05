@@ -31,8 +31,8 @@ class DashboardHandler:
     """
 
     @staticmethod
-    def search_tags(search: str, cache: dict[str, Iterable[Tag]], eviction: Queue) \
-            -> Iterable[Tag]:
+    def search_tags(search: str, cache: dict[str, Iterable[str]], eviction: Queue) \
+            -> Iterable[str]:
         """
         Finds any tag where their tag name or description matches <tag> and returns them
 

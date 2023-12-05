@@ -3,7 +3,7 @@ from typing import Callable
 
 from astra.data.data_manager import DataManager
 from astra.data.parameters import Tag
-from astra.usecase.request_receiver import DashboardRequestReceiver
+from astra.usecase.dashboard_request_receiver import DashboardRequestReceiver
 
 
 class TagSearcher:

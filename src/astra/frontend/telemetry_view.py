@@ -11,7 +11,8 @@ from tkinter import filedialog, messagebox, ttk, Label
 from astra.data.data_manager import DataManager
 from astra.frontend.timerange_input import OperationControl, TimerangeInput
 from .tag_searcher import TagSearcher
-from ..usecase.request_receiver import DashboardRequestReceiver, DataRequestReceiver
+from ..usecase.dashboard_request_receiver import DashboardRequestReceiver
+from ..usecase.request_receiver import DataRequestReceiver
 
 
 class TelemetryView:
