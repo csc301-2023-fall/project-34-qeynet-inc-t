@@ -3,9 +3,9 @@ This file holds the main view class that will run after selecting a device to mo
 """
 
 import itertools
-from tkinter import Frame
 from tkinter import BOTH
-from tkinter import ttk, Tk, Label
+from tkinter import Frame, Label, Tk
+from tkinter import ttk, PhotoImage
 
 from astra.data.data_manager import DataManager
 from .graphing_view import GraphingView
@@ -33,6 +33,7 @@ class View(Tk):
         # Root frame of tkinter
         super().__init__()
         self.title(f'Astra - {device_name}')
+        self.iconphoto(True, PhotoImage(file='logo.png'))
 
         # tab widget
         tab_control = ttk.Notebook(self)
