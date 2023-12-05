@@ -209,9 +209,8 @@ class AlarmsHandler:
             show = show and cls._get_alarm_type(alarm) in filter_args.types
 
         # Checking if the tag of the alarm is requested to be shown
-        if filter_args.tags is not None:
-            relevant_tags = set(alarm.event.base.tags)
-            show = show and len(relevant_tags.difference(filter_args.tags)) == 0
+        relevant_tags = set(alarm.event.base.tags)
+        show = show and len(relevant_tags.difference(filter_args.tags)) == 0
 
         # Now we need to make sure the alarm fits in the time parameters
         alarm_confirm_time = alarm.event.confirm_time

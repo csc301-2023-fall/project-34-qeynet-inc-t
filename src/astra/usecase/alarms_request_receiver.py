@@ -36,7 +36,7 @@ class AlarmsRequestReceiver(RequestReceiver):
     and updating the sorting filter to be applied.
     """
 
-    filters = AlarmsFilters(None, None, CRITICALITIES, PRIORITIES, ALL_TYPES, datetime.min,
+    filters = AlarmsFilters({Tag("")}, None, CRITICALITIES, PRIORITIES, ALL_TYPES, datetime.min,
                             datetime.max, datetime.min, datetime.max, False)
     handler = AlarmsHandler()
     previous_data = TableReturn([], [])
@@ -53,7 +53,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         :param dm: Contains all data stored by the program to date.
         """
-        if cls.filters.tags is None:
+        if "" in cls.filters.tags:
             # Since the filter tags list needs to be provided externally via the DataManager, a
             # special case needs to be made to update the filter tags
             cls.filters.tags = set(dm.tags)

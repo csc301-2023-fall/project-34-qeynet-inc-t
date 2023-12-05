@@ -12,7 +12,7 @@ class Filters:
 
     :param tags: A set of all tags to be shown
     """
-    tags: set[Tag] | None
+    tags: set[Tag]
 
 
 @dataclass
@@ -31,7 +31,7 @@ class DashboardFilters(Filters):
     All of the above parameters may be None iff they have never been set before
     """
 
-    sort: tuple[str, str] | None
+    sort: tuple[str, str]
     index: int
     start_time: datetime
     end_time: datetime

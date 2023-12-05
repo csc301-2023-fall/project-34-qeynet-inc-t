@@ -115,7 +115,8 @@ class DashboardRequestReceiver(RequestReceiver):
     and updating the sorting filter to be applied.
     """
 
-    filters = DashboardFilters(None, None, 0, datetime.min, datetime.max)
+    filters = DashboardFilters(set(), (">", "TAG"),
+                               0, datetime.min, datetime.max)
     handler = DashboardHandler()
     search_cache = dict()
     search_eviction = Queue()
