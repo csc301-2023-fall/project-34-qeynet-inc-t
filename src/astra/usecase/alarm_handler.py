@@ -267,8 +267,8 @@ class AlarmsHandler:
             reverse = True
 
         return_data.table = sorted(return_data.table,
-                                    key=lambda x: (x[key_index], x[0]),
-                                    reverse=reverse)
+                                   key=lambda x: (x[key_index], x[0]),
+                                   reverse=reverse)
 
     @classmethod
     def _extract_alarm_data(cls, alarm: Alarm, priority: AlarmPriority) -> list:
