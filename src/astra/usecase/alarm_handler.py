@@ -1,10 +1,7 @@
-from queue import Queue
-
 from astra.data.alarms import (AlarmPriority, RateOfChangeEventBase, Alarm,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
-                               SOEEventBase, AllEventBase, EventBase, AnyEventBase)
+                               SOEEventBase, AllEventBase)
 from astra.data.data_manager import DataManager
-from astra.data.parameters import Tag
 from astra.usecase.filters import AlarmsFilters
 from astra.usecase.table_return import TableReturn
 
