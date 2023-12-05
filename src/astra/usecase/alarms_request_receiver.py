@@ -34,6 +34,30 @@ class AlarmsRequestReceiver(RequestReceiver):
     updating the currently represented information, adding or removing priorities,
     criticalities or types from the sets of them that we are viewing,
     and updating the sorting filter to be applied.
+
+    :param filters: Container class for all filters to apply to the table
+    :type: AlarmsFilters
+
+    :param handler: THe class that actually processes requests made by this request receiver
+    :type: AlarmsHandler
+
+    :param previous_data: Stores the return value of the previous call to <cls.create>
+    :type: TableReturn
+
+    :param _sorting: Tracks which direction each row should be sorted by
+    :type: list[int]
+
+    :param _new: Tracks if only new alarms should be shown
+    :type: bool
+
+    :param _priorities: Stores the priorities currently being shown
+    :type: set[str]
+
+    :param _criticalities: Stores the criticalities currently being shown
+    :type: set[str]
+
+    :param _types: Stores the types currently being shown
+    :type: set[str]
     """
 
     filters = AlarmsFilters({Tag("")}, None, CRITICALITIES, PRIORITIES, ALL_TYPES, datetime.min,
