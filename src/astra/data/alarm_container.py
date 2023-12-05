@@ -5,8 +5,6 @@ from typing import Callable, Mapping
 
 from astra.data.alarms import AlarmPriority, Alarm, AlarmCriticality
 
-NEW_QUEUE_KEY = 'n'
-
 
 class AlarmObserver:
     """
@@ -49,11 +47,12 @@ class AlarmsContainer:
     observer = AlarmObserver()
     alarms = {AlarmPriority.WARNING.name: [], AlarmPriority.LOW.name: [],
               AlarmPriority.MEDIUM.name: [], AlarmPriority.HIGH.name: [],
-              AlarmPriority.CRITICAL.name: [], NEW_QUEUE_KEY: Queue()}
+              AlarmPriority.CRITICAL.name: []}
+    new_alarms = Queue()
     mutex = Lock()
 
     @classmethod
-    def get_alarms(cls) -> dict[str, list[Alarm] | Queue]:
+    def get_alarms(cls) -> dict[str, list[Alarm]]:
         """
         Returns a shallow copy of <cls.alarms>
 
@@ -83,7 +82,7 @@ class AlarmsContainer:
                 for alarm in alarms:
                     criticality = alarm.criticality
                     alarm_timer_vals = []
-                    cls.alarms[NEW_QUEUE_KEY].put(alarm)
+                    cls.new_alarms.put(alarm)
 
                     # Find the closest timeframe from 0, 5, 15, and 30 minutes from when the
                     # alarm was created to when it was actually confirmed
@@ -179,7 +178,7 @@ class AlarmsContainer:
         """
         with cls.mutex:
             for priority in cls.alarms:
-                if priority != NEW_QUEUE_KEY and alarm in cls.alarms[priority]:
+                if alarm in cls.alarms[priority]:
                     # Note: We don't consider the queue of new alarms, since by the time
                     # the alarm can be removed, it's already be taken out of the queue
                     cls.alarms[priority].remove(alarm)

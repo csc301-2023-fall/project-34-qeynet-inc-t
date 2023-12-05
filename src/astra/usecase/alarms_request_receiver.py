@@ -61,7 +61,7 @@ class AlarmsRequestReceiver(RequestReceiver):
             cls.filters.tags = set(dm.tags)
 
         # Create the initial table.
-        cls.previous_data = cls.handler.get_data(dm.alarms.get_alarms(), cls.filters)
+        cls.previous_data = cls.handler.get_data(dm, cls.filters)
         return cls.previous_data
 
     @classmethod

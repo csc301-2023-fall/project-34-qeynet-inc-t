@@ -23,6 +23,8 @@ def check_alarms(dm: DataManager,
     threads = []
 
     for alarm_base in alarm_bases:
+        # The base and criticality were seperated due to how things worked previously. This would
+        # be a good and simple thing to refactor
         base = alarm_base.event_base
         criticality = alarm_base.criticality
 
