@@ -11,14 +11,14 @@ class TagSearcher:
     Defines a widget that can be used to search through a series of tags and allows the user to
     make selections on those tags for a number of purposes
 
-    :param search_bar: Contains the text held in the search bar
-    :param search_controller: Defines the controller used to make search requests
-    :param dm: Stores all data known to the program
-    :param shown_tags: An ordered list of tags and their descriptions to show in the search results
-    :param selected_tags: The set of tags selected by the user
-    :param watcher: A arbitrary function with no inputs to call any time a search toggle
+    :param: search_bar: Contains the text held in the search bar
+    :param: search_controller: Defines the controller used to make search requests
+    :param: dm: Stores all data known to the program
+    :param: shown_tags: An ordered list of tags and their descriptions to show in the search results
+    :param: selected_tags: The set of tags selected by the user
+    :param: watcher: A arbitrary function with no inputs to call any time a search toggle
     occurs
-    :param tag_table: Re[resemts the area of the screen holding all tags matching search query
+    :param: tag_table: Represents the area of the screen holding all tags matching search query
     """
 
     def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
@@ -106,7 +106,7 @@ class TagSearcher:
             tag_index = tag.index(':')
             if tag[:tag_index] in self.selected_tags:
                 check = "x"
-            self.tag_table.insert("", END, value=(f"[{check}] {tag}",))
+            self.tag_table.insert("", END, values=(f"[{check}] {tag}",))
 
     def toggle_tag_table_row(self, event) -> None:
         """
@@ -131,10 +131,10 @@ class TagSearcher:
 
         # Indicating tag is not selected
         if tag in self.selected_tags:
-            self.selected_tags.remove(tag)
+            self.selected_tags.remove(Tag(tag))
         else:
             # Indicating tag is now selected
-            self.selected_tags.add(tag)
+            self.selected_tags.add(Tag(tag))
         self.update_searched_tags()
         self.watcher()
 
@@ -146,7 +146,7 @@ class TagSearcher:
         # Iterate through all shown tags and force choose them
         for tag_info in self.shown_tags:
             tag_index = tag_info.index(':')
-            self.selected_tags.add(tag_info[:tag_index])
+            self.selected_tags.add(Tag(tag_info[:tag_index]))
         self.update_searched_tags()
         self.watcher()
 
@@ -158,7 +158,7 @@ class TagSearcher:
         for tag_info in self.shown_tags:
             tag_index = tag_info.index(':')
             if tag_info[:tag_index] in self.selected_tags:
-                self.selected_tags.remove(tag_info[:tag_index])
+                self.selected_tags.remove(Tag(tag_info[:tag_index]))
         self.update_searched_tags()
         self.watcher()
 
