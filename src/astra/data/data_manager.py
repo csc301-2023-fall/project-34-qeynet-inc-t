@@ -1,42 +1,24 @@
 """This module defines the DataManager, the main data access interface for the use case subteam."""
-from collections import defaultdict
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from threading import Lock
 from typing import Self
 
-from astra.data import dict_parsing, telemetry_manager
+from astra.data import config_manager, dict_parsing, telemetry_manager
 from astra.data.alarms import AlarmBase, AlarmCriticality, AlarmPriority, Alarm
 from astra.data.database import db_manager
+from astra.data.alarm_container import AlarmsContainer
 from astra.data.dict_parsing import ParsingError
 from astra.data.parameters import Parameter, Tag
 from astra.data.telemetry_data import InternalDatabaseError, TelemetryData
 
 
-class AlarmsContainer:
-    """
-    A container for a global alarms dict that utilizes locking for multithreading
+@dataclass(frozen=True)
+class Device:
+    """The relevant metadata for a device."""
 
-    :param alarms: The actual dictionary of alarms held
-    :param mutex: A lock used for mutating cls.alarms
-    """
-    alarms: dict[AlarmPriority, list[Alarm]] = None
-    mutex = None
-
-    @classmethod
-    def __init__(cls):
-        cls.alarms = defaultdict(lambda: [])
-        cls.mutex = Lock()
-
-    @classmethod
-    def get_alarms(cls) -> dict[AlarmPriority, list[Alarm]]:
-        """
-        Returns a shallow copy of <cls.alarms>
-
-        :return: A copy of <cls.alarms>
-        """
-        with cls.mutex:
-            return cls.alarms.copy()
+    name: str
+    description: str
 
 
 class DataManager:
@@ -53,12 +35,39 @@ class DataManager:
     _alarm_bases: list[AlarmBase]
     _alarm_container: AlarmsContainer
 
+    @staticmethod
+    def add_device(config_filename: str) -> None:
+        """
+        Add a device, specified by a configuration file, to the database.
+
+        :param config_filename:
+            The path to the configuration file.
+        """
+        config_manager.read_config(config_filename)
+
+    @staticmethod
+    def remove_device(device_name: str) -> None:
+        """
+        Remove a device and all of its associated data from the database.
+
+        :param device_name:
+            The name of the device to remove (metadata.device in the device configuration file).
+        """
+        db_manager.delete_device(device_name)
+
+    @staticmethod
+    def get_devices() -> Mapping[str, Device]:
+        """:return: A name->metadata mapping for all devices in the database."""
+        return {
+            name: Device(name, description) for name, description in db_manager.get_device_data()
+        }
+
     def __init__(self, device_name: str):
         """
         Construct a DataManager for the device with the given name.
 
         :param device_name:
-            The name of the device (metadata.device in the device configuration file)
+            The name of the device (metadata.device in the device configuration file).
 
         :raise ValueError:
             If there is no device with the given name.
@@ -103,8 +112,13 @@ class DataManager:
         return cls(device_name)
 
     @property
+    def device_name(self) -> str:
+        """The name of the device of this DataManager."""
+        return self._device_name
+
+    @property
     def tags(self) -> Iterable[Tag]:
-        """Iterable of tags for the device of this DataManager."""
+        """All the tags for the device of this DataManager."""
         return self._parameters.keys()
 
     @property
@@ -114,27 +128,21 @@ class DataManager:
 
     @property
     def alarm_bases(self) -> Iterable[AlarmBase]:
+        """The alarm bases for the device of this DataManager."""
         return self._alarm_bases
 
     @property
     def alarms(self) -> AlarmsContainer:
         return self._alarm_container
 
-
-    def update_alarms(self, alarms: list[Alarm]) -> None:
+    def add_alarms(self, alarms: list[Alarm]) -> None:
         """
         Updates the alarms global variable after acquiring the lock for it
 
         :param dm: Holds information of data criticality and priority
         :param alarms: The set of alarms to add to <cls.alarms>
         """
-        # TODO: set priority correctly based on time elapsed since alarm
-        if alarms:
-            with self._alarm_container.mutex:
-                for alarm in alarms:
-                    criticality = alarm.criticality
-                    priority = self.alarm_priority_matrix[timedelta(seconds=0)][criticality]
-                    self.alarms.alarms[priority].append(alarm)
+        self._alarm_container.add_alarms(alarms, self.alarm_priority_matrix)
 
     @property
     def alarm_priority_matrix(self) -> Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]:
@@ -148,8 +156,8 @@ class DataManager:
         w, l, m, h, c = AlarmCriticality
         # fmt: off
         return dict(reversed([
-            (timedelta(minutes= 0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
-            (timedelta(minutes= 5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
+            (timedelta(minutes=0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
+            (timedelta(minutes=5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
             (timedelta(minutes=15), {w: w, l: l, m: m, h: h, c: c}),
             (timedelta(minutes=30), {w: w, l: m, m: h, h: c, c: c}),
         ]))
@@ -194,11 +202,8 @@ class DataManager:
         :return:
             A TelemetryData object for this DataManager's device and the given time range and tags.
         """
-        tags = set(tags)
-        device_tags = set(self.tags)
-        if not (tags <= device_tags):
-            raise ValueError(f'got unexpected tags {tags - device_tags}')
-        subset_parameters = {
-            tag: parameter for tag, parameter in self.parameters.items() if tag in tags
-        }
-        return TelemetryData(self._device_name, start_time, end_time, subset_parameters)
+        selected_tag_set = set(tags)
+        device_tag_set = set(self.tags)
+        if not (selected_tag_set <= device_tag_set):
+            raise ValueError(f'got unexpected tags {selected_tag_set - device_tag_set}')
+        return TelemetryData(self, start_time, end_time, tags)

@@ -1,15 +1,23 @@
 from datetime import timedelta, datetime
 import unittest
 
-from astra.data.alarms import EventBase, StaticEventBase
-from astra.usecase.alarm_strategies import find_first_time, persistence_check, find_alarm_indexes
+from astra.data.alarms import SimpleEventBase, StaticEventBase
+from astra.usecase.alarm_strategies import (
+    find_first_time,
+    persistence_check,
+    find_alarm_indexes,
+    running_average_at_time
+)
+
+TEST_TAG = "TEST_TAG"
+TEST_DESCRIPTION = "TEST_DESCRIPTION"
 
 
 class MyTestCase(unittest.TestCase):
     def test_find_first_time_no_persistence(self):
         """Tests that when a basic eventbase with no persistence is provided, the base earliest
         time is returned, and the sequence of time to check is correctly indicated as 0"""
-        basic_event = EventBase(None, "")
+        basic_event = SimpleEventBase(None, TEST_DESCRIPTION, TEST_TAG)
         earliest = datetime.now()
 
         actual = find_first_time(basic_event, earliest)
@@ -20,7 +28,7 @@ class MyTestCase(unittest.TestCase):
     def test_find_first_time_persistence(self):
         """Tests that when a basic eventbase with persistence is provided, the correct values
         are returned"""
-        basic_event = EventBase(50, "")
+        basic_event = SimpleEventBase(50, TEST_DESCRIPTION, TEST_TAG)
         earliest = datetime.now()
 
         actual = find_first_time(basic_event, earliest)
@@ -306,6 +314,94 @@ class MyTestCase(unittest.TestCase):
 
         actual = find_alarm_indexes(first_indexes, conditions)
         expected = [False, False, False, False, False]
+
+        self.assertEqual(actual, expected)
+
+    def test_running_average_at_time_full_map(self):
+        """Tests that the correct value is returned when a full map is in the time_window"""
+        data = {
+            datetime.now() - timedelta(seconds=180): 1,
+            datetime.now() - timedelta(seconds=120): 2,
+            datetime.now() - timedelta(seconds=60): 3,
+            datetime.now() - timedelta(seconds=0): 4,
+        }
+        times = list(data.keys())
+        start_date = datetime.now() - timedelta(seconds=180)
+        time_window = 180.0
+
+        expected = 2.5  # (1 + 2 + 3 + 4)/4
+        actual = running_average_at_time(data, times, start_date, time_window)
+
+        self.assertEqual(actual, expected)
+
+    def test_running_average_at_time_half_map(self):
+        """Tests that the correct value is returned when half the map is in the time_window"""
+        data = {
+            datetime.now() - timedelta(seconds=180): 1,
+            datetime.now() - timedelta(seconds=120): 2,
+            datetime.now() - timedelta(seconds=60): 3,
+            datetime.now() - timedelta(seconds=0): 4,
+        }
+        times = list(data.keys())
+        start_date = datetime.now() - timedelta(seconds=180)
+        time_window = 60.0
+
+        expected = 1.5  # (1 + 2)/2
+        actual = running_average_at_time(data, times, start_date, time_window)
+
+        self.assertEqual(actual, expected)
+
+    def test_running_average_at_time_mid_frame(self):
+        """Tests that the correct value is returned when the time between frames
+        is less than the time window."""
+        data = {
+            datetime.now() - timedelta(seconds=180): 1,
+            datetime.now() - timedelta(seconds=120): 2,
+            datetime.now() - timedelta(seconds=60): 3,
+            datetime.now() - timedelta(seconds=0): 4,
+        }
+        times = list(data.keys())
+        start_date = datetime.now() - timedelta(seconds=180)
+        time_window = 30.0
+
+        expected = 0.0
+        actual = running_average_at_time(data, times, start_date, time_window)
+
+        self.assertEqual(actual, expected)
+
+    def test_running_average_at_time_too_big(self):
+        """Tests that the correct value is returned when the time window
+        ends outside the whole map"""
+        data = {
+            datetime.now() - timedelta(seconds=180): 1,
+            datetime.now() - timedelta(seconds=120): 2,
+            datetime.now() - timedelta(seconds=60): 3,
+            datetime.now() - timedelta(seconds=0): 4,
+        }
+        times = list(data.keys())
+        start_date = datetime.now() - timedelta(seconds=180)
+        time_window = 200.0
+
+        expected = 2.5  # (1 + 2 + 3 + 4)/4
+        actual = running_average_at_time(data, times, start_date, time_window)
+
+        self.assertEqual(actual, expected)
+
+    def test_running_average_at_time_none(self):
+        """Tests that the correct value is returned when the time window
+        ends outside the whole map"""
+        data = {
+            datetime.now() - timedelta(seconds=180): 1,
+            datetime.now() - timedelta(seconds=120): None,
+            datetime.now() - timedelta(seconds=60): 3,
+            datetime.now() - timedelta(seconds=0): None,
+        }
+        times = list(data.keys())
+        start_date = datetime.now() - timedelta(seconds=180)
+        time_window = 180.0
+
+        expected = 1.0  # (1 + 0 + 3 + 0)/4
+        actual = running_average_at_time(data, times, start_date, time_window)
 
         self.assertEqual(actual, expected)
 

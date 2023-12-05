@@ -1,0 +1,45 @@
+metadata:
+  comments: ''
+  description: Device V1.
+  device: test_config1
+  end: '2023-10-11 15:35:00'
+  generated: '2023-11-06 23:40:39'
+  license: All Rights Reserved
+  model: qrx-rev4
+  owner: QEYnet Inc.
+  start: '2023-10-11 15:30:00'
+  version: '1.0'
+telemetry:
+  Nf3:
+  - 467640.60634239786
+  - 464240.2930270969
+  - .nan
+  - 468158.34450224123
+  - 466288.2692964514
+  - 467752.1778316993
+  - 467034.82697615295
+  - .nan
+  - 466026.0261241936
+  - 468285.01818524837
+  EPOCH:
+  - 1697052600.0
+  - 1697052601.0
+  - 1697052602.0
+  - 1697052603.0
+  - 1697052604.0
+  - 1697052605.0
+  - 1697052606.0
+  - 1697052607.0
+  - 1697052608.0
+  - 1697052609.0
+  e4:
+  - false
+  - false
+  - true
+  - false
+  - .nan
+  - false
+  - false
+  - true
+  - false
+  - false
