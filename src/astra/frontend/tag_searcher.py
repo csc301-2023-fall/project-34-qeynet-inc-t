@@ -31,7 +31,7 @@ class TagSearcher:
     :type: Callable
 
     :param: tag_table: Represents the area of the screen holding all tags matching search query
-    :type TreeView
+    :type: TreeView
     """
 
     def __init__(self, num_rows: int, frame: Frame, dm: DataManager, watcher: Callable):
