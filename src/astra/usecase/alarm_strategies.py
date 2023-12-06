@@ -7,7 +7,7 @@ from astra.data.alarms import (EventID, Alarm, EventBase, RateOfChangeEventBase,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
                                SOEEventBase, AllEventBase, AlarmCriticality, Event, AnyEventBase)
 from astra.data.data_manager import DataManager
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Union
 from astra.data.parameters import Tag, ParameterValue
 from astra.data.telemetry_data import TelemetryData
 from datetime import timedelta, datetime
@@ -16,14 +16,16 @@ UNACKNOWLEDGED = False
 next_id = EventID(0)
 
 
-# TODO: if alarm descriptions are "formulaic", extract helper method for making alarms from list
-
-
 def get_strategy(base: EventBase) -> Callable:
     """
     Matches an unknown form of EventBase to the correct strategy to check them
 
+    NOTE: Major code smell here, we tried to factor it out but ran into some circular
+    dependency issues. If no further event bases are added, then this isn't too bad,
+    but should be refactored
+
     :param base: An EventBase to evaluate
+    :return: The function needed to evaluate <base>
     """
     match base:
         case RateOfChangeEventBase():
@@ -43,13 +45,13 @@ def get_strategy(base: EventBase) -> Callable:
 
 
 def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> tuple[datetime, float]:
-    """Finds the first time to check for persistence and returns it, along with
+    """Finds the first datetime to check for persistence on event bases and returns it, along with
     the length of time to check for persistence
 
-    :param alarm_base: the event for which persistence must be checked
-    :param earliest_time: The earliest time linked to the newest telemetry frame
+    :param: alarm_base: the event for which persistence must be checked
+    :param: earliest_time: The earliest time linked to the newest telemetry frame set
     recently added
-    :return A tuple where the first item is the first time which must be checked,
+    :return: A tuple where the first item is the first time which must be checked,
     and the second is the length of time to check
     """
 
@@ -72,13 +74,13 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime],
     """
     Uses information on telemetry indexes to create an appropriate alarm
 
-    :param alarm_indexes: A tuple listing the index where an alarm condition is first met,
+    :param: alarm_indexes: A tuple listing the index where an alarm condition is first met,
     and another listing the first where the persistence time check is met
-    :param times: Lists in order the time of the i-th telemetry frame to be examined
-    :param description: Describes information about the event
-    :param event_base: The underlying type of alarm that occured
-    :param criticality: The base importance of the alarm
-    :return: An alarm detailing a certain event that has occured
+    :param: times: Lists in order the time of the i-th telemetry frame to be examined
+    :param: description: Describes information about the event
+    :param: event_base: The underlying type of alarm that occurred
+    :param: criticality: The base importance of the alarm
+    :return: An alarm detailing a certain event that has occurred
     """
     global next_id
 
@@ -105,7 +107,7 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     :param tag: The tag to use for checking conditions
     :param td: Contains all telemetry frames to examine
     :param condition: A function that returns a boolean with parameters
-                      (ParameterValue, ParameterValue
+                      (ParameterValue, ParameterValue)
     :param comparison: ParameterValues to be used as a point of comparison
     :param persistence: How long the condition has to last
     :return: A list of tuples where the first tuple element is the index of telemetry frame where
@@ -145,17 +147,23 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
 
         if not cond_frame_met:
             if confirmed_alarm:
+                # Now that we now how long the alarm lasted, we pad <alarm_indices> with
+                # the sufficient number of True values
                 true_indices = [True] * (i - curr_first_index)
                 alarm_indices += true_indices
                 confirmed_alarm = False
                 active_sequence = False
             elif active_sequence:
+                # Persistence failed, so we pad <alarm_indices> with the sufficient number of
+                # False values
                 false_indices = [False] * (i - curr_first_index)
                 alarm_indices += false_indices
                 active_sequence = False
             alarm_indices.append(False)
         i += 1
 
+    # Similar to the case under <if not conf_frame_met:>, we simply check again as if there is if
+    # conditions are still being met at the end of frames we examine, there may still be an alarm
     if confirmed_alarm:
         true_indices = [True] * (i - curr_first_index)
         alarm_indices += true_indices
@@ -564,6 +572,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
     alarms = []
     times = list(telemetry_data.get_parameter_values(tag).keys())
     all_alarm_frames = []
+
     if lower_threshold is not None:
         # Checking + generating all alarms for crossing the lower threshold
         lower_alarms, lower_alarm_frames = check_conds(telemetry_data, tag, lower_threshold_cond,
@@ -575,6 +584,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
             alarms.append(new_alarm)
 
         all_alarm_frames = lower_alarm_frames
+
     if upper_threshold is not None:
         # Checking + generating all alarms for crossing the upper threshold
         upper_alarms, upper_alarm_frames = check_conds(telemetry_data, tag, upper_threshold_cond,
@@ -664,7 +674,7 @@ def forward_checking_propagator(first_events: list[tuple[int, datetime]],
         -> list[tuple[int, datetime]]:
     """
     Returns a modification of <second_events> of elements where the datetime element occurs
-    in a specified time windows
+    in a specified time window
 
     :param first_events: The list of all events to check time windows after
     :param second_events: The list of all events to compare time window it started in
@@ -673,23 +683,28 @@ def forward_checking_propagator(first_events: list[tuple[int, datetime]],
     satisfying_events = []
     for second_event in second_events:
         for first_event in first_events:
+
+            # Checking if the window between events matches <window_duration>
             lower_threshold = first_event[1] + timedelta(seconds=window_duration[0])
+
             if window_duration[1] is not None:
                 upper_threshold = first_event[1] + timedelta(seconds=window_duration[1])
             else:
                 # If upper threshold is None, we need a time that's guaranteed to be greater than
                 # any second event time
-                upper_threshold = first_events[-1][1] + timedelta(seconds=10)
+                upper_threshold = second_events[-1][1] + timedelta(seconds=10)
 
             if lower_threshold < second_event[1] < upper_threshold:
                 satisfying_events.append(second_event)
                 break
+
     return satisfying_events
 
 
-def get_smallest_domain(events: list[list[tuple[int, datetime]]]) -> int:
+def get_smallest_domain(events: list[Union[list[tuple[int, datetime]], tuple[int, datetime]]]) -> int:
     """
-    Returns the index of the event with the smallest remaining domain values
+    Returns the index of the event with the smallest remaining domain values that isn't already
+    assigned
 
     :param events: A list of all events to check
     :return: The index of the event with the smallest domain
@@ -699,6 +714,7 @@ def get_smallest_domain(events: list[list[tuple[int, datetime]]]) -> int:
     smallest_index = -1
     for i in range(len(events)):
         event = events[i]
+
         # Skipping already assigned events
         if type(event) is list:
             event_size = len(event)
@@ -708,10 +724,9 @@ def get_smallest_domain(events: list[list[tuple[int, datetime]]]) -> int:
     return smallest_index
 
 
-def backtracking_search(events: list[tuple[int, datetime] | list[tuple[int, datetime]]],
-                        end_events: list[tuple[int, datetime] | list[tuple[int, datetime]]],
-                        time_window: list[tuple[float, float | None]]) \
-        -> list[int]:
+def backtracking_search(events: list[Union[list[tuple[int, datetime]], tuple[int, datetime]]],
+                        end_events: list[Union[list[tuple[int, datetime]], tuple[int, datetime]]],
+                        time_window: list[tuple[float, float | None]]) -> list[int]:
     """
     Employs the backtracking search algorithm to find a sequence of events where each sequential
     event occurs within <time_window> of one another
@@ -719,28 +734,68 @@ def backtracking_search(events: list[tuple[int, datetime] | list[tuple[int, date
     Note: the inputs should probably just be their own class, i'll make the change time permitting
 
     :param events: An ordered list of all events to check through
-    :param end_events: A list of the last index an event
-    occurred corresponding to each event in <events>
-    :param time_window: The window of time where each sequential event must occur within
+    Each index of the outermost list corresponds to an ordered list of events to check through,
+    with inner lists storing the dates and telemetry frame indexes the event occurred at.
+    If the inner list only stores a tuple, we consider it "assigned". That is, we work under the
+    operating assumption that if an SOE event occurred, the detailed start time was the start of
+    one event in the sequence
+
+    :param end_events: A list of the last index an event occurred corresponding to each
+    event in <events>. The choice of inner lists storing tuples vs lists works similarly
+
+    :param time_window: The window of time when each sequential event must occur within. Each
+    index corresponds to the pair of events that had to have occured (ex: index 0 -> the first
+    and seconds events
+
     :return: A list of the first and last index in the sequence of events
     """
-    # Using the MRV heuristic to speed up the search
+    # Using the minimum-remaining-values heuristic to speed up the search
+    # We exclude the last event in the domain as it must be assigned last implicitly
     chosen_domain = get_smallest_domain(events[:len(events) - 1])
+
     if chosen_domain == -1:
         # indicates solution was found
-        return [events[0][0], end_events[-1][-1][0]]
+
+        first_event: int = 0
+        last_events: int = 0
+        if type(events[0][0]) is int:
+            # this should always pass
+            first_event = events[0][0]
+
+        if type(end_events[-1][-1][0]) is int:
+            # this should always pass
+            last_events = end_events[-1][-1][0]
+
+        return [first_event, last_events]
 
     first_event = end_events[chosen_domain]
     second_event = events[chosen_domain + 1]
 
     events[chosen_domain + 1] = forward_checking_propagator(first_event, second_event,
                                                             time_window[chosen_domain])
+
+    # updating the end events to match the new domain of the chosen variable
+    updated_end_events = []
+    for updated_event in events[chosen_domain + 1]:
+        for i in range(len(end_events[chosen_domain + 1])):
+            curr_end_events = end_events[chosen_domain + 1][i]
+            if curr_end_events[0] > updated_event[0]:
+                updated_end_events.append(curr_end_events)
+                break
+    end_events[chosen_domain + 1] = updated_end_events
+
     if not events[chosen_domain + 1]:
+        # If any domain is empty, current assignment has no solution, so return the empty list
         return []
     else:
+        # these lists will be mutated, so we copy them so each iteration of the for loop
+        # can re-use values assigned in the current recursive case
         new_events = events.copy()
         new_end_events = end_events.copy()
+
         for i in range(len(events[chosen_domain])):
+            # For each element in the chosen domain, we assign one and check if a solution
+            # to the sequence of events exists
             event = events[chosen_domain][i]
             new_events[chosen_domain] = event
 
@@ -769,7 +824,7 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
                              compound: bool, cv: Condition) -> list[bool]:
     """
     Checks that the alarms described in <alarm_base> were all raised and persisted,
-    and occured within the appropriate time window in correct sequential order.
+    and occurred within the appropriate time window in correct sequential order.
 
     :param dm: The source of all data known to the program
     :param alarm_base: Defines events to check
@@ -787,17 +842,20 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
 
     # iterate through each of the eventbases and get their list indicating where alarm conditions
     # where met
-    first_indexes = []
-    last_indexes = []
+    first_indexes: list[Union[list[tuple[int, datetime]], tuple[int, datetime]]] = []
+    last_indexes: list[Union[list[tuple[int, datetime]], tuple[int, datetime]]] = []
 
     times = telemetry_data.timestamps()
 
+    # First, we go through each requested event in the sequence of events and collect data on alarms
+    # that did/did not occur
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
         inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True,
                                        Condition())
 
         if not inner_alarm_indexes:
+            # If any nested alarm was not raised, sequence of events couldn't have happened, so return early
             with cv:
                 cv.notify()
                 return [False] * len(inner_alarm_indexes)
@@ -830,6 +888,8 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
         first_index = sequence_of_events[0]
         last_index = sequence_of_events[1]
 
+        # We assume only one sequence of events to have occured, so we pad the return list with
+        # True/False using the return value of backtracking search
         up_to_first = [False] * first_index
         up_to_last = [True] * (last_index - first_index)
         up_to_end = [False] * (len(times) - last_index - 1)
@@ -870,7 +930,7 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
     # iterate through each of the eventbases and get their list indicating where alarm conditions
     # where met
 
-    alarm_indexes = []
+    alarm_indexes: list[bool] = []
     taken_indices = set()
     alarm_data = set()
 
@@ -914,7 +974,8 @@ def all_events_check(dm: DataManager, alarm_base: AllEventBase,
 
     alarms = []
     for alarm in alarm_data:
-        new_alarm = create_alarm(alarm, times[len(times) - max_len:], alarm_base, criticality)
+        times_index = int(len(times) - max_len)
+        new_alarm = create_alarm(alarm, times[times_index:], alarm_base, criticality)
         alarms.append(new_alarm)
 
     if not compound:
@@ -950,11 +1011,12 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
 
     times = telemetry_data.timestamps()
 
-    alarm_indexes = []
+    alarm_indexes: list[bool] = []
     taken_indices = set()
     alarm_data = set()
-    inner_alarms = []
+    inner_alarms: list[list[bool]] = []
     max_len = -math.inf
+
     for possible_event in possible_events:
         strategy = get_strategy(possible_event)
         inner_alarm_indexes = strategy(dm, possible_event, criticality, earliest_time, True,
@@ -988,7 +1050,8 @@ def any_events_check(dm: DataManager, alarm_base: AnyEventBase,
 
     alarms = []
     for alarm in alarm_data:
-        new_alarm = create_alarm(alarm, times[len(times) - max_len:], alarm_base, criticality)
+        times_index = int(len(times) - max_len)
+        new_alarm = create_alarm(alarm, times[times_index:], alarm_base, criticality)
         alarms.append(new_alarm)
 
     if not compound:
