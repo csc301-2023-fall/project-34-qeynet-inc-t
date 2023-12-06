@@ -267,13 +267,14 @@ def persistence_check(tuples: list[tuple[bool, datetime]], persistence: float,
 def running_average_at_time(data: Mapping[datetime, ParameterValue | None], times: list[datetime],
                             start_date: datetime, time_window: float) -> float:
     """
-    Gets the rate of change of the tag within the <td> from <start_date> to <end_date>.
+    Calculates the running average of the tag within the <data> from <start_date> to
+    <start_date> + <time_window>.
 
     :param data: The data to check
-    :param times: The times associated with <data> (its keys)
+    :param times: The times associated with the data: <data.keys()>
     :param start_date: The start date to check from
-    :param end_date: The end date to check to
-    :return: The rate of change of the tag within the <td> from <start_date> to <end_date>.
+    :param time_window: The time_window to check over
+    :return: The running average starting at <start_date> and ending at <start_date> + <time_window>.
 
     PRECONDITION: <start_date> is in <times> and <times> are the keys of <data>.
     """
@@ -294,11 +295,11 @@ def running_average_at_time(data: Mapping[datetime, ParameterValue | None], time
 
         curr_index += 1
 
-    # If loop ended with <curr_time> as the same as <start_date>, then we have roc = 0.0
+    # If loop ended with <curr_time> as the same as <start_date>, then we have running average = 0.0
     if curr_time == start_date:
         return 0.0
 
-    # otherwise we have the n-point running average.
+    # otherwise we can take the n-point running average.
     roc = total / (curr_index - initial_index)
 
     return roc
@@ -308,8 +309,8 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
                          criticality: AlarmCriticality, earliest_time: datetime,
                          compound: bool, cv: Condition) -> list[bool]:
     """
-    Checks if in the telemetry frames with times in the range
-    (<earliest_time> - <alarm_base.persistence> -> present), there exists
+    Checks in the telemetry frames with times in the range
+    (<earliest_time> - <alarm_base.persistence> -> present), if there exists
     a sequence lasting <alarm_base.persistence> seconds where:
     a) <alarm_base.tag> reported a rate of change above <alarm_base.rate_of_rise_threshold>
     b) <alarm_base.tag> reported a rate of change below <alarm_base.rate_of_fall_threshold>
@@ -329,7 +330,7 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     # Calculating the range of time that needs to be checked
     first_time, sequence = find_first_time(alarm_base, earliest_time)
 
-    # Getting all the values relevant to this alarm.
+    # Getting all the important values to this alarm.
     tag = alarm_base.tag
     telemetry_data = dm.get_telemetry_data(first_time, None, [tag])
     tag_values = telemetry_data.get_parameter_values(tag)
@@ -342,15 +343,17 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     # fall alarm, and 0 indicates no alarm.
     rising_or_falling_list = []
 
+    # initialize the prev_running_average
     curr_running_average = 0.0
     if len(times) > 0:
         prev_running_average = running_average_at_time(tag_values, times,
                                                        times[0], alarm_base.time_window)
     else:
         prev_running_average = 0.0
-    # Calculate the rate of change for each time window, and add the appropriate
-    # number to the list.
-    for start_date in times[1:-1]:
+
+    # We calculate the running average at each time, and then calculate the rate of change
+    # by comparing adjacent running averages.
+    for start_date in times[1:]:
 
         # ROC is found by subtracting the previous running average from the current one.
         curr_running_average = running_average_at_time(tag_values, times,
@@ -417,14 +420,16 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
 
 def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, datetime]], list[int]]:
     """
-    Checks all the frames in <td> and returns a list of tuples where each tuple
-    contains a boolean indicating if the value of <tag> is the same as the previous
-    frame, and the datetime associated with the frame.
+    Checks all the frames in <td> and returns a 2-element tuple where the first element
+    is list of tuples where each tuple contains a date and boolean indicating whether the
+    alarm was active on that date. The second element of the tuple is a list of indices
+    where the first tuple element is False.
 
     :param tag: The tag to check the values of.
     :param td: The relevant telemetry data to check.
-    :return: A list of tuples where each tuple contains a boolean indicating if the value of
-    <tag> is the same as the previous frame, and the datetime associated with the frame.
+    :return: A 2-element tuple where the first element is list of tuples where each tuple
+    contains a date and boolean indicating whether the alarm was active on that date.
+    The second element of the tuple is a list of indices where the first tuple element is False.
     """
 
     sequences_of_static = []
@@ -436,6 +441,7 @@ def repeat_checker(td: TelemetryData, tag: Tag) -> tuple[list[tuple[bool, dateti
     sequences_of_static.append((True, td.get_telemetry_frame(0).time))
 
     values_at_times = td.get_parameter_values(tag)
+
     # Iterate over each pair of timestamps and add a (True, datetime) to the list each time they
     # are the same or (False, datetime) when they aren't.
     for prev_time, curr_time in pairwise(values_at_times.keys()):
@@ -483,8 +489,10 @@ def static_check(dm: DataManager, alarm_base: StaticEventBase,
     # Check which frames share the same value as the previous frame.
     cond_met, false_indexes = repeat_checker(telemetry_data, tag)
 
+    # Check for persistence and create alarms if necessary.
     alarm_indexes = persistence_check(cond_met, sequence, false_indexes)
 
+    # Loop through the alarm indexes and create alarms for each one.
     alarms = []
     first_indexes = []
     for index in alarm_indexes:
