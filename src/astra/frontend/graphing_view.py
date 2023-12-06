@@ -149,10 +149,11 @@ class GraphingView:
     def export_data(self) -> None:
         config_path = filedialog.asksaveasfilename(title='Save file as', defaultextension='.csv',
                                                    filetypes=[('csv file', '.csv')])
-        try:
-            self.controller.export_data_to_file(config_path)
-        except Exception as e:
-            messagebox.showerror(title='Could not save data', message=f'{type(e).__name__}: {e}')
+        if config_path:
+            try:
+                self.controller.export_data_to_file(config_path)
+            except Exception as e:
+                messagebox.showerror(title='Could not save data', message=f'{type(e).__name__}: {e}')
 
     def create_graph(self) -> None:
         """
