@@ -25,7 +25,7 @@ class DashboardRequestReceiver(RequestReceiver):
     and updating the sorting filter to be applied.
     """
 
-    filters = DashboardFilters(set(), (">", "TAG"),
+    filters = DashboardFilters({Tag("")}, (">", "TAG"),
                                0, datetime.min, datetime.max)
     handler = DashboardHandler()
     search_cache: dict[str, Iterable[str]] = dict()
@@ -45,7 +45,7 @@ class DashboardRequestReceiver(RequestReceiver):
         all_tags = dm.tags
 
         # Add all tags to the shown tags by default.
-        if cls.filters.tags is None:
+        if "" in cls.filters.tags:
             cls.filters.tags = set(all_tags)
 
         # Set the index to the first index by default.
