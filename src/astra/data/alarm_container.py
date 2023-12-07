@@ -17,6 +17,7 @@ class AlarmObserver:
     :param: mutex: Synchronization tool as many threads may notify watchers of updates
     :type: Lock
     """
+
     watchers: list[Callable] = []
     _mutex = Lock()
 
@@ -52,10 +53,15 @@ class AlarmsContainer:
     :param observer: An Observer to monitor the state of the container
     :type: AlarmObserver
     """
+
     observer = AlarmObserver()
-    alarms: dict[str, list[Alarm]] = {AlarmPriority.WARNING.name: [], AlarmPriority.LOW.name: [],
-                                      AlarmPriority.MEDIUM.name: [], AlarmPriority.HIGH.name: [],
-                                      AlarmPriority.CRITICAL.name: []}
+    alarms: dict[str, list[Alarm]] = {
+        AlarmPriority.WARNING.name: [],
+        AlarmPriority.LOW.name: [],
+        AlarmPriority.MEDIUM.name: [],
+        AlarmPriority.HIGH.name: [],
+        AlarmPriority.CRITICAL.name: [],
+    }
     new_alarms: Queue[Alarm] = Queue()
     mutex = Lock()
 
@@ -70,8 +76,9 @@ class AlarmsContainer:
             return cls.alarms.copy()
 
     @classmethod
-    def add_alarms(cls, alarms: list[Alarm],
-                   apm: Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]) -> None:
+    def add_alarms(
+        cls, alarms: list[Alarm], apm: Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]
+    ) -> None:
         """
         Updates the alarms global variable after acquiring the lock for it
 
@@ -136,13 +143,21 @@ class AlarmsContainer:
                     # the index well later use into it
                     time_interval = len(times) - len(associated_times) + i
 
-                    new_timer = Timer(associated_time.seconds, cls._update_priority,
-                                      args=[alarm_data, alarm_crit, timedelta(minutes=times[time_interval]), apm])
+                    new_timer = Timer(
+                        associated_time.seconds,
+                        cls._update_priority,
+                        args=[alarm_data, alarm_crit, timedelta(minutes=times[time_interval]), apm],
+                    )
                     new_timer.start()
 
     @classmethod
-    def _update_priority(cls, alarm: Alarm, alarm_crit: AlarmCriticality, time: timedelta,
-                         apm: Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]]) -> None:
+    def _update_priority(
+        cls,
+        alarm: Alarm,
+        alarm_crit: AlarmCriticality,
+        time: timedelta,
+        apm: Mapping[timedelta, Mapping[AlarmCriticality, AlarmPriority]],
+    ) -> None:
         """
         Uses the alarm priority matrix with <time> to place <alarm> in the correct priority bin
         NOTE: we pass a list, and not a tuple, as we need to mutate said list
