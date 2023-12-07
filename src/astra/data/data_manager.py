@@ -156,8 +156,8 @@ class DataManager:
         w, l, m, h, c = AlarmCriticality
         # fmt: off
         return dict(reversed([
-            (timedelta(minutes=0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
-            (timedelta(minutes=5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
+            (timedelta(minutes= 0), {w: w, l: l, m: l, h: m, c: c}),  # noqa E251
+            (timedelta(minutes= 5), {w: w, l: l, m: m, h: h, c: c}),  # noqa E251
             (timedelta(minutes=15), {w: w, l: l, m: m, h: h, c: c}),
             (timedelta(minutes=30), {w: w, l: m, m: h, h: c, c: c}),
         ]))
