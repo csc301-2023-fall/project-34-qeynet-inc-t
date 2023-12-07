@@ -15,7 +15,7 @@ from .alarm_view import AlarmView
 
 class View(Tk):
     """
-    View class
+    The container class for all GUI elements of the main screen
     """
     _dm: DataManager
 
@@ -51,6 +51,7 @@ class View(Tk):
         self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
         graphing_frame = self.graphing_tab.overall_frame
 
+        # setting up observers for alarm updates
         watchers = [
             self.telemetry_tab.construct_dashboard_table,
             self.alarm_tab.construct_alarms_table,
