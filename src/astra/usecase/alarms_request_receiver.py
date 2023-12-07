@@ -393,8 +393,10 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         setter method for <cls.filters.confirmed_start_time>
         """
-
-        cls.filters.registered_start_time = start_time
+        if start_time is None:
+            cls.filters.registered_start_time = datetime.min
+        else:
+            cls.filters.registered_start_time = start_time
 
     @classmethod
     def set_registered_end_time(cls, end_time: datetime):
@@ -402,23 +404,30 @@ class AlarmsRequestReceiver(RequestReceiver):
         setter method for <cls.filters.registered_end_time>
         """
 
-        cls.filters.registered_end_time = end_time
+        if end_time is None:
+            cls.filters.registered_end_time = datetime.max
+        else:
+            cls.filters.registered_end_time = end_time
 
     @classmethod
     def set_confirmed_start_time(cls, start_time: datetime):
         """
         setter method for <cls.filters.confirmed_start_time>
         """
-
-        cls.filters.confirmed_start_time = start_time
+        if start_time is None:
+            cls.filters.confirmed_start_time = datetime.min
+        else:
+            cls.filters.confirmed_start_time = start_time
 
     @classmethod
     def set_confirmed_end_time(cls, end_time: datetime):
         """
         setter method for <cls.filters.confirmed_end_time>
         """
-
-        cls.filters.confirmed_end_time = end_time
+        if end_time is None:
+            cls.filters.confirmed_end_time = datetime.max
+        else:
+            cls.filters.confirmed_end_time = end_time
 
     @classmethod
     def set_new_alarms(cls, new: bool):
