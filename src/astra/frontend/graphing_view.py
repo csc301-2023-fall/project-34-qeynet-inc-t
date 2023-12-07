@@ -90,9 +90,9 @@ class GraphingView:
         button_selection_region = Frame(graphing_frame)
         button_selection_region.grid(sticky='nes', row=2, column=0, pady=20)
 
-        _export_data_button = Button(button_selection_region, text='Export Data',
+        export_data_button = Button(button_selection_region, text='Export Data',
                                     command=self._export_data)
-        _export_data_button.grid(row=0, column=1, pady=20)
+        export_data_button.grid(row=0, column=1, pady=20)
 
         self.searcher.deselect_all_tags()
 
