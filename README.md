@@ -1,10 +1,15 @@
-# Astra
 ​
+<h1 align="center">
+<img src="logo.png" width="150">
+</h1>
+
+# Astra 
+
 ## Partner Intro
 **Partner:**
 * Michael Luciuk
 * Primary point of contact
-* Email: mike.luciuk@mail.utoronto.ca
+* Github: https://github.com/mrl280
 
 **Organization:**
 
@@ -12,13 +17,11 @@
  <img width="300" height="160" src="https://images.squarespace-cdn.com/content/v1/5a837cb7d74cffca72977a29/1518672294226-XPZ4FOYONO9PKB0DX8AC/QEYnet+logo_final-+iteration+2.png">
 </p>
 
-[QEYnet](qeynet.com) is a startup company aiming to deploy a quantum key distribution system using satellites, to deal with the approaching quantum threat. 
+QEYnet is a startup company aiming to deploy a low-cost microsatellite quantum-key-distribution (QKD) network to facilitate the start a new era of ultra-secure communication systems
 
-Our society relies heavily on encryption to keep data safe when communicating, however, it also relies on a mathematical formula which will soon be broken by quantum computers.
+More can be learned about QEYnet and their groundbreaking QKD technologies from their website: https://qeynet.com/
 
-QEYnet plans to use the satellite distribution system to streamline our society's switch to "quantum-safe" keys, in a way that traditional distribution systems cannot.
-
-## Description about the project
+## Description of the project
 
 Astra will be a local, GUI-based program that will allow QEYnet employees and customers to read and interact with data from QEYnet satellites and other devices.
 
@@ -47,6 +50,12 @@ Data from telemetry frames is plotted on a graph with time as the independent va
 * **Emit additional warnings for high-priority alarms (if time permits)**
 
 For sufficiently high-priority alarms, additional methods of notifying staff are deployed such as popups or emails.
+
+## Download and Installation
+
+To acquire the program, one can head to the releases section and simply download `astra-vX.Y.Z.zip` under the latest release version X.Y.Z, then extract the zip folder
+
+Once extracted, running the program simply requires running the `main.exe` file located in the root of the folder.
 
 ## Instructions
 
@@ -88,7 +97,7 @@ For now, we deploy the application manually, using PyInstaller to create an exec
 We currently have the following standards on code style:
 * Max line Length: 100 characters
 * Strings: Use single quotes for strings by default
-* Docstring Format: reST (same as Panoptes)
+* Docstring Format: reST (same as Panoptes, a sister project to automatically generate device configuration and telemetry files)
 * Lint with Flake8; no specific autoformatters prescribed
 * Follow the PEP 8 Style Guide on other matters
 
