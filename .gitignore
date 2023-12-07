@@ -1,2 +1,16 @@
-astra.db
+# databases
+*.db
+
+# pycache
 __pycache__
+
+# mypy
+.mypy_cache
+
+# pytest
+.pytest_cache
+
+# pyinstaller
+*.spec
+dist/
+build/
