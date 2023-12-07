@@ -233,29 +233,12 @@ def test_search_tags_eviction():
     cache[''] = tags.copy()
     eviction = queue.Queue()
 
-    DashboardHandler.search_tags('abcde', cache, eviction)
-    DashboardHandler.search_tags('a', cache, eviction)
-    DashboardHandler.search_tags('b', cache, eviction)
-    DashboardHandler.search_tags('c', cache, eviction)
-    DashboardHandler.search_tags('d', cache, eviction)
-    DashboardHandler.search_tags('e', cache, eviction)
-    DashboardHandler.search_tags('f', cache, eviction)
-    DashboardHandler.search_tags('g', cache, eviction)
-    DashboardHandler.search_tags('h', cache, eviction)
-    DashboardHandler.search_tags('i', cache, eviction)
-    DashboardHandler.search_tags('j', cache, eviction)
-    DashboardHandler.search_tags('k', cache, eviction)
-    DashboardHandler.search_tags('l', cache, eviction)
-    DashboardHandler.search_tags('m', cache, eviction)
-    DashboardHandler.search_tags('n', cache, eviction)
-    DashboardHandler.search_tags('o', cache, eviction)
-    DashboardHandler.search_tags('p', cache, eviction)
-    DashboardHandler.search_tags('q', cache, eviction)
-    DashboardHandler.search_tags('r', cache, eviction)
-    DashboardHandler.search_tags('s', cache, eviction)
+    for i in range(200):
+        search = 'a' * (i + 1)
+        DashboardHandler.search_tags(search, cache, eviction)
 
     check = DashboardHandler.search_tags('t', cache, eviction)
     assert check == []
-    assert len(cache) == 21
-    # The function already evicted abcde, so 'a' should be the next one
-    assert eviction.get() == 'a'
+    assert len(cache) == 201
+    # The function already evicted 'a', so 'aa' should be the next one
+    assert eviction.get() == 'aa'
