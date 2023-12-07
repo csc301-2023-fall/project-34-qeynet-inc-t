@@ -38,7 +38,7 @@ def _read_config_yaml(filename: str) -> None:
         create_update_alarm(dictionary_of_alarms, device_id=device)
 
 
-def yaml_tag_parser(tag_dict: dict) -> dict:
+def yaml_tag_parser(tag_dict: dict) -> Parameter:
     """
         A helper function for yaml reader that parse the tag
         data into a dictionary.
@@ -59,6 +59,8 @@ def yaml_tag_parser(tag_dict: dict) -> dict:
         setpoint = tag_data["setpoint"]
     else:
         setpoint = None
+
+    dtype: type[int] | type[float] | type[bool]
 
     if tag_data["dtype"] == "int":
         dtype = int
