@@ -105,7 +105,8 @@ class SetTimerangePopup(tkinter.Toplevel):
         time_entries: list[tuple[Entry, StringVar, int]] = []
         for row, time_vars in enumerate([self.start_time_vars, self.end_time_vars]):
             time_display_frame = Frame(self)
-            for element in [4, '-', 2, '-', 2, ' ', 2, ':', 2, ':', 2, ' ']:
+            elements: list[int | str] = [4, '-', 2, '-', 2, ' ', 2, ':', 2, ':', 2, ' ']
+            for element in elements:
                 if isinstance(element, int):
                     time_var = StringVar()
                     time_vars.append(time_var)
@@ -197,7 +198,7 @@ class SetTimerangePopup(tkinter.Toplevel):
 
     def set_timerange(self) -> None:
         """Actually perform the action of setting a timerange."""
-        times = [None, None]
+        times: list[datetime | None] = [None, None]
         for i, (time_vars, time_type_capitalized, time_type_lowercase) in enumerate(
             [(self.start_time_vars, 'Start', 'start'), (self.end_time_vars, 'End', 'end')]
         ):
