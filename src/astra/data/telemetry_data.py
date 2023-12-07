@@ -62,7 +62,7 @@ class TelemetryData:
         """The tags for this TelemetryData."""
         return self._tags
 
-    def _convert_dtype(self, tag: Tag, value: float | None) -> ParameterValue:
+    def _convert_dtype(self, tag: Tag, value: float | None) -> ParameterValue | None:
         # Convert the float telemetry value from the database
         # to the correct type for the given parameter.
         if value is None:

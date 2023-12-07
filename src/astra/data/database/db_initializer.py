@@ -58,8 +58,8 @@ class Device(Base):
     __tablename__ = "Device"
 
     device_id: Mapped[int] = mapped_column(primary_key=True)
-    device_name: Mapped[str | None] = mapped_column(unique=True)
-    device_description: Mapped[str | None] = mapped_column()
+    device_name: Mapped[str] = mapped_column(unique=True)
+    device_description: Mapped[str] = mapped_column()
 
     # one-to-many relationship
     tags = relationship(
