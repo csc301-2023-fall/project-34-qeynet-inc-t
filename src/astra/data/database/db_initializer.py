@@ -31,10 +31,10 @@ Base = declarative_base()
 
 
 def initialize_sqlite_db():
-    """initializes the sqlite database and creates the tables
+    """
+    Initialize the sqlite database and create the tables.
 
-    Returns:
-        an Engine, which the Session will use for connection
+    :return: An Engine, which the Session will use for connection.
     """
     engine = create_engine("sqlite:///astra.db")
     Base.metadata.create_all(engine)
@@ -42,17 +42,14 @@ def initialize_sqlite_db():
 
 
 class Device(Base):
-    """A table that holds the device data.
+    """
+    A table that holds the device data.
 
-        device_id (int): unique id for device (primary key)
-        device_name (Optional[str | None]): device name
-        device_description (Optional[str | None]): device description
-        tags (Set["Tag"]): tags of the device (one-to-many relationship)
-        alarms (Set["Alarm"]): alarms of the device (one-to-many relationship)
-
-    Args:
-        Base: a declarative base class that helps mapping to the relational
-              schema
+        device_id: unique id for device (primary key)
+        device_name: device name
+        device_description: device description
+        tags: tags of the device (one-to-many relationship)
+        alarms: alarms of the device (one-to-many relationship)
     """
 
     __tablename__ = "Device"
@@ -80,18 +77,15 @@ class Device(Base):
 
 
 class Tag(Base):
-    """A table that holds the tag data.
+    """
+    A table that holds the tag data.
 
-         tag_id (int): unique id for tag
-         tag_name (str): tag name
-         tag_parameter ()
-         device_id (int): unique id for device (foreign key)
-         device (Device): device of the tag (many-to-one relationship)
-         data (List["Data"]): data of the tag (one-to-many relationship
-
-    Args:
-        Base: a declarative base class that helps mapping to the relational
-              schema
+         tag_id: unique id for tag
+         tag_name: tag name
+         tag_parameter: dictionary holding other configuration data pertaining to the tag
+         device_id: unique id for device (foreign key)
+         device: device of the tag (many-to-one relationship)
+         data: data of the tag (one-to-many relationship)
     """
 
     __tablename__ = "Tag"
@@ -126,18 +120,14 @@ class Tag(Base):
 
 
 class Alarm(Base):
-    """A table that holds the alarm data.
+    """
+    A table that holds the alarm data.
 
-        alarm_id (int): unique id for alarm (primary key)
-        alarm_criticality (str): criticality of the alarm
-                                 (Warning, Low, Medium, High, Critical)
-        alarm_data (dict): data of the alarm
-        device_id (int): unique id for device (foreign key)
-        device (Device): device of the alarm (many-to-one relationship)
-
-    Args:
-        Base: a declarative base class that helps mapping to the relational
-              schema
+        alarm_id: unique id for alarm (primary key)
+        alarm_criticality: criticality of the alarm (Warning, Low, Medium, High, Critical)
+        alarm_data: data of the alarm
+        device_id: unique id for device (foreign key)
+        device: device of the alarm (many-to-one relationship)
     """
 
     __tablename__ = "Alarm"
@@ -154,18 +144,15 @@ class Alarm(Base):
 
 
 class Data(Base):
-    """A table that holds the data for the tags with timestamps.
+    """
+    A table that holds the data for the tags with timestamps.
 
-        data_id (int): unique id for data (primary key)
-        timestamp (datetime): timestamp of the data
-        value (float | None): raw value of the data (before conversion)
-        last_modified (datetime): last modified date of the data
-        tag_id (int): unique id for tag (foreign key)
-        tag (Tag): tag of the data (many-to-one relationship)
-
-    Args:
-        Base: a declarative base class that helps mapping to the relational
-              schema
+        data_id: unique id for data (primary key)
+        timestamp: timestamp of the data
+        value: raw value of the data (before conversion)
+        last_modified: last modified date of the data
+        tag_id: unique id for tag (foreign key)
+        tag: tag of the data (many-to-one relationship)
     """
 
     __tablename__ = "Data"
