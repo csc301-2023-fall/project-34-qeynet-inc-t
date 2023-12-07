@@ -13,10 +13,6 @@ from astra.data.database.db_initializer import (
     Data,
 )
 
-# Docstring types have not been corrected in the latest change,
-# since those will be going away anyway.
-# TODO: put docstrings in the correct format
-
 
 # auto initialize the database
 # an Engine, which the Session will use for connection
@@ -28,13 +24,14 @@ Session = sessionmaker(engine, expire_on_commit=False)
 
 def create_update_tag(tag_name: str, tag_parameter: dict, device_id: int):
     """
-        create (if not exist) or update the tag in database
-        tag exists means the combination of tag_name and device_id
-        exists in database
-    Args:
-        tag_name (str): the name of the tag
-        tag_parameter (dict): the parameter of the tag
-        device_id (int): the id of the device
+    Create (if it does not already exist) or update a tag in the database.
+
+    A tag exists if the combination of tag_name and device_id
+    exists in the database.
+
+    :param tag_name: the name of the tag
+    :param tag_parameter: the parameter of the tag
+    :param device_id: the id of the device
     """
     with Session.begin() as session:
         # check if tag exists in database
@@ -68,9 +65,9 @@ def create_update_tag(tag_name: str, tag_parameter: dict, device_id: int):
 
 def create_update_device(metadata: dict):
     """
-        create (if not exist) or update the device in database
-    Args:
-        metadata (_type_): metadata of the configuration file
+    Create (if it does not already exist) or update a device in the database.
+
+    :param metadata: metadata from the configuration file of the device
     """
     device_id = None
     device = get_device(metadata["device"])
@@ -101,9 +98,10 @@ def create_update_device(metadata: dict):
     return device_id
 
 
+# TODO: figure out what's going on with this function and its documentation
 def create_update_alarm(dictionary_of_alarms: dict, device_id: int):
     """
-        if alarm for the device exists in database, delete the old alarm and
+        If alarm for the device exists in database, delete the old alarm and
         create new alarms in database based on the dictionary of alarms
     Args:
         dictionary_of_alarms (dict): a dictionary that contains the alarm's
@@ -135,43 +133,38 @@ def create_update_alarm(dictionary_of_alarms: dict, device_id: int):
 
 def get_device(device_name: str) -> Device | None:
     """
-        check if device exists in database and return the device
-    Args:
-        device_name (str): the name of the device
+    Get the device with the given name, if one exists.
 
-    Returns:
-        Device | None: the device with the given name, or None if none exists
+    :param device_name: the name of the device
+
+    :return: the device with the given name, or None if none exists
     """
     with Session.begin() as session:
-        # check if device exists in database
-        device_exist = (
+        return (
             session.query(Device)
             .filter(Device.device_name == device_name)
             .first()
         )
-        return None if device_exist is None else device_exist
 
 
 def device_exists(device_name: str) -> bool:
     """
-        check if device exists in database
-    Args:
-        device_name (str): the name of the device
+    Check if a device with the given name exists in the database.
 
-    Returns:
-        bool: True if device exists in database, False otherwise
+    :param device_name: the name of the device
+
+    :return: True if the device exists in database, False otherwise
     """
     return get_device(device_name) is not None
 
 
 def get_tags_for_device(device_name: str) -> Sequence[Row[tuple[str, dict]]]:
     """
-        return all tags for the given device
-    Args:
-        device_name (str): the name of the device
+    Return all tags for the given device.
 
-    Returns:
-        list[tuple[str, dict]]: a list of tuples of (tag_name, tag_parameter)
+    :param device_name: the name of the device
+
+    :return: a sequence of (tag_name, tag_parameter)
     """
     with Session.begin() as session:
         select_stmt = (
@@ -184,12 +177,11 @@ def get_tags_for_device(device_name: str) -> Sequence[Row[tuple[str, dict]]]:
 
 def get_alarm_base_info(device_name: str) -> Sequence[Row[tuple[str, dict]]]:
     """
-        return all alarm info for the given device
-    Args:
-        device_name (str): the name of the device
+    Return all alarm info for the given device.
 
-    Returns:
-        list[tuple[str, dict]]: a list of tuples of (alarm_criticality, alarm_data)
+    :param device_name: the name of the device
+
+    :return: a sequence of (alarm_criticality, alarm_data)
     """
     with Session.begin() as session:
         select_stmt = (
@@ -202,12 +194,11 @@ def get_alarm_base_info(device_name: str) -> Sequence[Row[tuple[str, dict]]]:
 
 def get_tag_id_name(device_name: str) -> Sequence[Row[tuple[int, str]]]:
     """
-        A helper function that fetches the tags for a device and
-        converts that to a list of (tag_id, tag_name)
-    Args:
-        device_name (str): the name of the device
-    Returns:
-        list[tuple[int, str]]: a list of tuples of (tag_id, tag_name)
+    Helper function: fetch the IDs and names of the tags for a device.
+
+    :param device_name: the name of the device
+
+    :return: a sequence of (tag_id, tag_name)
     """
     with Session.begin() as session:
         tag_id_name = (
@@ -222,17 +213,15 @@ def num_telemetry_frames(
     device_name: str, start_time: datetime | None, end_time: datetime | None
 ) -> int:
     """
-        Number of telemetry frames for a device between start_time and end_time
-        For this function and all below functions: if start_time/end_time is None,
-        treat as if there are no restrictions in the relevant direction.
-    Args:
-        device_name (str): name of the device
-        start_time (datetime | None): the start time of the data
-        end_time (datetime | None): the end time of the data
+    Number of telemetry frames for a device between start_time and end_time
+    For this function and all below functions: if start_time/end_time is None,
+    treat as if there are no restrictions in the relevant direction.
 
-    Returns:
-        int: the number of telemetry frames for the given device between
-             start_time and end_time
+    :param device_name: name of the device
+    :param start_time: the start time of the data
+    :param end_time: the end time of the data
+
+    :return: the number of telemetry frames for the given device between start_time and end_time
     """
     device = get_device(device_name)
     with Session.begin() as session:
@@ -264,20 +253,18 @@ def get_telemetry_data_by_index(
     index: int,
 ) -> tuple[Sequence[Row[tuple[str, float | None]]], datetime]:
     """
-        All the data for the telemetry frame with the <index>th timestamp
-        for a device between start_time and end_time.
-        May assume: 0 <= <index> < <number of timestamps>
-    Args:
-        device_name (str): name of the device
-        tags (set[str]): set of tags for the data to be returned
-        start_time (datetime | None): the start time of the data
-        end_time (datetime | None): the end time of the data
-        index (int): the index of the timestamp
+    All the data for the telemetry frame with the <index>th timestamp
+    for a device between start_time and end_time.
+    Precondition: 0 <= <index> < <number of timestamps>
 
-    Returns:
-        tuple[list[tuple[str, float]], datetime]: a tuple that contains
-         1. a list of tuple (tag_name, value) for the given device/tags with the
-            given timestamp
+    :param device_name: name of the device
+    :param tags: set of tags for the data to be returned
+    :param start_time: the start time of the data
+    :param end_time: the end time of the data
+    :param index: the index of the timestamp
+
+    :return: a two-element tuple that contains:
+         1. a sequence of (tag_name, value) for the given device/tags with the given timestamp;
          2. the timestamp for the data
     """
     device = get_device(device_name)
@@ -327,21 +314,18 @@ def get_telemetry_data_by_tag(
     step: int = 1,
 ) -> Sequence[Row[tuple[float, datetime]]]:
     """
-        Every <step>th data for the given tag for a device between
-        start_time and end_time
-        Should be sorted by time -- 0 earliest, <num frames> - 1 latest
-        May assume: tag exists for the given device
-    Args:
-        device_name (str): name of the device
-        start_time (datetime | None): the start time of the data
-        end_time (datetime | None): the end time of the data
-        tag (str): the tag of the data
-        step (int): the step of choosing the data within the given time range
+    Every <step>th data for the given tag for a device between start_time and end_time.
+    Should be sorted by time -- 0 earliest, <num frames> - 1 latest.
+    Precondition: tag exists for the given device
 
-    Returns:
-        list[tuple[float, datetime]]:
-            a list of tuple (value, timestamp) for the given device/tag between
-            start_time and end_time
+    :param device_name: name of the device
+    :param start_time: the start time of the data
+    :param end_time: the end time of the data
+    :param tag: the tag of the data
+    :param step: the step of choosing the data within the given time range
+
+    :return: a sequence of (value, timestamp) for the given device/tag
+    between start_time and end_time
     """
     device = get_device(device_name)
     with Session.begin() as session:
@@ -377,9 +361,9 @@ def get_telemetry_data_by_tag(
 
 def get_device_data() -> list[tuple[str, str]]:
     """
-        Return all the names and descriptions of devices in the database
-    Returns:
-        list[tuple[str, str]]: a list of (device name, device description) tuples
+    Return all the names and descriptions of devices in the database.
+
+    :return: a sequence of (device name, device description)
     """
     with Session.begin() as session:
         select_stmt = select(Device.device_name, Device.device_description)
@@ -388,10 +372,10 @@ def get_device_data() -> list[tuple[str, str]]:
 
 def delete_device(device_name: str) -> None:
     """
-        Delete the device with the given name from the database
-        Note that all the corresponding tags and data will be deleted as well
-    Args:
-        device_name (str): the name of the device
+    Delete the device with the given name from the database.
+    Note that all the corresponding tags and data will be deleted as well.
+
+    :param device_name: the name of the device
     """
     device = get_device(device_name)
     with Session.begin() as session:
