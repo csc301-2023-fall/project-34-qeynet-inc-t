@@ -24,7 +24,11 @@ from astra.data.alarms import (
     AllEventBase,
     AnyEventBase,
 )
-from astra.data.parameters import DisplayUnit, Parameter, ParameterValue, Tag
+from astra.data.parameters import DisplayUnit, Parameter, Tag
+
+
+# Define ParameterValue here as a UnionType to work around some mypy thing
+ParameterValue: UnionType = bool | int | float
 
 
 class ParsingError(Exception):
@@ -59,12 +63,12 @@ class Path:
         )
 
 
-def _format_type(t: type) -> str:
+def _format_type(t: type | UnionType) -> str:
     # Stringify types in a nice way.
     return repr('None' if t is NoneType else t.__name__ if isinstance(t, type) else str(t))
 
 
-def _check_type[T](path: Path, value: object, expected_type: type[T]) -> T:
+def _check_type(path: Path, value: object, expected_type: type | UnionType) -> Any:
     # Return the value unchanged if it is of the expected type and raise an error otherwise.
     if isinstance(value, expected_type):
         return value
