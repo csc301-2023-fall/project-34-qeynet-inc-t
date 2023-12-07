@@ -282,7 +282,8 @@ def running_average_at_time(data: Mapping[datetime, ParameterValue | None], time
     :param times: The times associated with the data: <data.keys()>
     :param start_date: The start date to check from
     :param time_window: The time_window to check over
-    :return: The running average starting at <start_date> and ending at <start_date> + <time_window>.
+    :return: The running average starting at <start_date> and ending at <start_date> +
+    <time_window>.
 
     PRECONDITION: <start_date> is in <times> and <times> are the keys of <data>.
     """
@@ -701,7 +702,8 @@ def forward_checking_propagator(first_events: list[tuple[int, datetime]],
     return satisfying_events
 
 
-def get_smallest_domain(events: list[Union[list[tuple[int, datetime]], tuple[int, datetime]]]) -> int:
+def get_smallest_domain(events: list[Union[list[tuple[int, datetime]], tuple[int, datetime]]]) \
+        -> int:
     """
     Returns the index of the event with the smallest remaining domain values that isn't already
     assigned
@@ -855,7 +857,8 @@ def sequence_of_events_check(dm: DataManager, alarm_base: SOEEventBase,
                                        Condition())
 
         if not inner_alarm_indexes:
-            # If any nested alarm was not raised, sequence of events couldn't have happened, so return early
+            # If any nested alarm was not raised, sequence of events couldn't have happened,
+            # so return early
             with cv:
                 cv.notify()
                 return [False] * len(inner_alarm_indexes)

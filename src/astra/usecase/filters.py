@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-
-from astra.data.alarms import AlarmPriority, AlarmCriticality
 from astra.data.parameters import Tag
 
 

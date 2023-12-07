@@ -153,7 +153,8 @@ class GraphingView:
             try:
                 self.controller.export_data_to_file(config_path)
             except Exception as e:
-                messagebox.showerror(title='Could not save data', message=f'{type(e).__name__}: {e}')
+                messagebox.showerror(title='Could not save data', message=f'{type(e).__name__}: '
+                                                                          f'{e}')
 
     def create_graph(self) -> None:
         """
