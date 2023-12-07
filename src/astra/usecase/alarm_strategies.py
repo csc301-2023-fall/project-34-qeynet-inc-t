@@ -16,6 +16,7 @@ UNACKNOWLEDGED = False
 next_id = EventID(0)
 
 
+
 def get_strategy(base: EventBase) -> Callable:
     """
     Matches an unknown form of EventBase to the correct strategy to check them
@@ -27,6 +28,7 @@ def get_strategy(base: EventBase) -> Callable:
     :param base: An EventBase to evaluate
     :return: The function needed to evaluate <base>
     """
+
     match base:
         case RateOfChangeEventBase():
             return rate_of_change_check
@@ -58,7 +60,7 @@ def find_first_time(alarm_base: EventBase, earliest_time: datetime) -> tuple[dat
     # Calculating the range of time that needs to be checked
     if alarm_base.persistence is None:
         subtract_time = timedelta(seconds=0)
-        sequence = 0
+        sequence = 0.0
     else:
         subtract_time = timedelta(seconds=alarm_base.persistence)
         sequence = alarm_base.persistence
@@ -90,7 +92,7 @@ def create_alarm(alarm_indexes: tuple[int, int], times: list[datetime],
 
     event = Event(event_base, next_id, register_timestamp, confirm_timestamp, datetime.now(),
                   event_base.description)
-    next_id += 1
+    next_id = EventID(next_id + 1)
 
     # Note: priority needs to be determined externally, so we temporarily set it to provided
     # criticality
@@ -115,6 +117,7 @@ def check_conds(td: TelemetryData, tag: Tag, condition: Callable,
     confirmed. Also returns a list of booleans where each index i refers to whether or not the
     i-th frame of <td> had an active alarm.
     """
+
     alarm_data = []
     alarm_indices = []
     tag_values = td.get_parameter_values(tag)
@@ -353,7 +356,6 @@ def rate_of_change_check(dm: DataManager, alarm_base: RateOfChangeEventBase,
     rising_or_falling_list = []
 
     # initialize the prev_running_average
-    curr_running_average = 0.0
     if len(times) > 0:
         prev_running_average = running_average_at_time(tag_values, times,
                                                        times[0], alarm_base.time_window)
@@ -557,7 +559,6 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
     :param criticality: The base criticality of the alarm
     :param earliest_time: The earliest time from a set of the most recently added
     telemetry frames
-    :param all_alarms: Container for the list of all alarms
     :param compound: If this algorithm is being called as part of a compound alarm
     :param cv: Used to notify completion of this task
     :return: A list of all alarms that should be newly raised, and a list of bools
@@ -609,7 +610,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
         with cv:
             cv.notify()
             return all_alarm_frames
-
+    return []
 
 def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool:
     """
@@ -758,22 +759,22 @@ def backtracking_search(events: list[Union[list[tuple[int, datetime]], tuple[int
     if chosen_domain == -1:
         # indicates solution was found
 
-        first_event: int = 0
-        last_events: int = 0
-        if type(events[0][0]) is int:
-            # this should always pass
-            first_event = events[0][0]
+        # these assertion checks should always pass
+        assert type(events[0][0]) is int
+        first_event = events[0][0]
 
-        if type(end_events[-1][-1][0]) is int:
-            # this should always pass
-            last_events = end_events[-1][-1][0]
+        assert type(end_events[-1][-1]) is tuple
+        last_events = end_events[-1][-1][0]
 
         return [first_event, last_events]
 
-    first_event = end_events[chosen_domain]
-    second_event = events[chosen_domain + 1]
+    first_event_list = end_events[chosen_domain]
+    assert type(first_event_list) is list
 
-    events[chosen_domain + 1] = forward_checking_propagator(first_event, second_event,
+    second_event_list = events[chosen_domain + 1]
+    assert type(second_event_list) is list
+
+    events[chosen_domain + 1] = forward_checking_propagator(first_event_list, second_event_list,
                                                             time_window[chosen_domain])
 
     # updating the end events to match the new domain of the chosen variable
@@ -781,9 +782,14 @@ def backtracking_search(events: list[Union[list[tuple[int, datetime]], tuple[int
     for updated_event in events[chosen_domain + 1]:
         for i in range(len(end_events[chosen_domain + 1])):
             curr_end_events = end_events[chosen_domain + 1][i]
+
+            assert type(updated_event) is tuple
+            assert type(curr_end_events) is tuple
+
             if curr_end_events[0] > updated_event[0]:
                 updated_end_events.append(curr_end_events)
                 break
+
     end_events[chosen_domain + 1] = updated_end_events
 
     if not events[chosen_domain + 1]:
@@ -799,10 +805,13 @@ def backtracking_search(events: list[Union[list[tuple[int, datetime]], tuple[int
             # For each element in the chosen domain, we assign one and check if a solution
             # to the sequence of events exists
             event = events[chosen_domain][i]
+            assert type(event) is tuple
+
             new_events[chosen_domain] = event
 
             new_end_events[chosen_domain] = end_events[i]
             return backtracking_search(new_events, new_end_events, time_window)
+    return []
 
 
 def pad_alarm_indexes(inner_alarms: list[list[bool]], max_size) -> list[list[bool]]:
