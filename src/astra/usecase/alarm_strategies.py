@@ -16,7 +16,6 @@ UNACKNOWLEDGED = False
 next_id = EventID(0)
 
 
-
 def get_strategy(base: EventBase) -> Callable:
     """
     Matches an unknown form of EventBase to the correct strategy to check them
@@ -611,6 +610,7 @@ def threshold_check(dm: DataManager, alarm_base: ThresholdEventBase,
             cv.notify()
             return all_alarm_frames
     return []
+
 
 def setpoint_cond(param_value: ParameterValue, setpoint: ParameterValue) -> bool:
     """
