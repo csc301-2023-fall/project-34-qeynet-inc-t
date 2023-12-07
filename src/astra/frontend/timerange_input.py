@@ -234,7 +234,7 @@ class SetTimerangePopup(tkinter.Toplevel):
             self.timerange_input.update_timerange(start_time, end_time)
 
     @staticmethod
-    def switch_entry(entry: Entry, next_entry: Entry, entry_len: int):
+    def switch_entry(entry: Entry, next_entry: Entry, entry_len: int) -> None:
         """Switch focus from entry to next_entry as long as entry has entry_length characters."""
         if len(entry.get()) == entry_len:
             next_entry.focus_set()
