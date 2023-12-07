@@ -98,30 +98,28 @@ def create_update_device(metadata: dict):
     return device_id
 
 
-# TODO: figure out what's going on with this function and its documentation
-def create_update_alarm(dictionary_of_alarms: dict, device_id: int):
+def create_update_alarm(alarm_dicts: Sequence[dict], device_id: int):
     """
-        If alarm for the device exists in database, delete the old alarm and
-        create new alarms in database based on the dictionary of alarms
-    Args:
-        dictionary_of_alarms (dict): a dictionary that contains the alarm's
-                                     criticality and data
-        device_id (int): the id of the device
+    Create new alarms in the database based on the given alarm dictionaries.
+    Delete any preexisting alarms for the given device.
+
+    :param alarm_dicts: a lost of dictionaries containing alarm criticalities and data
+    :param device_id: the id of the device
     """
     with Session.begin() as session:
-        # check if alarm for the device exists in database
+        # check if alarms for the device exist in database
         check_stmt = select(Alarm).where(
             Alarm.device_id == device_id,
         )
         alarm_exist = session.execute(check_stmt).first()
         if alarm_exist:
-            # delete the old alarm
+            # delete the old alarms
             delete_stmt = delete(Alarm).where(Alarm.device_id == device_id)
             session.execute(delete_stmt)
 
         # create new alarms in database
         alarm_list = []
-        for alarm_dict in dictionary_of_alarms:
+        for alarm_dict in alarm_dicts:
             alarm = Alarm(
                 alarm_criticality=alarm_dict["criticality"],
                 alarm_data=alarm_dict["event"],

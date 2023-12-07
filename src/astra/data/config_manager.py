@@ -34,8 +34,8 @@ def _read_config_yaml(filename: str) -> None:
             )
 
         # create or update the alarms in database
-        dictionary_of_alarms = config_contents["alarms"]
-        create_update_alarm(dictionary_of_alarms, device_id=device)
+        alarm_dicts = config_contents["alarms"]
+        create_update_alarm(alarm_dicts, device_id=device)
 
 
 def yaml_tag_parser(tag_dict: dict) -> Parameter:
@@ -44,7 +44,7 @@ def yaml_tag_parser(tag_dict: dict) -> Parameter:
         data into a dictionary.
 
     Args:
-        tag_data (dict): a dictionary that contains the tag data
+        tag_dict (dict): a dictionary that contains the tag data
                          (setpoint, dtype, display_units)
 
     Raises:
