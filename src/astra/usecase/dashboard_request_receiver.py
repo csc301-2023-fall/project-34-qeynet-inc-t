@@ -11,8 +11,6 @@ from astra.usecase.table_return import TableReturn
 
 VALID_SORTING_DIRECTIONS = {'>', '<'}
 VALID_SORTING_COLUMNS = {'TAG', 'DESCRIPTION'}
-DATA = 'DATA'
-CONFIG = 'CONFIG'
 DASHBOARD_HEADINGS = ['TAG', 'DESCRIPTION']
 
 
@@ -244,8 +242,10 @@ class DashboardRequestReceiver(RequestReceiver):
         """
         Returns the time of the currently examined frame
 
-        :return: The time of the currently examined frame, or None if no data is in the telemetry dashboard
+        :return: The time of the currently examined frame, or None if no data is in the
+        telemetry dashboard
         """
+
         if cls.previous_data is not None:
             return cls.previous_data.timestamp
         return None
