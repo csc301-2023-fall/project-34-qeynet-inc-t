@@ -81,7 +81,7 @@ Astra is designed to run on Windows, and uses Python 3.12. All required dependen
  
  ## Deployment and Github Workflow
 
-Astra was developed in 3 subteams: the data subteam, responsible for file I/O and persistence; the use case subteam, responsible for alarm checking and formatting data from the data subteam into a useful form for the frontend subteam; and the frontend subteam, responsible for the GUI. The subteam division was loosely followed, with members of one subteam often helping out members of another subteam as needed.
+Astra was developed in 3 subteams: the data subteam, responsible for file I/O and persistence; the use case subteam, responsible for alarm checking and formatting data from the data subteam into a useful form for the frontend subteam; and the frontend subteam, responsible for the GUI. The subteam division was loosely followed, with members of one subteam often helping out members of another subteam as needed. Some additional information about the architecture is available to QEYnet in [this document](https://docs.google.com/document/d/1Wuo1VQmCnTxxP83IEmn096VleXanofMJPdSxHzJb2K8/edit?usp=sharing).
 
 There is a GitHub workflow for linting with Flake8 and running tests with pytest.
 
