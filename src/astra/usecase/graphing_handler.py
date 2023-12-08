@@ -11,11 +11,11 @@ DATETIME_FORMAT = "%d/%m/%Y, %H:%M:%S"
 @dataclass
 class GraphingData:
     """
-    A container for data needed by the fronted to graph the requested tags. For each tag,
+    A container for data needed by the frontend to graph the requested tags. For each tag,
     the length of their times and values lists must be the same.
 
     :param shown_tags: A dictionary where each key is a tag, and each value is a tuple of lists.
-    the first list is a list of strings representing times and the second is a list of values at
+    The first list is a list of strings representing times and the second is a list of values at
     those times for that tag. These lists must be the same length.
     :param curr_telemetry_data: The telemetry data that was used to create the <shown_tags>. It is
     used to correctly filter data when it is requested without accessing the database each time.
@@ -28,7 +28,7 @@ class GraphingData:
 
 class GraphingHandler:
     """
-    GraphingHandler is a implementation of UseCaseHandler for the graphing tab.
+    GraphingHandler is an implementation of UseCaseHandler for the graphing tab.
     It takes care of acquiring and formatting data needed by the graphing tab.
     """
 
@@ -42,7 +42,7 @@ class GraphingHandler:
         :param filter_args: Contains all information on filters to be applied
         :return: A GraphingData object containing the data needed to graph the requested tags.
         """
-        # get the data from the database
+        # get all data from the database
         telemetry_data = dm.get_telemetry_data(
             None, None, dm.tags)
 
@@ -58,19 +58,19 @@ class GraphingHandler:
     def update_data(cls, prev_data: GraphingData, filter_args: GraphingFilters) -> None:
         """
         update_data is a method that updates the currently represented information,
-        by modifying <prev_data> to match the current filters. Note, this method
-        will not add new data from the database.
+        by modifying <prev_data> to match the current filters given in <filter_args>.
+        Note, this method will not add new data from the database.
 
         :param prev_data: The representation of the current state of displayed data
         :param filter_args: Contains all information on filters to be applied
-        :param dm: Contains all data stored by the program to date
         """
         cls._filter_graphing_data(prev_data, filter_args)
 
     @classmethod
     def export_data_to_file(cls, prev_data: GraphingData, file_name: str) -> None:
         """
-        export_data_to_file is a method that exports the graph to a file.
+        export_data_to_file is a method that exports the current data to the file given by
+        <file_name>.
 
         :param prev_data: The representation of the current state of displayed data
         :param file_name: The name of the file to export the graph to.
@@ -78,6 +78,7 @@ class GraphingHandler:
 
         interval = 1
 
+        # call on the telemetry data to save the data to the file.
         prev_data.curr_telemetry_data.save_to_file(file_name, interval)
 
     @classmethod
@@ -101,7 +102,8 @@ class GraphingHandler:
         formatted_times_list = [time.strftime(DATETIME_FORMAT)
                                 for time in times_list[min_index: max_index + 1]]
 
-        # Remove all tags before looking through the filter to get only the required tags
+        # Remove all tags before looking through the filter so that the tags that are not
+        # in the filter are not shown.
         graphing_data.shown_tags.clear()
 
         # If the max and min index are the same, there are no values within the time_frame.
@@ -126,7 +128,7 @@ class GraphingHandler:
         This method returns a tuple of ints representing indices that give a slice
         of the <times_list> where all times in it are >= <start_time> and <= <end_time>.
 
-        :param imtes_list: The list of times in chronological order that we need the slice of, which
+        :param times_list: The list of times in chronological order that we need the slice of, which
         is between the <start_time> and <end_time>.
         :param start_time: The datetime that is the earliest time that values for each tag
         are from.
@@ -146,9 +148,12 @@ class GraphingHandler:
 
         Precondition: times_list is sorted chronologically and there are no duplicate times
         """
+
+        # Determine if the start_time is None, and if so, return 0.
         if start_time is None:
             return 0
 
+        # Perform a binary search to find the index of the first time that is >= <start_time>.
         curr_min = 0
         curr_max = len(times_list) - 1
 
@@ -165,7 +170,7 @@ class GraphingHandler:
             elif times_list[index] < start_time:
                 curr_min = index + 1
 
-        # In the case that the loop ends, curr_min will be the index of the first time
+        # In the case that the loop ends, <curr_min> will be the index of the first time
         # that is after <start_time>.
         return curr_min
 
@@ -181,9 +186,11 @@ class GraphingHandler:
 
         Precondition: times_list is sorted chronologically and there are no duplicate times
         """
+        # Determine if the start_time is None, and if so, return 0.
         if end_time is None:
             return len(times_list) - 1
 
+        # Perform a binary search to find the index of the first time that is <= <end_time>.
         curr_min = 0
         curr_max = len(times_list) - 1
 
@@ -200,6 +207,6 @@ class GraphingHandler:
             elif times_list[index] < end_time:
                 curr_min = index + 1
 
-        # In the case that the loop ends, curr_max will be the index of the last time
+        # In the case that the loop ends, <curr_max> will be the index of the last time
         # that is before <end_time>.
         return curr_max

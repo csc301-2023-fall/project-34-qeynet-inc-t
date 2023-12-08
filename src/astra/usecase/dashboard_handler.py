@@ -1,11 +1,11 @@
-import queue
+from queue import Queue
 from typing import Iterable
 
 from astra.data.alarms import (
     Alarm,
     AlarmCriticality,
-    AlarmPriority,
 )
+
 from .filters import DashboardFilters
 from .table_return import TableReturn, TelemetryTableReturn
 from astra.data.data_manager import DataManager
@@ -22,7 +22,7 @@ DATA = 'DATA'
 CONFIG = 'CONFIG'
 ROUNDING_DECMIALS = 2
 # For now, this choice is somewhat arbitrary
-CACHE_SIZE = 20
+CACHE_SIZE = 200
 
 
 class DashboardHandler:
@@ -31,9 +31,10 @@ class DashboardHandler:
     """
 
     @staticmethod
-    def search_tags(search: str, cache: dict[str: Iterable[Tag]], eviction: queue) -> list[Tag]:
+    def search_tags(search: str, cache: dict[str, Iterable[str]], eviction: Queue) \
+            -> Iterable[str]:
         """
-        Searches for all tags where <search> is a substring of the tag
+        Finds any tag where their tag name or description matches <tag> and returns them
 
         :param search: The substring to search for
         :param cache: Stores CACHE_SIZE + 1 keys, where each key matches a previous <search>
@@ -51,8 +52,12 @@ class DashboardHandler:
                 closest = prev_search
                 max_len = len(prev_search)
 
+        # If search request is already in the cache
         if closest == search:
             return cache[search]
+
+        # Search request is not already in the cache, so we perform the search on the closest
+        # option
         matching = []
         for tag in cache[closest]:
             lower_tag = tag.lower()
@@ -63,6 +68,7 @@ class DashboardHandler:
             cache[search] = matching
             eviction.put(search)
 
+        # evicting from the cache if needed
         if len(cache) == CACHE_SIZE + 2:
             remove = eviction.get()
             cache.pop(remove)
@@ -71,7 +77,7 @@ class DashboardHandler:
     @classmethod
     def _format_param_value(cls, tag_data: ParameterValue | None) -> str:
         """
-        Formats the <tag_data>.
+        Formats the <tag_data> for viewing in the telemetry dashboard
 
         :param tag_data: The (converted) data to format
         :return: A string with the appropriate formatting
@@ -97,7 +103,7 @@ class DashboardHandler:
 
     @classmethod
     def _tag_to_alarms(cls, tags: list[Tag],
-                       alarms: dict[AlarmPriority, list[Alarm]]) -> dict[Tag, Alarm]:
+                       alarms: dict[str, list[Alarm]]) -> dict[Tag, Alarm]:
         """
         Finds and returns the highest priority alarm for each Tag in <tags, for use in
         displaying some alarm data in the telemetry dashboard.
@@ -168,14 +174,17 @@ class DashboardHandler:
             tag_setpoint_value = eval_param_value(
                 tag_parameters, raw_tag_setpoint_value)
 
+            # creating strings for relevant tag data
             tag_value = cls._format_param_value(tag_data)
             tag_setpoint = cls._format_param_value(tag_setpoint_value)
 
+            # creating strings for unit of measurement of each tag
             if tag_parameters.display_units is None:
                 tag_units = "-"
             else:
                 tag_units = tag_parameters.display_units.symbol
 
+            # creating strings for the highest priority alarm associated with the tag
             tag_alarm_data = cls._format_alarm_data(tag_alarm)
 
             include_tag = tag in input_tags
@@ -219,8 +228,7 @@ class DashboardHandler:
     @classmethod
     def get_data(cls, dm: DataManager, filter_args: DashboardFilters):
         """
-        An implementation of get_data for the Telemetry Dashboard to create a
-        data table pertaining to a single telemetry frame with data filtering
+        Creates a data table pertaining to a single telemetry frame with data filtering
         requested by the user
 
         :param dm: Contains all data stored by the program to date
@@ -238,6 +246,7 @@ class DashboardHandler:
 
         # First, all the return data
         timestamp = telemetry_frame.time
+
         include, remove = cls._add_rows_to_output(
             filter_args.tags, dm,
             telemetry_frame)
@@ -254,11 +263,8 @@ class DashboardHandler:
     @classmethod
     def update_data(cls, previous_table: TelemetryTableReturn, filter_args: DashboardFilters):
         """
-        An implementation of update_data for the Telemetry Dashboard to update fields
-        based on new sorting requests from the user
+        Updates the currently shown table based on new filter or sort requests from the user
 
-
-        :param dm: Contains all data stored by the program to date
         :param filter_args: Defines all filters to be applied
         :param previous_table: A representation of the current shown data in
         the Telemetry Dashboard

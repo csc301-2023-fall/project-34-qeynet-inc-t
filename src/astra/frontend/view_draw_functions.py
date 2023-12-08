@@ -9,9 +9,8 @@ def draw_status(status_frame, descriptions):
     """
     Draws the status frame of the dashboard
 
-    Args:
-        status_frame: frame of the status
-        descriptions: content to be displayed in the frame
+    :param: status_frame: frame of the status
+    :param: descriptions: content to be displayed in the frame
     """
 
     # Wipe the frame first
@@ -31,9 +30,8 @@ def draw_warnings(warnings_frame, descriptions):
     Draws the warnings frame of the dashboard
     Assumes warnings are sorted by critical first
 
-    Args:
-        warnings_frame: frame for warnings
-        descriptions: informations for what to go in the warnings
+    :param: warnings_frame: frame for warnings
+    :param: descriptions: informations for what to go in the warnings
     """
 
     # Wipe the frame first
@@ -63,9 +61,8 @@ def draw_frameview(frameview_frame, descriptions):
     Takes a tkinter Frame, and a 2d array of label strings
     Can be called whenever an update is required
 
-    Args:
-        frameview_frame (_type_): tkinter frame
-        descriptions (_type_): list of lists to display
+    :param frameview_frame: tkinter frame to insert descriptions into
+    :param descriptions: 2D list of label strings to display
     """
 
     # Wipe the frame first

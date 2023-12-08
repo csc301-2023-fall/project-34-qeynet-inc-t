@@ -30,17 +30,40 @@ ALL_TYPES = {RATE_OF_CHANGE, STATIC, THRESHOLD, SETPOINT, SOE, L_AND, L_OR}
 
 class AlarmsRequestReceiver(RequestReceiver):
     """
-    AlarmsRequestReceiver is a class that implements the RequestReceiver interface.
-    It handles requests from the alarms tab, such as creating the initial data table,
-    updating the currently represented information, changing the index of the datatable
-    that we are viewing, adding or removing priorities, criticalities or types
-    from the sets of them that we are viewing, and updating the sorting filter to be applied.
+    Handles requests relating to displaying alarms, such as creating the initial alarm table,
+    updating the currently represented information, adding or removing priorities,
+    criticalities or types from the sets of them that we are viewing,
+    and updating the sorting filter to be applied.
+
+    :param filters: Container class for all filters to apply to the table
+    :type: AlarmsFilters
+
+    :param handler: THe class that actually processes requests made by this request receiver
+    :type: AlarmsHandler
+
+    :param previous_data: Stores the return value of the previous call to <cls.create>
+    :type: TableReturn
+
+    :param _sorting: Tracks which direction each row should be sorted by
+    :type: list[int]
+
+    :param _new: Tracks if only new alarms should be shown
+    :type: bool
+
+    :param _priorities: Stores the priorities currently being shown
+    :type: set[str]
+
+    :param _criticalities: Stores the criticalities currently being shown
+    :type: set[str]
+
+    :param _types: Stores the types currently being shown
+    :type: set[str]
     """
 
-    filters = AlarmsFilters(None, None, CRITICALITIES, PRIORITIES, ALL_TYPES, None, None, None,
-                            None, False)
+    filters = AlarmsFilters({Tag("")}, None, CRITICALITIES, PRIORITIES, ALL_TYPES, datetime.min,
+                            datetime.max, datetime.min, datetime.max, False)
     handler = AlarmsHandler()
-    previous_data = None
+    previous_data = TableReturn([], [])
     _sorting = [-1, 1, 1, 1, 1, 1]
     _new = False
     _priorities = {'WARNING', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
@@ -50,57 +73,47 @@ class AlarmsRequestReceiver(RequestReceiver):
     @classmethod
     def create(cls, dm: DataManager) -> TableReturn:
         """
-        Create is a method that creates the initial data table,
-        with all priorities/types/criticalities shown, no sorting applied and at the first index.
+        Creates a table of data using all alarms and applies any relevant filters or sorts
 
-        :param model: The model of currently shown data
         :param dm: Contains all data stored by the program to date.
         """
-        if cls.filters.tags is None:
-            # Since this needs to be supplied externally, we make a special case for it
+        if "" in cls.filters.tags:
+            # Since the filter tags list needs to be provided externally via the DataManager, a
+            # special case needs to be made to update the filter tags
             cls.filters.tags = set(dm.tags)
 
         # Create the initial table.
-        cls.previous_data = cls.handler.get_data(dm.alarms.get_alarms(), cls.filters)
+        cls.previous_data = cls.handler.get_data(dm, cls.filters)
         return cls.previous_data
 
     @classmethod
     def update(cls):
         """
-        update is a method that updates the currently represented information
-
-        :param previous_data: The previous table that was in the view and we want to update.
-        :param dm: Contains all data stored by the program to date.
+        Updates the current data in the table to represent changes to filters or sorting
         """
-        if cls.previous_data is not None:
-            cls.handler.update_data(cls.previous_data, cls.filters)
+
+        cls.handler.update_data(cls.previous_data, cls.filters)
 
     @classmethod
     def set_shown_tags(cls, tags: set[Tag]):
         """
-        Sets the filtered tags to be equivalent to <tags>
-
-        :param tags: The new set of tags to exclusively include in the table
+        Setter method for <cls.filters.tags>
         """
         cls.filters.tags = tags
 
     @classmethod
     def add_shown_priority(cls, add: str) -> bool:
         """
-        add_shown_priority is a method that adds a priority to the set of priorities
-        that we are viewing. It returns True if it was successful and False otherwise.
+        Adds an alarm priority to the set of priorities that we are viewing.
+        It returns True if it was successful and False otherwise.
 
         :param add: the priority that we want to add to the set of priorities that we are viewing.
-        :returns: True if the priority was successfully added and False otherwise.
+        :returns: True iff the priority was successfully added
         """
-
-        # Make sure that the set of priorities that we are viewing is not None.
-        if cls.filters.priorities is None:
-            cls.filters.priorities = set()
 
         # Determine if we can add <add> to the set of priorities that we are viewing.
         if add not in cls.filters.priorities:
-            cls.filters.priorities.add(AlarmCriticality(add))
+            cls.filters.priorities.add(add)
             return True
         else:
             # <add> was already in the set of priorities that we are viewing.
@@ -109,21 +122,17 @@ class AlarmsRequestReceiver(RequestReceiver):
     @classmethod
     def add_shown_criticality(cls, add: AlarmCriticality) -> bool:
         """
-        add_shown_criticality is a method that adds a criticality to the set of criticalities
-        that we are viewing. It returns True if it was successful and False otherwise.
+        Adds a criticality to the set of criticalities that we are viewing. Returns True iff
+        it was successful
 
         :param add: the criticality that we want to add to the set of criticalities that we
         are viewing.
-        :returns: True if the criticality was successfully added and False otherwise.
+        :returns: True iff the criticality was successfully added
         """
-
-        # Make sure that the set of criticalities that we are viewing is not None.
-        if cls.filters.criticalities is None:
-            cls.filters.criticalities = set()
 
         # Determine if we can add <add> to the set of criticalities that we are viewing.
         if add not in cls.filters.criticalities:
-            cls.filters.criticalities.add(add)
+            cls.filters.criticalities.add(add.name)
             return True
         else:
             # <add> was already in the set of criticalities that we are viewing.
@@ -152,35 +161,139 @@ class AlarmsRequestReceiver(RequestReceiver):
             return False
 
     @classmethod
-    def set_shown_priorities(cls, priorities: set[AlarmPriority]):
+    def toggle_sort(cls, heading: str) -> bool:
         """
-        Sets <cls.filters.priorities> to the set of priorities to be shown
+        Method for toggling sorting on a specific heading
+        The headings include:
+        - TAG
+        - PRIORITY
+        - CRITICALITY
+        - REGISTERED
+        - CONFIRMED
+        - TYPE
+        This method will filter the data according to which heading was toggled
 
-        PRECONDITION: <priority> is an element of <cls.filters.priorities>
-
-        :param priorities: a set of priorities to show
+        :param heading: the sort name that was toggled
         """
+        sort_value = 1
+        for i in range(len(ALARM_HEADINGS)):
+            check_heading = ALARM_HEADINGS[i]
+            if check_heading == heading:
+                cls._sorting[i] *= -1
+                sort_value = cls._sorting[i] * (heading == check_heading)
+            else:
+                cls._sorting[i] = 1
+
+        if sort_value == 1:
+            # ascending
+            cls.update_sort(('<', heading))
+        elif sort_value == -1:
+            # descending
+            cls.update_sort(('>', heading))
+
+        return sort_value == 1
+
+    @classmethod
+    def toggle_priority(cls, tag: Tag):
+        """
+        Method for toggling filtering of specific priority
+        The headings include:
+        - WARNING
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+        This method will filter the data according to which heading was toggled
+
+        :param tag: The priority name to toggle on/off
+        """
+        if tag not in cls._priorities:
+            cls._priorities.add(tag)
+        else:
+            cls._priorities.remove(tag)
+
+        cls.set_shown_priorities(cls._priorities)
+        cls.update()
+
+    @classmethod
+    def toggle_criticality(cls, tag: Tag):
+        """
+        Method for toggling filtering of specific criticality
+        The headings include:
+        - WARNING
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+        This method will filter the data according to which heading was toggled
+
+        :param tag: string representing which criticality was toggled
+        """
+        if tag not in cls._criticalities:
+            cls._criticalities.add(tag)
+        else:
+            cls._criticalities.remove(tag)
+
+        cls.set_shown_criticalities(cls._criticalities)
+        cls.update()
+
+    @classmethod
+    def toggle_type(cls, tag: Tag):
+        """
+        Method for toggling filtering of specific criticality
+        The headings include:
+        - RATE-OF-CHANGE
+        - STATIC
+        - THRESHOLD
+        - SETPOINT
+        - SOE
+        - LOGICAL
+        This method will filter the data according to which heading was toggled
+
+        :param tag: string representing which type of alarm was toggled
+        """
+
+        if tag not in cls._types:
+            cls._types.add(tag)
+        else:
+            cls._types.remove(tag)
+
+        cls.set_shown_types(cls._types)
+        cls.update()
+
+    @classmethod
+    def toggle_all(cls) -> None:
+        """
+        Resets all non-parameter filters to their default options. That is,
+        all alarms of different acknowledgement levels, priorities, criticalities, and types are
+        shown
+        """
+
+        cls.set_new_alarms(False)
+        cls.set_shown_priorities(cls._priorities)
+        cls.set_shown_criticalities(cls._criticalities)
+        cls.set_shown_types(cls._types)
+
+    @classmethod
+    def set_shown_priorities(cls, priorities: set[str]):
+        """
+        Setter method for <cls.filters.priorities>
+        """
+
         cls.filters.priorities = priorities
 
     @classmethod
-    def set_shown_criticalities(cls, criticalities: set[AlarmCriticality]):
+    def set_shown_criticalities(cls, criticalities: set[str]):
         """
-        Sets <cls.filters.criticalities> to the set of criticalities to be shown
-
-        PRECONDITION: <criticality> is an element of <cls.filters.criticalities>
-
-        :param criticalities: a set of criticalities to show
+        Setter method for <cls.filters.criticalities>
         """
+
         cls.filters.criticalities = criticalities
 
     @classmethod
     def set_shown_types(cls, types: set[str]):
         """
-        Sets <cls.filters.types> to the set of types to be shown
-
-        PRECONDITION: <type> is an element of <cls.filters.types>
-
-        :param types: a set of types to show
+        Setter method for <cls.filters.types>
         """
         cls.filters.types = types
 
@@ -201,7 +314,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Determine if we can remove <remove> from the set of priorities that we are viewing.
         if remove in cls.filters.priorities:
-            cls.filters.priorities.remove(remove)
+            cls.filters.priorities.remove(remove.name)
             return True
         else:
             # <remove> was not in the set of priorities that we are viewing.
@@ -224,7 +337,7 @@ class AlarmsRequestReceiver(RequestReceiver):
 
         # Determine if we can remove <remove> from the set of criticalities that we are viewing.
         if remove in cls.filters.criticalities:
-            cls.filters.criticalities.remove(remove)
+            cls.filters.criticalities.remove(remove.name)
             return True
         else:
             # <remove> was not in the set of criticalities that we are viewing.
@@ -278,48 +391,50 @@ class AlarmsRequestReceiver(RequestReceiver):
     @classmethod
     def set_registered_start_time(cls, start_time: datetime):
         """
-        Modifies <cls.filters.registered_start_time> to be equal to <start_time>
-
-        :param start_time: the datetime to be set
+        setter method for <cls.filters.confirmed_start_time>
         """
-        cls.filters.registered_start_time = start_time
+        if start_time is None:
+            cls.filters.registered_start_time = datetime.min
+        else:
+            cls.filters.registered_start_time = start_time
 
     @classmethod
     def set_registered_end_time(cls, end_time: datetime):
         """
-        Modifies <cls.filters.registered_end_time> to be equal to <end_time>
-
-        :param end_time: the datetime to be set
+        setter method for <cls.filters.registered_end_time>
         """
-        cls.filters.registered_end_time = end_time
+
+        if end_time is None:
+            cls.filters.registered_end_time = datetime.max
+        else:
+            cls.filters.registered_end_time = end_time
 
     @classmethod
     def set_confirmed_start_time(cls, start_time: datetime):
         """
-        Modifies <cls.filters.confirmed_start_time> to be equal to <start_time>
-
-        :param start_time: the datetime to be set
+        setter method for <cls.filters.confirmed_start_time>
         """
-        cls.filters.confirmed_start_time = start_time
+        if start_time is None:
+            cls.filters.confirmed_start_time = datetime.min
+        else:
+            cls.filters.confirmed_start_time = start_time
 
     @classmethod
     def set_confirmed_end_time(cls, end_time: datetime):
         """
-        Modifies <cls.filters.confirmed_end_time> to be equal to <end_time>
-
-        :param end_time: the datetime to be set
+        setter method for <cls.filters.confirmed_end_time>
         """
-        cls.filters.confirmed_end_time = end_time
+        if end_time is None:
+            cls.filters.confirmed_end_time = datetime.max
+        else:
+            cls.filters.confirmed_end_time = end_time
 
     @classmethod
     def set_new_alarms(cls, new: bool):
         """
-        Sets the <cls.filters.new> to <new>.
-
-        :param new: the value to set <cls.filters.new> to. True indicates
-        that we will only show new/unacknowledged alarms, False indicates that we will
-        show all alarms.
+        setter method for <cls.filters.new>
         """
+
         cls.filters.new = new
 
     @classmethod
@@ -327,6 +442,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         Switches the boolean value of <cls.filters.new>
         """
+
         cls.filters.new = not cls.filters.new
 
     @classmethod
@@ -337,6 +453,7 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param alarm: The alarm whose acknowledgment needs to be modified
         :param dm: Stores all data known to the program
         """
+
         cls.handler.acknowledge_alarm(alarm, dm)
 
     @classmethod
@@ -347,11 +464,15 @@ class AlarmsRequestReceiver(RequestReceiver):
         :param alarm: The alarm to remove
         :param dm: The holder of the global alarm container
         """
+
         cls.handler.remove_alarm(alarm, dm)
 
     @classmethod
     def get_alarm_banner(cls) -> list[str]:
-        """Returns a list of strings in order to show in the alarm banners"""
+        """
+        Returns a list of strings in order to show in the alarm banners
+        """
+
         return cls.handler.get_banner_elems()
 
     @classmethod
@@ -359,140 +480,45 @@ class AlarmsRequestReceiver(RequestReceiver):
         """
         An interfacing function for the alarm container to install a watcher function
         """
+
         dm.alarms.observer.add_watcher(watcher)
 
     @classmethod
     def get_table_entries(cls) -> list[list]:
-        if cls.previous_data is not None:
-            return cls.previous_data.table
-        return []
+        """
+        getter method for the data to actually be shown in the alarms table
+        """
+
+        return cls.previous_data.table
 
     @classmethod
     def get_new(cls) -> bool:
+        """
+        getter method for whether only unacknowledged alarms should be shown or not
+        """
+
         return cls.filters.new
 
     @classmethod
     def get_priorities(cls):
+        """
+        getter method for the priorities currently shown
+        """
+
         return cls._priorities
 
     @classmethod
     def get_criticalities(cls):
+        """
+        getter method for the criticalities currently shown
+        """
+
         return cls._criticalities
 
     @classmethod
     def get_types(cls):
+        """
+        getter method for the types of alarms shown
+        """
+
         return cls._types
-
-    @classmethod
-    def toggle_sort(cls, heading: str) -> bool:
-        """
-        Method for toggling sorting on a specific heading
-        The headings include (for now):
-        - TAG
-        - PRIORITY
-        - CRITICALITY
-        - REGISTERED
-        - CONFIRMED
-        - TYPE
-        This method will ask the model to sort the data
-        according to which heading was toggled
-
-        Args:
-            heading (str): string representing which heading was toggled
-        """
-        sort_value = 1
-        for i in range(len(ALARM_HEADINGS)):
-            check_heading = ALARM_HEADINGS[i]
-            if check_heading == heading:
-                cls._sorting[i] *= -1
-                sort_value = cls._sorting[i] * (heading == check_heading)
-            else:
-                cls._sorting[i] = 1
-
-        if sort_value == 1:
-            # ascending
-            cls.update_sort(('<', heading))
-        elif sort_value == -1:
-            # descending
-            cls.update_sort(('>', heading))
-
-        return sort_value == 1
-
-    @classmethod
-    def toggle_priority(cls, tag: Tag):
-        """
-        Method for toggling filtering of specific priority
-        The headings include (for now):
-        - WARNING
-        - LOW
-        - MEDIUM
-        - HIGH
-        - CRITICAL
-        This method will ask the model to sort the data
-        according to which heading was toggled
-
-        Args:
-            heading (str): string representing which heading was toggled
-        """
-        if tag not in cls._priorities:
-            cls._priorities.add(tag)
-        else:
-            cls._priorities.remove(tag)
-
-        cls.set_shown_priorities(cls._priorities)
-        cls.update()
-
-    def toggle_criticality(cls, tag: Tag):
-        """
-        Method for toggling filtering of specific criticality
-        The headings include (for now):
-        - WARNING
-        - LOW
-        - MEDIUM
-        - HIGH
-        - CRITICAL
-        This method will ask the model to sort the data
-        according to which heading was toggled
-
-        Args:
-            heading (str): string representing which heading was toggled
-        """
-        if tag not in cls._criticalities:
-            cls._criticalities.add(tag)
-        else:
-            cls._criticalities.remove(tag)
-
-        cls.set_shown_criticalities(cls._criticalities)
-        cls.update()
-
-    @classmethod
-    def toggle_type(cls, tag: Tag):
-        """
-        Method for toggling filtering of specific criticality
-        The headings include (for now):
-        - RATE-OF-CHANGE
-        - STATIC
-        - THRESHOLD
-        - SETPOINT
-        - SOE
-        - LOGICAL
-        This method will ask the model to sort the data
-        according to which heading was toggled
-
-        Args:
-            heading (str): string representing which heading was toggled
-        """
-        if tag not in cls._types:
-            cls._types.add(tag)
-        else:
-            cls._types.remove(tag)
-
-        cls.set_shown_types(cls._types)
-        cls.update()
-
-    @classmethod
-    def toggle_all(cls) -> None:
-        cls.set_new_alarms(False)
-        cls.set_shown_priorities(cls._priorities)
-        cls.set_shown_criticalities(cls._criticalities)
-        cls.set_shown_types(cls._types)

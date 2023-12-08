@@ -24,7 +24,11 @@ from astra.data.alarms import (
     AllEventBase,
     AnyEventBase,
 )
-from astra.data.parameters import DisplayUnit, Parameter, ParameterValue, Tag
+from astra.data.parameters import DisplayUnit, Parameter, Tag
+
+
+# Define ParameterValue here as a UnionType to work around some mypy thing
+ParameterValue: UnionType = bool | int | float
 
 
 class ParsingError(Exception):
@@ -53,18 +57,23 @@ class Path:
         return Path(self.base, self.elements + [element])
 
     def __str__(self):
+        """
+        Format this path in a human-readable way.
+
+        Current format looks something like: base[index0].key0[index1][index2].key1.key2
+        """
         return self.base + ''.join(
             (f'[{element}]' if isinstance(element, int) else f'.{element}')
             for element in self.elements
         )
 
 
-def _format_type(t: type) -> str:
+def _format_type(t: type | UnionType) -> str:
     # Stringify types in a nice way.
     return repr('None' if t is NoneType else t.__name__ if isinstance(t, type) else str(t))
 
 
-def _check_type[T](path: Path, value: object, expected_type: type[T]) -> T:
+def _check_type(path: Path, value: object, expected_type: type | UnionType) -> Any:
     # Return the value unchanged if it is of the expected type and raise an error otherwise.
     if isinstance(value, expected_type):
         return value
@@ -98,6 +107,17 @@ class PathedList:
     _list: list
 
     def __init__(self, path: Path, value: object):
+        """
+        Construct a PathedList.
+
+        :param path:
+            The path for the PathedList.
+        :param value:
+            The underlying list for the PathedList, validated as a list during runtime.
+
+        :raise ParsingError:
+            If value is not a list.
+        """
         self._path = path
         self._list = _check_type(path, value, list)
 
@@ -162,6 +182,17 @@ class PathedDict:
     _dict: dict
 
     def __init__(self, path: Path, value: object):
+        """
+        Construct a PathedDict.
+
+        :param path:
+            The path for the PathedDict.
+        :param value:
+            The underlying dict for the PathedDict, validated as a dict during runtime.
+
+        :raise ParsingError:
+            If value is not a dict.
+        """
         self._path = path
         self._dict = _check_type(path, value, dict)
 

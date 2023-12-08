@@ -1,3 +1,9 @@
+"""
+This module defines classes and types relating to events and alarms.
+
+The classes defined here generally work the same way as they do in Panoptes.
+"""
+
 import functools
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -12,18 +18,24 @@ from astra.data.parameters import ParameterValue, Tag
 
 @dataclass(frozen=True)
 class EventBase(ABC):
-    type: ClassVar[str] = ''
+    type: ClassVar[str] = ''  # Used for display purposes
     persistence: float | None
     description: str
 
     @property
     @abstractmethod
     def tags(self) -> Iterable[Tag]:
+        """A unified way to access all tags associated with an event base, regardless of type."""
         raise NotImplementedError
 
 
 @dataclass(frozen=True)
 class SimpleEventBase(EventBase):
+    """
+    An event base revolving around a single tag.
+
+    Equivalent to SingleTagEventBase in Panoptes.
+    """
     tag: Tag
 
     @override
@@ -34,6 +46,13 @@ class SimpleEventBase(EventBase):
 
 @dataclass(frozen=True)
 class CompoundEventBase(EventBase):
+    """
+    An event base that consists of several inner event bases.
+
+    Equivalent to MultiTagEventBase in Panoptes.
+
+    Tags are currently automatically determined based on the tags of the inner event bases.
+    """
     event_bases: list[EventBase]
 
     @override
@@ -75,12 +94,12 @@ class SOEEventBase(CompoundEventBase):
 
 
 @dataclass(frozen=True)
-class AllEventBase(CompoundEventBase):
+class AllEventBase(CompoundEventBase):  # LogicalAndEventBase in Panoptes
     type: ClassVar[str] = 'Logical AND'
 
 
 @dataclass(frozen=True)
-class AnyEventBase(CompoundEventBase):
+class AnyEventBase(CompoundEventBase):  # LogicalOrEventBase in Panoptes
     type: ClassVar[str] = 'Logical OR'
 
 
@@ -98,10 +117,11 @@ class Event:
 
     @property
     def type(self) -> str:
+        """A string representation of the general type (static, setpoint, etc) of this event."""
         return type(self.base).type
 
 
-@functools.total_ordering
+@functools.total_ordering  # Criticalities/priorities can be compared in the natural way
 class AlarmCriticality(Enum):
     WARNING = 'WARNING'
     LOW = 'LOW'
@@ -141,6 +161,7 @@ class AlarmBase:
 @dataclass(frozen=False)
 class Alarm:
     event: Event
+    # As of now, no separate ID for alarms -- the id of the underlying event is used instead.
     criticality: AlarmCriticality
     priority: AlarmPriority
     acknowledged: bool

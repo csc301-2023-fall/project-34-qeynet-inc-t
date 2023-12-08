@@ -3,9 +3,9 @@ This file holds the main view class that will run after selecting a device to mo
 """
 
 import itertools
-from tkinter import Frame
 from tkinter import BOTH
-from tkinter import ttk, Tk, Label
+from tkinter import Frame, Label, Tk
+from tkinter import ttk, PhotoImage
 
 from astra.data.data_manager import DataManager
 from .graphing_view import GraphingView
@@ -15,7 +15,7 @@ from .alarm_view import AlarmView
 
 class View(Tk):
     """
-    View class
+    The container class for all GUI elements of the main screen
     """
     _dm: DataManager
 
@@ -33,6 +33,7 @@ class View(Tk):
         # Root frame of tkinter
         super().__init__()
         self.title(f'Astra - {device_name}')
+        self.iconphoto(True, PhotoImage(file='logo.png'))
 
         # tab widget
         tab_control = ttk.Notebook(self)
@@ -50,6 +51,7 @@ class View(Tk):
         self.graphing_tab = GraphingView(tab_control, height // 4, width, self._dm)
         graphing_frame = self.graphing_tab.overall_frame
 
+        # setting up observers for alarm updates
         watchers = [
             self.telemetry_tab.construct_dashboard_table,
             self.alarm_tab.construct_alarms_table,

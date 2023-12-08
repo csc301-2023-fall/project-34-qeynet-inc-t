@@ -1,10 +1,7 @@
-from queue import Queue
-
 from astra.data.alarms import (AlarmPriority, RateOfChangeEventBase, Alarm,
                                StaticEventBase, ThresholdEventBase, SetpointEventBase,
-                               SOEEventBase, AllEventBase, EventBase, AnyEventBase)
+                               SOEEventBase, AllEventBase)
 from astra.data.data_manager import DataManager
-from astra.data.parameters import Tag
 from astra.usecase.filters import AlarmsFilters
 from astra.usecase.table_return import TableReturn
 
@@ -21,24 +18,30 @@ NEW_QUEUE_KEY = 'n'
 OLD_QUEUE_KEY = 'o'
 NEW_PREFIX = "[NEW] "
 MAX_BANNER_SIZE = 6
+MAX_NEW_SIZE = 3
+MAX_OLD_SIZE = 3
 
 
-class LimitedSlotAlarms:
+class AlarmBanner:
     """
-    Contains all alarms to be shown in the banner at the top of the screen
+    Stores alarms to be shown in the banner at the top of the screen according to acknowledgement
 
-    :param _slots: A dict of priority queues
+    :param _slots: Maps constant strings to the appropriate alarms list
+    :type: dict[str, list[Alarm]]
+
     :param _priorities: an ordered list of keys in _slots, where elements are ordered by
     descending importance
+    :type: list[str]
     """
-    _slots = {NEW_QUEUE_KEY: [], OLD_QUEUE_KEY: []}
+
+    _slots = {NEW_QUEUE_KEY: [], OLD_QUEUE_KEY: []}  # type: dict[str, list[Alarm]]
     _priorities = [NEW_QUEUE_KEY, OLD_QUEUE_KEY]
 
     @staticmethod
     def create_banner_string(alarm: Alarm) -> str:
         """Creates an appropriate string for the banner provided an alarm
 
-        :param alarm: The alarm to use in creating a string
+        :param alarm: The alarm to detail in the returned string
         :return A representation of the alarm for the banner
         """
         priority_str = (f"{alarm.priority.name[0] + alarm.priority.name[1:].lower()}"
@@ -50,14 +53,21 @@ class LimitedSlotAlarms:
     @classmethod
     def get_all(cls) -> list[str]:
         """
-        Compacts all data amongst <cls._slots> into one list in a readable format
+        Determines which alarms should be shown in the banners and returns an ordered list
+        of strings to display
 
-        :return: An ordered list of data compiled from <cls._slots>
+        Currently, uses the following criteria to determine what should be shown:
+            1. 3 new alarms and 3 old alarms should be shown. If there are less than 3 of either,
+            the other may take its place
+            2. In each age bracket, we use the highest priority to determine which should be shown
+
+        :return: An ordered list of strings to show in the banner
         """
-        all_items = []
+
+        all_items: list[str] = []
 
         # Note: while this implementation may seem slow, due to the nature of alarms
-        # being rare and banner slots being limited, it's effectively fast
+        # being rare and banner slots being limited, speed should not be an issue
         new_q = cls._slots[NEW_QUEUE_KEY]
         new_q_items = new_q.copy()
         new_q_items.sort(reverse=True)
@@ -66,10 +76,10 @@ class LimitedSlotAlarms:
         # We want to reserve 3 slots for old alarms, but if there's less than 3 old alarms,
         # populate the banner with more new ones
         old_q_size = len(old_q)
-        if old_q_size > 3:
-            max_new = 3
+        if old_q_size > MAX_NEW_SIZE:
+            max_new = MAX_NEW_SIZE
         else:
-            max_new = 6 - old_q_size
+            max_new = MAX_BANNER_SIZE - old_q_size
 
         # Getting and formatting strings for the top priority new alarms
         i = 0
@@ -83,7 +93,10 @@ class LimitedSlotAlarms:
         i = 0
         old_q_items = old_q.copy()
         old_q_items.sort(reverse=True)
-        while i < len(old_q_items) and len(all_items) < MAX_BANNER_SIZE:
+
+        # We run a while loop over the size of <all_items> to ensure the
+        # banner is as populated as possible
+        while len(all_items) < MAX_BANNER_SIZE:
             item = old_q_items[i]
             old_str = cls.create_banner_string(item)
             all_items.append(old_str)
@@ -96,7 +109,7 @@ class LimitedSlotAlarms:
         """
         Inserts <alarm> into the new alarms queue in <cls._slots>
 
-        :param alarm: The alarm to insert into the banner slots
+        :param alarm: The alarm to insert into the new alarms queue
         """
         new_q = cls._slots[NEW_QUEUE_KEY]
         new_q.append(alarm)
@@ -104,9 +117,9 @@ class LimitedSlotAlarms:
     @classmethod
     def insert_into_old(cls, alarm: Alarm) -> None:
         """
-        Moves <alarm> from the new alarms queue and into the old alarms queue
+        Moves <alarm> from the new alarms list and into the old alarms list
 
-        :param alarm: The alarm to insert into the banner slots
+        :param alarm: The alarm to insert into the old banner slots
 
         PRECONDITION: <alarm> is in <cls._slots[NEW_QUEUE_KEY]>
         """
@@ -121,9 +134,9 @@ class LimitedSlotAlarms:
         """
         Removes <alarm> from the appropriate queue
 
-        :param alarm: The alarm to insert into the banner slots
+        :param alarm: The alarm to remove from any banner slots
 
-        PRECONDITION: <alarm> is in one queue in <cls._slots>
+        PRECONDITION: <alarm> is in one list in <cls._slots>
         """
         if alarm.acknowledged:
             old_q = cls._slots[OLD_QUEUE_KEY]
@@ -134,16 +147,28 @@ class LimitedSlotAlarms:
 
 
 class AlarmsHandler:
-    banner_container = LimitedSlotAlarms()
+    """
+    Processes requests of the program when it comes to displaying alarm information
+
+    :param banner_container: Data structure to determine what information to store in the
+    alarm banner at the top of the screen
+    :type: AlarmBanner
+    """
+
+    banner_container = AlarmBanner()
 
     @staticmethod
     def _get_alarm_type(alarm: Alarm) -> str:
         """
         Returns the string representation of the underlying EventBase of <alarm>
 
-        :param alarm: The alarm to examine
+        NOTE: This is a pretty bad code smell. It will work--and if there are no further alarm
+        types to add then this is fine enough--but this should be refactored.
+
+        :param alarm: The alarm to extract a type from
         :return: A string representation of the alarm type
         """
+
         base = alarm.event.base
         match base:
             case RateOfChangeEventBase():
@@ -162,24 +187,6 @@ class AlarmsHandler:
                 return 'L_OR'
 
     @classmethod
-    def _get_relevant_tags(cls, event_base: EventBase) -> set[Tag]:
-        """
-        Takes an event base and outputs a list of all relevant tags to the base
-
-        :param event_base: The event base to examine
-        :return: A list of all relevant tags to the base
-        """
-        if type(event_base) is not AllEventBase \
-                and type(event_base) is not AnyEventBase \
-                and type(event_base) is not SOEEventBase:
-            return {event_base.tag}
-        else:
-            all_tags = set()
-            for inner_event_base in event_base.event_bases:
-                all_tags = all_tags.union(cls._get_relevant_tags(inner_event_base))
-            return all_tags
-
-    @classmethod
     def _determine_toggled(cls, alarm: Alarm, filter_args: AlarmsFilters) -> bool:
         """
         Uses <filter_args> to determine if <alarm> should be shown or not
@@ -188,38 +195,38 @@ class AlarmsHandler:
         :param filter_args: Contains arguments that will determine if <alarm> is shown
         :return: true iff <alarm> should be shown
         """
-        show = True
+
         # First, checking if it satisfies priority requirements
+
+        show: bool = True
         show = alarm.priority.name in filter_args.priorities
 
         # Next, checking if it satisfies criticality arguments
         show = show and alarm.criticality.name in filter_args.criticalities
 
         # Checking if the alarm type matches
-        show = show and cls._get_alarm_type(alarm) in filter_args.types
+        if filter_args.types is not None:
+            show = show and cls._get_alarm_type(alarm) in filter_args.types
 
         # Checking if the tag of the alarm is requested to be shown
-        relevant_tags = set(cls._get_relevant_tags(alarm.event.base))
+        relevant_tags = set(alarm.event.base.tags)
         show = show and len(relevant_tags.difference(filter_args.tags)) == 0
 
         # Now we need to make sure the alarm fits in the time parameters
         alarm_confirm_time = alarm.event.confirm_time
         alarm_register_time = alarm.event.confirm_time
-        if filter_args.confirmed_start_time is not None:
-            compare_time = filter_args.confirmed_start_time
-            show = show and alarm_confirm_time >= compare_time
 
-        if filter_args.confirmed_end_time is not None:
-            compare_time = filter_args.confirmed_end_time
-            show = show and alarm_confirm_time <= compare_time
+        compare_time = filter_args.confirmed_start_time
+        show = show and alarm_confirm_time >= compare_time
 
-        if filter_args.registered_start_time is not None:
-            register_time = filter_args.registered_start_time
-            show = show and alarm_register_time >= register_time
+        compare_time = filter_args.confirmed_end_time
+        show = show and alarm_confirm_time <= compare_time
 
-        if filter_args.registered_end_time is not None:
-            register_time = filter_args.registered_end_time
-            show = show and alarm_register_time <= register_time
+        register_time = filter_args.registered_start_time
+        show = show and alarm_register_time >= register_time
+
+        register_time = filter_args.registered_end_time
+        show = show and alarm_register_time <= register_time
 
         # Finally, checking if we only show unacknowledged alarms
         if filter_args.new:
@@ -232,28 +239,27 @@ class AlarmsHandler:
         sorts the <table> field of return_data based on <sort>
 
         :param return_data: the output container to sort data from
-        :param sort: defines how output should be sorted
-
-        PRECONDITION: The values of sort satisfy the docstrings of the sort field in
-        AlarmsFilters
+        :param sort: indicates what type of sort should be applied to which column.
+        A tuple in the form (sort_type, sort_column), where <sort_type> is one
+        of '>' or '<', and <sort_column> is in VALID_SORTING_COLUMNS.
         """
-        if sort is not None:
-            # Determining which column to sort by
-            key_index = 0
-            for i in range(len(VALID_SORTING_COLUMNS)):
-                if sort[1] == VALID_SORTING_COLUMNS[i]:
-                    key_index = i
-                    break
 
-            # By default, sorting occurs by ascending values, so a case is
-            # needed to check if it should occur by descending order
-            reverse = False
-            if sort[0] == DESCENDING:
-                reverse = True
+        # Determining which column to sort by
+        key_index = 0
+        for i in range(len(VALID_SORTING_COLUMNS)):
+            if sort[1] == VALID_SORTING_COLUMNS[i]:
+                key_index = i
+                break
 
-            return_data.table = sorted(return_data.table,
-                                       key=lambda x: (x[key_index], x[0]),
-                                       reverse=reverse)
+        # By default, sorting occurs by ascending values, so a case is
+        # needed to check if it should occur by descending order
+        reverse = False
+        if sort[0] == DESCENDING:
+            reverse = True
+
+        return_data.table = sorted(return_data.table,
+                                   key=lambda x: (x[key_index], x[0]),
+                                   reverse=reverse)
 
     @classmethod
     def _extract_alarm_data(cls, alarm: Alarm, priority: AlarmPriority) -> list:
@@ -266,13 +272,14 @@ class AlarmsHandler:
         <alarm> register time, <alarm> confirm time, <alarm> type, <alarm> description, and the
         alarm itself
         """
+
         alarm_id = alarm.event.id
         alarm_priority = priority
         alarm_criticality = alarm.criticality
         alarm_register_time = alarm.event.register_time
         alarm_confirm_time = alarm.event.confirm_time
         alarm_type = cls._get_alarm_type(alarm)
-        alarm_tags = cls._get_relevant_tags(alarm.event.base)
+        alarm_tags = alarm.event.base.tags
         tag_string = ''
         for tag in alarm_tags:
             tag_string += tag + ' '
@@ -284,41 +291,50 @@ class AlarmsHandler:
         return new_row
 
     @classmethod
-    def get_data(cls, dm: dict[AlarmPriority | str, set[Alarm] | Queue],
+    def get_data(cls, dm: DataManager,
                  filter_args: AlarmsFilters) -> TableReturn:
         """
         Using the current data structure of alarms, packs all data stored by the alarms into
         an easily accessible format
 
-        :param dm: Contains all alarms known to the program
+        :param dm: Contains all data known to the program
         :param filter_args: Describes all filters to apply to the filter
         :return: A container for all data to be shown by the table
         """
         shown = []
         removed = []
+
+        alarms_container = dm.alarms
+        alarms = alarms_container.get_alarms()
+
+        # simply iterating through all alarms and extracting their data then adding it into
+        # the appropriate list from those defined above
         for priority in PRIORITIES:
-            for alarm in dm[priority]:
+            for alarm in alarms[priority]:
                 new_row = cls._extract_alarm_data(alarm, AlarmPriority(priority))
                 if cls._determine_toggled(alarm, filter_args):
                     shown.append(new_row)
                 else:
                     removed.append(new_row)
 
-        while dm[NEW_QUEUE_KEY].qsize() > 0:
-            next_item = dm[NEW_QUEUE_KEY].get()
+        # emptying the queue of new alarms to inform the alarm banner of their presence
+        while alarms_container.new_alarms.qsize() > 0:
+            next_item = alarms_container.new_alarms.get()
             cls.banner_container.insert_into_new(next_item)
 
         return_table = TableReturn(shown, removed)
+        if filter_args.sort is not None:
+            cls._sort_output(return_table, filter_args.sort)
+
         return return_table
 
     @classmethod
     def update_data(cls, prev_data: TableReturn, filter_args: AlarmsFilters) -> None:
         """
-        Updates the previous data returned by get_data to apply any new filters
+        Updates the previous data returned by get_data to apply any new filters or sort
 
         :param prev_data: The data returned by the last call to cls.get_data
         :param filter_args: Describes all filters to apply to the table
-        :param dm: Contains all data known to the program
         """
         new_table = []
         new_removed = []
@@ -338,7 +354,9 @@ class AlarmsHandler:
 
         prev_data.table = new_table
         prev_data.removed = new_removed
-        cls._sort_output(prev_data, filter_args.sort)
+
+        if filter_args.sort is not None:
+            cls._sort_output(prev_data, filter_args.sort)
 
     @classmethod
     def acknowledge_alarm(cls, alarm: Alarm, dm: DataManager) -> None:

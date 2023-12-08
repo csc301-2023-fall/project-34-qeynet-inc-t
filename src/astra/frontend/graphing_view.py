@@ -20,14 +20,14 @@ class GraphingView:
     """
     Defines the actual view and some minor logic for the graphing tab
 
-    :param dm: Contains all data known to the program
-    :param overall_frame: Contains all visual aspects of the view
-    :param controller: Interface for backend requests
-    :param searcher: The tag searcher used to select parameters to plot
-    :param figure: The actual graphing data to be shown
-    :param figure_canvas: A canvas to display <cls.figure> on
-    :param y_axis_selection_text: Contains the most recently selected y-axis selection option
-    :param y_axis_selector: Allows user to select a tag to use for y-axis values
+    :param: dm: Contains all data known to the program
+    :param: overall_frame: Contains all visual aspects of the view
+    :param: controller: Interface for backend requests
+    :param: searcher: The tag searcher used to select parameters to plot
+    :param: figure: The actual graphing data to be shown
+    :param: figure_canvas: A canvas to display <cls.figure> on
+    :param: y_axis_selection_text: Contains the most recently selected y-axis selection option
+    :param: y_axis_selector: Allows user to select a tag to use for y-axis values
     """
 
     def __init__(self, frame: ttk.Notebook, num_rows: int, width, dm: DataManager):
@@ -61,7 +61,7 @@ class GraphingView:
         graphing_time_option = Frame(graphing_frame)
         graphing_time_option.grid(sticky='news', row=0, column=0)
 
-        time_input = TimerangeInput(graphing_time_option, 'Time range', self.times_update)
+        time_input = TimerangeInput(graphing_time_option, 'Time range', self._times_update)
         time_input.grid(row=0, column=0, padx=20, pady=20, )
 
         # Creating graphing region UI
@@ -84,14 +84,14 @@ class GraphingView:
         self.y_axis_selector = Combobox(y_axis_selection_region,
                                         textvariable=self.y_axis_selection_text)
         self.y_axis_selector.grid(row=0, column=1, padx=5, pady=20)
-        self.y_axis_selector.bind('<<ComboboxSelected>>', self.set_graph_y_axis_label)
+        self.y_axis_selector.bind('<<ComboboxSelected>>', self._set_graph_y_axis_label)
 
         # Creating region for export data button
         button_selection_region = Frame(graphing_frame)
         button_selection_region.grid(sticky='nes', row=2, column=0, pady=20)
 
         export_data_button = Button(button_selection_region, text='Export Data',
-                                    command=self.export_data)
+                                    command=self._export_data)
         export_data_button.grid(row=0, column=1, pady=20)
 
         self.searcher.deselect_all_tags()
@@ -124,9 +124,9 @@ class GraphingView:
             self.y_axis_selection_text.set(detailed_tags[0])
 
         self.controller.set_shown_tags(selected_tags)
-        self.create_graph()
+        self._create_graph()
 
-    def times_update(self, start_time: datetime | None, end_time: datetime | None) -> (
+    def _times_update(self, start_time: datetime | None, end_time: datetime | None) -> (
             OperationControl):
         """
         Changes filtering for times once the user changes their input
@@ -143,18 +143,23 @@ class GraphingView:
             return OperationControl.CANCEL
         self.controller.set_start_date(start_time)
         self.controller.set_end_date(end_time)
-        self.create_graph()
+        self._create_graph()
         return OperationControl.CONTINUE
 
-    def export_data(self) -> None:
+    def _export_data(self) -> None:
+        """
+        Defines actions once the export data button is clicked
+        """
         config_path = filedialog.asksaveasfilename(title='Save file as', defaultextension='.csv',
                                                    filetypes=[('csv file', '.csv')])
-        try:
-            self.controller.export_data_to_file(config_path)
-        except Exception as e:
-            messagebox.showerror(title='Could not save data', message=f'{type(e).__name__}: {e}')
+        if config_path:
+            try:
+                self.controller._export_data_to_file(config_path)
+            except Exception as e:
+                messagebox.showerror(title='Could not save data', message=f'{type(e).__name__}: '
+                                                                          f'{e}')
 
-    def create_graph(self) -> None:
+    def _create_graph(self) -> None:
         """
         Constructs the graph according to previous user inputs
         """
@@ -217,12 +222,12 @@ class GraphingView:
             new_plot.set_xticks(xticks_positions)
             new_plot.set_xticklabels(xticks_labels, rotation=0, fontsize=7)
             new_plot.legend()
-            self.set_graph_y_axis_label()
+            self._set_graph_y_axis_label()
 
         self.figure_canvas.draw()
         self.figure_canvas.get_tk_widget().pack()
 
-    def set_graph_y_axis_label(self, args: any = None) -> None:
+    def _set_graph_y_axis_label(self, args: any = None) -> None:
         """
         Changes the y_axis range for the graph to the selected tag from
         the dropdown

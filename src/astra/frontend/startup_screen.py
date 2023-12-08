@@ -1,8 +1,9 @@
 """This module provides the GUI for Astra's startup screen."""
 
-from tkinter import Button, Frame, Label, Tk, Toplevel
-from tkinter import filedialog, font, messagebox, simpledialog, ttk, Event
 from tkinter import BOTTOM, LEFT, X, Y
+from tkinter import Button, Frame, Label, Tk, Toplevel
+from tkinter import filedialog, font, messagebox, simpledialog, ttk, Event, PhotoImage
+
 from astra.frontend.view import View
 from astra.usecase.request_receiver import DataRequestReceiver
 
@@ -14,6 +15,7 @@ class StartupScreen(Tk):
         """Initialize the screen, adding all the UI elements."""
         super().__init__()
         self.title('Astra')
+        self.iconphoto(True, PhotoImage(file='logo.png'))
         self.state('zoomed')
         self.controller = DataRequestReceiver()
 

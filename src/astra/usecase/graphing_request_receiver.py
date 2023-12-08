@@ -16,7 +16,7 @@ class GraphingRequestReceiver(RequestReceiver):
     """
 
     handler = GraphingHandler()
-    filters = GraphingFilters(set(), None, None)
+    filters = GraphingFilters(set(), datetime.min, datetime.max)
 
     @classmethod
     def create(cls, dm: DataManager) -> GraphingData:
@@ -32,7 +32,8 @@ class GraphingRequestReceiver(RequestReceiver):
     def update(cls) -> None:
         """
         update is a method that updates the currently represented information,
-        by mutating the data in <previous_data> to match the current filters.
+        by mutating the data in <cls.previous_data> to match the current filters
+        given in <cls.filters>.
         """
 
         cls.handler.update_data(cls.previous_data, cls.filters)
@@ -40,9 +41,9 @@ class GraphingRequestReceiver(RequestReceiver):
     @classmethod
     def set_start_date(cls, start_date: datetime) -> None:
         """
-        Sets the start date of the graph by updating the filters.
+        Sets the start date of the graph by updating <cls.filters>.
 
-        :param start_time: The new start date of the graph.
+        :param start_date: The new start date of the graph.
         """
 
         cls.filters.start_time = start_date
@@ -50,17 +51,27 @@ class GraphingRequestReceiver(RequestReceiver):
     @classmethod
     def set_end_date(cls, end_date: datetime) -> None:
         """
-        Sets the end date of the graph by updating the filters.
+        Sets the end date of the graph by updating >cls.filters>.
 
-        :param end_time: The new end date of the graph.
+        :param end_date: The new end date of the graph.
         """
 
         cls.filters.end_time = end_date
 
     @classmethod
+    def add_shown_tag(cls, tag: str) -> None:
+        """
+        Adds a single tag to the set of shown tags by updating <cls.filters>.
+
+        :param tag: The name of the tag to be added.
+        """
+
+        cls.filters.tags.add(Tag(tag))
+
+    @classmethod
     def set_shown_tags(cls, tags: set[str]) -> None:
         """
-        Sets the entire set of shown tags by updating the filters.
+        Sets the entire set of shown tags at once by updating <cls.filters>.
 
         :param tags: The set of tags to be shown.
         """
@@ -72,32 +83,21 @@ class GraphingRequestReceiver(RequestReceiver):
     @classmethod
     def remove_shown_tag(cls, tag: str) -> None:
         """
-        Removes a tag from the set of shown tags by updating the filters.
+        Removes a tag from the set of shown tags by updating <cls.filters>.
 
-        :param tags: The name of the tag to be removed.
+        :param tag: The name of the tag to be removed.
         """
 
         if tag in cls.filters.tags:
             cls.filters.tags.remove(Tag(tag))
 
     @classmethod
-    def add_shown_tag(cls, tag: str) -> None:
-        """
-        Adds a tag to the set of shown tags by updating the filters.
-
-        :param tags: The name of the tag to be added.
-        """
-
-        cls.filters.tags.add(Tag(tag))
-
-    @classmethod
     def export_data_to_file(cls, filename: str) -> None:
         """
-        Exports the current telemetry data to a file.
+        Exports the current telemetry data to a file. The export format is
+        determined based on the file extension in the <filename>.
 
-        :param filename: The path to save to. The export format is
-        determined based on the file extension.
-        :param data: The data to be exported.
+        :param filename: The path to save to.
         """
 
         cls.handler.export_data_to_file(cls.previous_data, filename)
