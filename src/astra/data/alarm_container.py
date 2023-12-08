@@ -1,3 +1,5 @@
+"""This module provides classes for storing and working with alarms."""
+
 from datetime import timedelta
 from queue import Queue
 from threading import Lock, Timer

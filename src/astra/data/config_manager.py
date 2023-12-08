@@ -1,3 +1,5 @@
+"""This module provides functionality for reading config files."""
+
 from yaml import safe_load
 
 # import parameters

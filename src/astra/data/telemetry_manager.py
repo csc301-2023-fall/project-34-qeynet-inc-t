@@ -1,3 +1,5 @@
+"""This module provides functionality for reading telemetry files."""
+
 from datetime import datetime
 
 import h5py

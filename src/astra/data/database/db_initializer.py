@@ -1,6 +1,4 @@
-"""
-This module initializes the database and provides the schema for the tables.
-"""
+"""This module initializes the database and provides the schema for the tables."""
 from datetime import datetime
 from sqlalchemy import (
     create_engine,

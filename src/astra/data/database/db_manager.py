@@ -1,3 +1,5 @@
+"""This module provides functions for interacting with the database."""
+
 from collections.abc import Sequence
 from datetime import datetime
 
