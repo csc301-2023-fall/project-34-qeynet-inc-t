@@ -1,5 +1,7 @@
 """This module initializes the database and provides the schema for the tables."""
 from datetime import datetime
+from typing import Any
+
 from sqlalchemy import (
     create_engine,
     ForeignKey,
@@ -25,7 +27,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 
 # A declarative base class that helps mapping to the relational schema
-Base = declarative_base()
+# Mypy complains about using Base as a base class for some reason,
+# so annotate with Any as a workaround
+Base: Any = declarative_base()
 
 
 def initialize_sqlite_db():
