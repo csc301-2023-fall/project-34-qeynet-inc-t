@@ -105,7 +105,7 @@ def create_update_alarm(alarm_dicts: Sequence[dict], device_id: int):
     Create new alarms in the database based on the given alarm dictionaries.
     Delete any preexisting alarms for the given device.
 
-    :param alarm_dicts: a lost of dictionaries containing alarm criticalities and data
+    :param alarm_dicts: a sequence of dictionaries containing alarm criticalities and data
     :param device_id: the id of the device
     """
     with Session.begin() as session:

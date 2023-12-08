@@ -137,10 +137,9 @@ class DataManager:
 
     def add_alarms(self, alarms: list[Alarm]) -> None:
         """
-        Updates the alarms global variable after acquiring the lock for it
+        Add alarms to the alarm container of this DataManager.
 
-        :param dm: Holds information of data criticality and priority
-        :param alarms: The set of alarms to add to <cls.alarms>
+        :param alarms: The list of alarms to add.
         """
         self._alarm_container.add_alarms(alarms, self.alarm_priority_matrix)
 
