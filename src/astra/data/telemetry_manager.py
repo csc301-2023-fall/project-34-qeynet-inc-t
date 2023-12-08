@@ -19,8 +19,9 @@ def _read_telemetry_hdf5(filename: str) -> datetime:
     datetime.
     The data is then written to the database.
 
-    Args:
-        filename (str): full path to the telemetry file
+    :param filename: full path to the telemetry file
+
+    :return: earliest timestamp in the telemetry data
     """
 
     with h5py.File(filename, "r") as h5file:
@@ -37,6 +38,7 @@ def _read_telemetry_hdf5(filename: str) -> datetime:
                 len(values) for values in h5file["telemetry"].values()
             }
             # get the telemetry data and use pandas to store it in a dataframe
+            # use None for parameters not included in the telemetry file
             telemetry_data = pd.DataFrame(
                 {
                     header: values
@@ -47,14 +49,6 @@ def _read_telemetry_hdf5(filename: str) -> datetime:
                     for tag_name in excluded_tags
                 }
             )
-
-            # # create a dataframe from the telemetry data
-            # telemetry_data = pd.DataFrame(
-            #     {
-            #         header: values
-            #         for header, values in h5file["telemetry"].items()
-            #     }
-            # )
 
             # write the data to database
             earliest_added_timestamp = _dataframe_to_database(
@@ -71,8 +65,9 @@ def _read_telemetry_yaml(filename: str) -> datetime:
     """
     Read in a yaml telemetry file and store it in the database.
 
-    Args:
-        filename (str): full path to the telemetry file
+    :param filename: full path to the telemetry file
+
+    :return: earliest timestamp in the telemetry data
     """
     with open(filename, "r") as yaml_file:
         # Load the yaml file and get the data
@@ -91,6 +86,7 @@ def _read_telemetry_yaml(filename: str) -> datetime:
                 len(values) for values in telemetry_data.values()
             }
             # get the telemetry data and use pandas to store it in a dataframe
+            # use None for parameters not included in the telemetry file
             telemetry_dataframe = pd.DataFrame(
                 {header: values for header, values in telemetry_data.items()}
                 | {
@@ -99,8 +95,7 @@ def _read_telemetry_yaml(filename: str) -> datetime:
                 }
             )
 
-            # # create a dataframe from the telemetry data
-            # telemetry_dataframe = pd.DataFrame(telemetry_data)
+            # create a dataframe from the telemetry data
             earliest_added_timestamp = _dataframe_to_database(
                 telemetry_dataframe, device
             )
@@ -111,7 +106,7 @@ def _read_telemetry_yaml(filename: str) -> datetime:
             raise ValueError("Device does not exist in database")
 
 
-# A dictionary that map file extensions to reader functions
+# A dictionary that maps file extensions to reader functions
 _file_readers = {
     "h5": _read_telemetry_hdf5,
     "yaml": _read_telemetry_yaml
@@ -122,13 +117,12 @@ _file_readers = {
 def _dataframe_to_database(
     telemetry_data: pd.DataFrame, device: Device
 ) -> datetime:
-    """A helper function that stores a pandas dataframe to the database.
+    """Helper function: save data from a pandas dataframe to the database.
 
-    Args:
-        telemetry_data (pd.DataFrame): the telemetry data
+    :param telemetry_data: the telemetry data in the form of a pandas dataframe --
+    should have an EPOCH column for timestamps and one column for each parameter
 
-    Returns:
-        datetime: the earliest timestamp of the telemetry data
+    :return: earliest timestamp in the telemetry data
     """
     # convert EPOCH to datetime
     telemetry_data["timestamp"] = pd.to_datetime(
@@ -139,7 +133,7 @@ def _dataframe_to_database(
 
     # convert the dataframe to long format for database insertion
     telemetry_data = pd.melt(
-        telemetry_data, id_vars="timestamp", value_name="value"
+        telemetry_data, id_vars=["timestamp"], value_name="value"
     )
     telemetry_data.rename(columns={"variable": "tag_name"}, inplace=True)
 
@@ -168,12 +162,13 @@ def _dataframe_to_database(
 
 def read_telemetry(filename: str) -> datetime:
     """
-    Read in a telemetry file with the given path and return
-    it as a pandas dataframe.
-    Raise ValueError when the type of the telemetry is incorrect.
+    Read in a telemetry file with the given path and save the telemetry data in the database.
 
-    Args:
-        filename (str): full path to the telemetry file
+    :param filename: full path to the telemetry file
+
+    :raise ValueError: when the type of the telemetry is incorrect
+
+    :return: earliest timestamp in the telemetry data
     """
     file_extension = filename.split(".")[-1]
     reader_func = _file_readers.get(file_extension)

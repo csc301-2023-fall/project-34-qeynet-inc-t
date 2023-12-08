@@ -11,12 +11,9 @@ from astra.data.parameters import DisplayUnit, Parameter, Tag
 
 def _read_config_yaml(filename: str) -> None:
     """
-    Read in a yaml configuration file and parse it into a pandas dataframe.
-    The data in the "alarm" column is temporarily removed to
-    improve the readability of the dataframe.
+    Read in a yaml configuration file and save it to the database.
 
-    Args:
-        filename (str): full path to the config file
+    :param filename: full path to the config file
     """
     with open(filename, "r") as yaml_file:
         config_contents = safe_load(yaml_file)
@@ -40,18 +37,13 @@ def _read_config_yaml(filename: str) -> None:
 
 def yaml_tag_parser(tag_dict: dict) -> Parameter:
     """
-        A helper function for yaml reader that parse the tag
-        data into a dictionary.
+    Helper function for yaml reader: parse the tag data into a Parameter object.
 
-    Args:
-        tag_dict (dict): a dictionary that contains the tag data
-                         (setpoint, dtype, display_units)
+    :param tag_dict: a dictionary that contains the tag data (setpoint, dtype, display_units)
 
-    Raises:
-        ValueError: when the dtype is not int, float, or bool
+    :raise ValueError: when the dtype is not int, float, or bool
 
-    Returns:
-        dict: a dictionary that contains the parsed tag data
+    :return: a Parameter object from the parsed tag data
     """
     tag_id = list(tag_dict.keys())[0]
     tag_data = tag_dict[tag_id]
@@ -90,7 +82,7 @@ def yaml_tag_parser(tag_dict: dict) -> Parameter:
     )
 
 
-# A dictionary that map file extensions to reader functions
+# A dictionary that maps file extensions to reader functions
 _file_readers = {
     "yaml": _read_config_yaml
     # Add more file types and reader functions as needed
@@ -99,12 +91,11 @@ _file_readers = {
 
 def read_config(filename: str) -> None:
     """
-    Read in a configuration file with the given path and return
-    it as a pandas dataframe.
-    Raise ValueError when the type of the configuration is incorrect.
+    Read in a configuration file with the given path and save it to the database.
 
-    Args:
-        filename (str): full path to the config file
+    :param filename: full path to the config file
+
+    :raise ValueError: when the type of the configuration is incorrect.
     """
     file_extension = filename.split(".")[-1]
     reader_func = _file_readers.get(file_extension)
