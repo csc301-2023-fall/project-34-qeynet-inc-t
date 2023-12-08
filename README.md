@@ -49,33 +49,32 @@ Data from telemetry frames can be plotted on a graph with time as the independen
 
 ## Download and Installation
 
-To acquire the program, one can head to the releases section and simply download `astra-vX.Y.Z.zip` under the latest release version X.Y.Z, then extract the zip folder.
+To acquire the program, one can head to the releases section and simply download `astra-X.Y.Z.zip` under the latest release version X.Y.Z, then extract the zip folder.
 
 Once extracted, running the program simply requires running the `astra.exe` file located in the root of the folder.
 
 ## Instructions
 
-On startup, a file dialog will appear asking for a device configuration file. Some sample device configuration files are included in the download.
+Astra starts up on the device selection screen. You can add a device by clicking the appropriate button and selecting a device configuration file (some example files are included in the download). Once added, devices will appear in a table. Double-clicking a row of the table allows you to either delete a device or select it for monitoring.
 
-Once a configuration file is chosen, the GUI for Astra will open. There are currently two functioning tabs (screens): the telemetry tab and the alarm tab.
+Once a device is chosen, the main GUI for Astra will open. It consists of three tabs: the telemetry, alarm, and graphing tabs.
 
-The telemetry tab is where you can input and view telemetry data. To start, press the button for adding telemetry data from a file. A file dialog will appear asking for a telemetry file. Some sample telemetry files are also included in the download. Make sure to select telemetry files that correspond to the appropriate device.
+The telemetry tab is where you can input and view telemetry data. To start, press the button for adding telemetry data from a file. A file dialog will appear asking for a telemetry file. (Some example telemetry files are also included in the download.) Make sure to select telemetry files that correspond to the appropriate device.
 
-NOTE: telemetry data persists between sessions of the program. If you close and reopen the program, all the read-in telemetry data for a given device will still be there. To reset the state of the program, delete the `astra.db` file that is generated upon the first run of the program. (In the future, there will be more granular ways of managing the state of the program.)
+NOTE: telemetry data persists between sessions of the program. If you close and reopen the program, all the read-in telemetry data for a given device will still be there.
 
-The table on the screen will now be filled with data for the first telemetry frame from the file. You can use arrows above the table to change between different telemetry frames, or the time range filter to view only telemetry frames in a certain time range. The format for the filter is `YYYY-MM-DD hh:mm:ss`; leave a time blank to indicate that there is no bound.
+The table on the screen will now be filled with data for the first telemetry frame from the file. You can use arrows above the table to change between different telemetry frames, or the time range filter to view only telemetry frames in a certain time range. Clicking on the headers of the table allows you to sort by certain columns, and clicking on the rows allows you to see more data. Finally, which parameters to show can be controlled by the left panel, where parameters can be checked or unchecked to show or hide them from the table. There is a search function for narrowing down the tags in the panel.
 
-On the left is a parameter filter. Check and uncheck parameter tags to show and hide them from the table. There is a search function to narrow down tags -- enter something into the search box to see only tags that contain the search text as a substring. (Leave the search box empty to see all tags. The search function will be expanded in the future to include parameter descriptions.)
+The alarm tab displays a table of alarms generated upon reading in a telemetry file that satisifies certain abnormal conditions. Alarms can be filtered according to various options above the table, as well as a parameter-filtering side panel that functions similarly to the one in the telemetry tab. Clicking on the headers allows for sorting by columns just like with the telemetry table. Clicking on rows allows you to view an alarm in more detail and either acknowledge or remove the alarm.
 
-The other tab is the alarm tab. It contains a table of alarms, created based on patterns in the telemetry data and alarm specifications in the chosen configuration file. There are some filters above the table that can be toggled.
+On all three tabs, there is a set of alarm banners showing the most high-priority alarms that have been generated. The banners will generally show a mixture of acknowledged (old) and unacknowledged (new) alarms.
 
 NOTE: alarms, unlike telemetry data, do not persist between sessions.
 
-Some columns of the tables for both the telemetry and alarm tabs can be sorted. Click a column header of the table to sort, and click again to sort in the opposite order.
+The final tab is the graphing tab. Another parameter selection side panel allows you to pick which parameters to plot. There is a time range filter to allow for narrowing the graph to a specific range of time. All parameters are plotted according to separate y-axes that can be switched between in a dropdown.
 
-Known issues:
-- The telemetry file reading is currently not very robust. Make sure to select the appropriate files for the appropriate device, to add files for a device in order of timestamp (indicated on the filename of all sample telemetry files), and to add each file only once. The program may behave in unpredictable ways otherwise.
- 
+There are also options to export a graph, as well as the raw data that makes up the graph.
+
  ## Development requirements
 
 Astra is designed to run on Windows, and uses Python 3.12. All required dependencies are listed in `requirements.txt`.
