@@ -123,3 +123,10 @@ Wednesday, Nov 15, 14:00-14:55
   - For now: still many things not fully decided; team should prioritize other areas if needed
 - Tentatively: meet again in about two weeks (Monday, Nov 27)
 - Team TODO: discuss logistics of D4 presentations; let partner know by Thursday/Friday
+
+Monday, Dec 4, 11:00-11:30
+- Team explained teaching team's expectations for Deliverable 5
+- Further development: QEYnet will fork the repo (either the original repo or a separate "final version" repo -- to be decided in the future) at its own convenience -- must stay publicly available
+- Team's Panoptes repo: to be deleted in the future after all changes have been made
+- Team should use GitHub issues to highlight work left to do for the project
+- Priorities for improving the codebase: docstrings, type annotations
