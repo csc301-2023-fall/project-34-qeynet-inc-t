@@ -45,13 +45,13 @@ When the telemetry data satisfies certain alarm criteria, alarms are created and
 
 * **Plot selected parameters against time**
 
-Data from telemetry frames is plotted on a graph with time as the independent variable and various user-chosen parameters as dependent variables.
+Data from telemetry frames can be plotted on a graph with time as the independent variable and various user-chosen parameters as dependent variables.
 
 ## Download and Installation
 
 To acquire the program, one can head to the releases section and simply download `astra-vX.Y.Z.zip` under the latest release version X.Y.Z, then extract the zip folder.
 
-Once extracted, running the program simply requires running the `main.exe` file located in the root of the folder.
+Once extracted, running the program simply requires running the `astra.exe` file located in the root of the folder.
 
 ## Instructions
 
@@ -78,19 +78,19 @@ Known issues:
  
  ## Development requirements
 
- Astra can be run on Windows. To install the D3 version, navigate to the D3 release for this repository and download `astra-d3.zip`. Extract the zip, and double-click on `astra-d3.exe` to launch the program. If a Windows Defender popup appears, click "More info" followed by "Run anyway".
+Astra is designed to run on Windows, and uses Python 3.12. All required dependencies are listed in `requirements.txt`.
  
  ## Deployment and Github Workflow
 
-We still largely work in the subteams established in D2: the data subteam, responsible with interacting with the file system (including persistence); the use case subteam, responsible for alarm checking and turning data from the data subteam into a useful format for the frontend subteam; and the frontend subteam, responsible for the GUI. However, we are not strict with the subteams, and members of one subteam can and do help out members of another subteam as needed.
+Astra was developed in 3 subteams: the data subteam, responsible for file I/O and persistence; the use case subteam, responsible for alarm checking and formatting data from the data subteam into a useful form for the frontend subteam; and the frontend subteam, responsible for the GUI. The subteam division was loosely followed, with members of one subteam often helping out members of another subteam as needed.
 
-Ideally, changes are worked on in branches, and when a feature is done, a pull request is made, at least one other team member reviews and provides feedback on the changes to the code, and when the code is deemed ready, the pull request is merged into the main branch. (In practice, deviations from this may occur for various reasons.) There are workflows upon pushing to the repository to run tests and lint the code.
+There is a GitHub workflow for linting with Flake8 and running tests with pytest.
 
-For now, we deploy the application manually, using PyInstaller to create an executable from the source code. In the future, we may switch to a more automatic method of deployment.
+Deployment of the application is manual, using PyInstaller to create an executable from the source code.
 
  ## Coding Standards and Guidelines
 
-We currently have the following standards on code style:
+We have the following standards on code style:
 * Max line Length: 100 characters
 * Strings: Use single quotes for strings by default
 * Docstring Format: reST (same as Panoptes, a sister project to automatically generate device configuration and telemetry files)
@@ -99,6 +99,6 @@ We currently have the following standards on code style:
 
  ## Licenses 
 
-We will apply the **MIT license** to our codebase. It’s because we're allowed to share the code under an open-source license and the MIT license is such a simple and popular open-source license that meets all our needs.
+Astra uses the **MIT license**, a simple and popular open-source license that meets all our needs.
 
 With the MIT license in our codebase, it grants any person the right to use, modify, and distribute our codebase as long as they include the same copyright notice in their copies.
