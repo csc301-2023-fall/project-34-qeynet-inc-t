@@ -17,13 +17,13 @@
  <img width="300" height="160" src="https://images.squarespace-cdn.com/content/v1/5a837cb7d74cffca72977a29/1518672294226-XPZ4FOYONO9PKB0DX8AC/QEYnet+logo_final-+iteration+2.png">
 </p>
 
-QEYnet is a startup company aiming to deploy a low-cost microsatellite quantum-key-distribution (QKD) network to facilitate the start a new era of ultra-secure communication systems
+QEYnet is a startup company aiming to deploy a low-cost microsatellite quantum-key-distribution (QKD) network to facilitate the start a new era of ultra-secure communication systems.
 
 More can be learned about QEYnet and their groundbreaking QKD technologies from their website: https://qeynet.com/
 
 ## Description of the project
 
-Astra will be a local, GUI-based program that will allow QEYnet employees and customers to read and interact with data from QEYnet satellites and other devices.
+Astra is a local, GUI-based program that will allow QEYnet employees and customers to read and interact with data from QEYnet satellites and other devices.
 
 Satellites out of view are critical to QEYnet’s mission, hence they need some form of software that allows them and customers to monitor the state of their satellites at all times.
 
@@ -47,13 +47,9 @@ When the telemetry data satisfies certain alarm criteria, alarms are created and
 
 Data from telemetry frames is plotted on a graph with time as the independent variable and various user-chosen parameters as dependent variables.
 
-* **Emit additional warnings for high-priority alarms (if time permits)**
-
-For sufficiently high-priority alarms, additional methods of notifying staff are deployed such as popups or emails.
-
 ## Download and Installation
 
-To acquire the program, one can head to the releases section and simply download `astra-vX.Y.Z.zip` under the latest release version X.Y.Z, then extract the zip folder
+To acquire the program, one can head to the releases section and simply download `astra-vX.Y.Z.zip` under the latest release version X.Y.Z, then extract the zip folder.
 
 Once extracted, running the program simply requires running the `main.exe` file located in the root of the folder.
 
