@@ -154,7 +154,7 @@ class GraphingView:
                                                    filetypes=[('csv file', '.csv')])
         if config_path:
             try:
-                self.controller._export_data_to_file(config_path)
+                self.controller.export_data_to_file(config_path)
             except Exception as e:
                 messagebox.showerror(title='Could not save data', message=f'{type(e).__name__}: '
                                                                           f'{e}')
