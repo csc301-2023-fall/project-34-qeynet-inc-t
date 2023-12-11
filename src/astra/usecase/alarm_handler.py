@@ -96,7 +96,7 @@ class AlarmBanner:
 
         # We run a while loop over the size of <all_items> to ensure the
         # banner is as populated as possible
-        while len(all_items) < MAX_BANNER_SIZE:
+        while i < len(old_q_items) and len(all_items) < MAX_BANNER_SIZE:
             item = old_q_items[i]
             old_str = cls.create_banner_string(item)
             all_items.append(old_str)
