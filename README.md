@@ -9,7 +9,7 @@
 **Partner:**
 * Michael Luciuk
 * Primary point of contact
-* Github: https://github.com/mrl280
+* GitHub: https://github.com/mrl280
 
 **Organization:**
 
