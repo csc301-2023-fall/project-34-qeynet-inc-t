@@ -3,7 +3,7 @@ Organization Name: QEYnet Inc.
 Partner: 
   Michael Luciuk
   Primary point of contact
-  Email: mike.luciuk@mail.utoronto.ca
+  GitHub: https://github.com/mrl280
 
 TA:
   Sajad Faghfoor Maghrebi
